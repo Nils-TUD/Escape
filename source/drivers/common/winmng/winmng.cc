@@ -35,7 +35,8 @@
 #include "infodev.h"
 #include "input.h"
 #include "listener.h"
-#include "window.h"
+#include "preview.h"
+#include "winlist.h"
 
 using namespace esc;
 
@@ -69,16 +70,19 @@ public:
 		CStringBuf<WinMngEvents::MAX_WINTITLE_LEN> title;
 		is >> x >> y >> width >> height >> style >> titleBarHeight >> title;
 
-		errcode_t res = win_create(x,y,width,height,is.fd(),style,titleBarHeight,title.str());
+		gwinid_t id = WinList::get().add(x,y,width,height,is.fd(),style,titleBarHeight,title.str());
 
-		is << ValueResponse<gwinid_t>::result(res) << Reply();
+		is << ValueResponse<gwinid_t>::result(id) << Reply();
 	}
 
 	void delegate(IPCStream &is) {
 		esc::DevDelegate::Request r;
 		is >> r;
 
-		int res = win_joinbuf(r.arg,r.nfd);
+		int res = -EINVAL;
+		Window *win = WinList::get().get(r.arg);
+		if(win)
+			res = win->joinbuf(r.nfd);
 		is << esc::DevDelegate::Response(res) << esc::Reply();
 	}
 
@@ -86,17 +90,18 @@ public:
 		gwinid_t wid;
 		is >> wid;
 
-		Window *win = win_get(wid);
+		Window *win = WinList::get().get(wid);
 		if(win)
-			win_setActive(wid,true,input_getMouseX(),input_getMouseY(),true);
+			WinList::get().setActive(win,true,Input::get().getMouseX(),Input::get().getMouseY(),true);
 	}
 
 	void destroy(IPCStream &is) {
 		gwinid_t wid;
 		is >> wid;
 
-		if(win_exists(wid))
-			win_destroy(wid,input_getMouseX(),input_getMouseY());
+		Window *win = WinList::get().get(wid);
+		if(win)
+			WinList::get().remove(win);
 	}
 
 	void move(IPCStream &is) {
@@ -105,12 +110,13 @@ public:
 		bool finished;
 		is >> wid >> x >> y >> finished;
 
-		Window *win = win_get(wid);
-		if(win && x < (gpos_t)win_getMode()->width && y < (gpos_t)win_getMode()->height) {
+		const esc::Screen::Mode &mode = WinList::get().getMode();
+		Window *win = WinList::get().get(wid);
+		if(win && x < (gpos_t)mode.width && y < (gpos_t)mode.height) {
 			if(finished)
-				win_moveTo(wid,x,y,win->width(),win->height());
+				win->moveTo(x,y,win->width(),win->height());
 			else
-				win_previewMove(wid,x,y);
+				WinList::get().previewMove(win,x,y);
 		}
 	}
 
@@ -121,18 +127,12 @@ public:
 		bool finished;
 		is >> wid >> x >> y >> width >> height >> finished;
 
-		if(win_exists(wid)) {
-			int evid = win_get(wid)->evfd;
-			if(finished) {
-				win_resize(wid,x,y,width,height);
-
-				WinMngEvents::Event ev;
-				ev.type = WinMngEvents::Event::TYPE_RESIZE;
-				ev.wid = wid;
-				send(evid,MSG_WIN_EVENT,&ev,sizeof(ev));
-			}
+		Window *win = WinList::get().get(wid);
+		if(win) {
+			if(finished)
+				win->resize(x,y,width,height);
 			else
-				win_previewResize(x,y,width,height);
+				WinList::get().previewResize(x,y,width,height);
 		}
 	}
 
@@ -142,12 +142,12 @@ public:
 		gsize_t width,height;
 		is >> wid >> x >> y >> width >> height;
 
-		Window *win = win_get(wid);
+		Window *win = WinList::get().get(wid);
 		if(win != NULL) {
 			if((gpos_t)(x + width) > x &&
 					(gpos_t)(y + height) > y && x + width <= win->width() &&
 					y + height <= win->height()) {
-				win_update(wid,x,y,width,height);
+				WinList::get().update(win,x,y,width,height);
 			}
 			else
 				wid = -EINVAL;
@@ -183,7 +183,7 @@ public:
 	}
 
 	void getMode(IPCStream &is) {
-		is << ValueResponse<Screen::Mode>::success(*win_getMode()) << Reply();
+		is << ValueResponse<Screen::Mode>::success(WinList::get().getMode()) << Reply();
 	}
 
 	void setMode(IPCStream &is) {
@@ -191,12 +191,12 @@ public:
 		gcoldepth_t bpp;
 		is >> width >> height >> bpp;
 
-		errcode_t res = win_setMode(width,height,bpp);
+		errcode_t res = WinList::get().setMode(width,height,bpp);
 		is << res << Reply();
 	}
 
 	void getTheme(IPCStream &is) {
-		const std::string &nameobj = win_getTheme();
+		const std::string &nameobj = WinList::get().getTheme();
 		is << CString(nameobj.c_str(),nameobj.length()) << Reply();
 	}
 
@@ -204,12 +204,12 @@ public:
 		CStringBuf<64> name;
 		is >> name;
 
-		win_setTheme(name.str());
+		WinList::get().setTheme(name.str());
 		is << 0 << Reply();
 	}
 
 	void close(IPCStream &is) {
-		win_destroyWinsOf(is.fd(),input_getMouseX(),input_getMouseY());
+		WinList::get().destroyWinsOf(is.fd());
 		Device::close(is);
 	}
 };
@@ -228,26 +228,28 @@ public:
 		gwinid_t winid;
 		is >> winid;
 
-		win_attach(winid,is.fd());
+		Window *win = WinList::get().get(winid);
+		if(win)
+			win->attach(is.fd());
 	}
 
 	void addListener(IPCStream &is) {
-		ev_type type;
+		Listener::ev_type type;
 		is >> type;
 
-		listener_add(is.fd(),type);
+		Listener::get().add(is.fd(),type);
 	}
 
 	void remListener(IPCStream &is) {
-		ev_type type;
+		Listener::ev_type type;
 		is >> type;
 
-		listener_remove(is.fd(),type);
+		Listener::get().remove(is.fd(),type);
 	}
 
 	void close(IPCStream &is) {
-		listener_removeAll(is.fd());
-		win_detachAll(is.fd());
+		Listener::get().removeAll(is.fd());
+		WinList::get().detachAll(is.fd());
 		Device::close(is);
 	}
 };
@@ -290,21 +292,16 @@ int main(int argc,char *argv[]) {
 		printe("Unable to add ui-group to group-list");
 
 	/* open input device and attach */
-	sInputThread inputData;
-	inputData.uiev = new UIEvents(*ui);
+	UIEvents *uiev = new UIEvents(*ui);
 
-	/* init window stuff */
-	inputData.winmng = path;
-	int mode = win_init(windev.id(),ui,atoi(argv[1]),atoi(argv[2]),DEF_BPP);
-	if(mode < 0)
-		error("Setting mode %zu%zu@%d failed",atoi(argv[1]),atoi(argv[2]),DEF_BPP);
+	WinList::create(windev.id(),ui,atoi(argv[1]),atoi(argv[2]),DEF_BPP);
 
-	/* start helper threads */
-	listener_init(windev.id());
-	if(startthread(input_thread,&inputData) < 0)
-		error("Unable to start thread for mouse-handler");
-	if(startthread(InfoDev::thread,argv[3]) < 0)
-		error("Unable to start thread for the infodev");
+	/* start helper modules */
+	Listener::create(windev.id());
+	Input::create(uiev,path);
+	InfoDev::create(argv[3]);
+	Preview::create();
+
 	if(startthread(eventThread,&evdev) < 0)
 		error("Unable to start thread for the event-channel");
 

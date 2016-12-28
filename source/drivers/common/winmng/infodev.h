@@ -19,6 +19,27 @@
 
 #pragma once
 
+#include <esc/ipc/filedev.h>
 #include <sys/common.h>
+#include <sys/thread.h>
+#include <stdlib.h>
 
-int infodev_thread(A_UNUSED void *arg);
+class InfoDev : public esc::FileDevice {
+public:
+	static void create(const char *ui) {
+		char tmp[MAX_PATH_LEN];
+		snprintf(tmp,sizeof(tmp),"/sys/%s-windows",ui);
+		new InfoDev(tmp,0444);
+	}
+
+	explicit InfoDev(const char *path,mode_t mode)
+		: esc::FileDevice(path,mode) {
+		if(startthread(thread,this) < 0)
+			error("Unable to create info thread");
+	}
+
+	virtual std::string handleRead();
+
+private:
+	static int thread(void *arg);
+};

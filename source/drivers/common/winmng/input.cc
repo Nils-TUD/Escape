@@ -32,43 +32,27 @@
 #include "input.h"
 #include "listener.h"
 #include "stack.h"
-#include "window.h"
+#include "winlist.h"
 
-static void handleKbMessage(esc::UIEvents::Event *data);
-static void handleMouseMessage(esc::WinMng &winmng,esc::UIEvents::Event *data);
+Input *Input::_inst;
 
-static uchar buttons = 0;
-static gpos_t curX = 0;
-static gpos_t curY = 0;
-static uchar cursor = esc::Screen::CURSOR_DEFAULT;
-static Window *mouseWin = NULL;
-
-gpos_t input_getMouseX(void) {
-	return curX;
-}
-
-gpos_t input_getMouseY(void) {
-	return curY;
-}
-
-int input_thread(void *arg) {
-	sInputThread *in = (sInputThread*)arg;
-
+int Input::thread(void *) {
+	Input &in = Input::get();
 	/* open ourself to send set-active-requests to us */
-	esc::WinMng winmng(in->winmng);
+	esc::WinMng winmng(in._winmng);
 
 	/* read from uimanager and handle the keys */
 	while(1) {
 		esc::UIEvents::Event ev;
-		*in->uiev >> ev;
+		*in._uiev >> ev;
 
 		switch(ev.type) {
 			case esc::UIEvents::Event::TYPE_KEYBOARD:
-				handleKbMessage(&ev);
+				in.handleKbMessage(&ev);
 				break;
 
 			case esc::UIEvents::Event::TYPE_MOUSE:
-				handleMouseMessage(winmng,&ev);
+				in.handleMouseMessage(winmng,&ev);
 				break;
 
 			default:
@@ -78,7 +62,7 @@ int input_thread(void *arg) {
 	return 0;
 }
 
-static void handleKbMessage(esc::UIEvents::Event *data) {
+void Input::handleKbMessage(esc::UIEvents::Event *data) {
 	if(data->d.keyb.modifier & STATE_CTRL) {
 		if(data->d.keyb.keycode == VK_TAB) {
 			if(~data->d.keyb.modifier & STATE_BREAK) {
@@ -95,7 +79,7 @@ static void handleKbMessage(esc::UIEvents::Event *data) {
 	else
 		Stack::stop();
 
-	Window *active = win_getActive();
+	Window *active = WinList::get().getActive();
 	if(!active || active->evfd == -1)
 		return;
 
@@ -108,66 +92,70 @@ static void handleKbMessage(esc::UIEvents::Event *data) {
 	send(active->evfd,MSG_WIN_EVENT,&ev,sizeof(ev));
 }
 
-static void handleMouseMessage(esc::WinMng &winmng,esc::UIEvents::Event *data) {
-	gpos_t oldx = curX,oldy = curY;
+void Input::handleMouseMessage(esc::WinMng &winmng,esc::UIEvents::Event *data) {
+	const esc::Screen::Mode &mode = WinList::get().getMode();
+	gpos_t oldx = _curX;
+	gpos_t oldy = _curY;
 	bool btnChanged = false;
-	Window *w,*wheelWin = NULL;
-	curX = esc::Util::max(0,esc::Util::min((gpos_t)win_getMode()->width - 1,curX + data->d.mouse.x));
-	curY = esc::Util::max(0,esc::Util::min((gpos_t)win_getMode()->height - 1,curY - data->d.mouse.y));
+	Window *w;
+	Window *wheelWin = NULL;
+
+	_curX = esc::Util::max(0,esc::Util::min((gpos_t)mode.width - 1,_curX + data->d.mouse.x));
+	_curY = esc::Util::max(0,esc::Util::min((gpos_t)mode.height - 1,_curY - data->d.mouse.y));
 
 	/* set active window */
-	if(data->d.mouse.buttons != buttons) {
+	if(data->d.mouse.buttons != _buttons) {
 		btnChanged = true;
-		buttons = data->d.mouse.buttons;
-		if(buttons) {
-			w = win_getAt(curX,curY);
+		_buttons = data->d.mouse.buttons;
+		if(_buttons) {
+			w = WinList::get().getAt(_curX,_curY);
 			if(w) {
 				/* do that via message passing so that only one thread performs changes on the
 				 * windows */
 				winmng.setActive(w->id);
 			}
-			mouseWin = w;
+			_mouseWin = w;
 		}
 	}
 	else if(data->d.mouse.z)
-		wheelWin = win_getAt(curX,curY);
+		wheelWin = WinList::get().getAt(_curX,_curY);
 
 	/* if no buttons are pressed, change the cursor if we're at a window-border */
-	if(!buttons) {
-		w = mouseWin ? mouseWin : win_getAt(curX,curY);
-		cursor = esc::Screen::CURSOR_DEFAULT;
-		if(w && w->style != WIN_STYLE_POPUP && w->style != WIN_STYLE_DESKTOP) {
+	if(!_buttons) {
+		w = _mouseWin ? _mouseWin : WinList::get().getAt(_curX,_curY);
+		_cursor = esc::Screen::CURSOR_DEFAULT;
+		if(w && w->style != Window::STYLE_POPUP && w->style != Window::STYLE_DESKTOP) {
 			gsize_t tbh = w->titleBarHeight;
-			bool left = curY >= (gpos_t)(w->y() + tbh) &&
-					curX < (gpos_t)(w->x() + esc::Screen::CURSOR_RESIZE_WIDTH);
-			bool right = curY >= (gpos_t)(w->y() + tbh) &&
-					curX >= (gpos_t)(w->x() + w->width() - esc::Screen::CURSOR_RESIZE_WIDTH);
-			bool bottom = curY >= (gpos_t)(w->y() + w->height() - esc::Screen::CURSOR_RESIZE_WIDTH);
+			bool left = _curY >= (gpos_t)(w->y() + tbh) &&
+					_curX < (gpos_t)(w->x() + esc::Screen::CURSOR_RESIZE_WIDTH);
+			bool right = _curY >= (gpos_t)(w->y() + tbh) &&
+					_curX >= (gpos_t)(w->x() + w->width() - esc::Screen::CURSOR_RESIZE_WIDTH);
+			bool bottom = _curY >= (gpos_t)(w->y() + w->height() - esc::Screen::CURSOR_RESIZE_WIDTH);
 			if(left && bottom)
-				cursor = esc::Screen::CURSOR_RESIZE_BL;
+				_cursor = esc::Screen::CURSOR_RESIZE_BL;
 			else if(left)
-				cursor = esc::Screen::CURSOR_RESIZE_L;
+				_cursor = esc::Screen::CURSOR_RESIZE_L;
 			if(right && bottom)
-				cursor = esc::Screen::CURSOR_RESIZE_BR;
+				_cursor = esc::Screen::CURSOR_RESIZE_BR;
 			else if(right)
-				cursor = esc::Screen::CURSOR_RESIZE_R;
+				_cursor = esc::Screen::CURSOR_RESIZE_R;
 			else if(bottom && !left)
-				cursor = esc::Screen::CURSOR_RESIZE_VERT;
+				_cursor = esc::Screen::CURSOR_RESIZE_VERT;
 		}
 	}
 
 	/* let vesa draw the cursor */
-	if(curX != oldx || curY != oldy)
-		win_setCursor(curX,curY,cursor);
+	if(_curX != oldx || _curY != oldy)
+		WinList::get().setCursor(_curX,_curY,_cursor);
 
 	/* send to window */
-	w = wheelWin ? wheelWin : (mouseWin ? mouseWin : win_getActive());
+	w = wheelWin ? wheelWin : (_mouseWin ? _mouseWin : WinList::get().getActive());
 	if(w && w->evfd != -1) {
 		esc::WinMngEvents::Event ev;
 		ev.type = esc::WinMngEvents::Event::TYPE_MOUSE;
 		ev.wid = w->id;
-		ev.d.mouse.x = curX;
-		ev.d.mouse.y = curY;
+		ev.d.mouse.x = _curX;
+		ev.d.mouse.y = _curY;
 		ev.d.mouse.movedX = data->d.mouse.x;
 		ev.d.mouse.movedY = -data->d.mouse.y;
 		ev.d.mouse.movedZ = data->d.mouse.z;
@@ -175,6 +163,6 @@ static void handleMouseMessage(esc::WinMng &winmng,esc::UIEvents::Event *data) {
 		send(w->evfd,MSG_WIN_EVENT,&ev,sizeof(ev));
 	}
 
-	if(btnChanged && !buttons)
-		mouseWin = NULL;
+	if(btnChanged && !_buttons)
+		_mouseWin = NULL;
 }

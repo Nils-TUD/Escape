@@ -27,62 +27,44 @@
 
 #include "listener.h"
 
-struct WinListener {
-	explicit WinListener() : client(), type() {
-	}
-	explicit WinListener(int client,ev_type type) : client(client), type(type) {
-	}
+Listener *Listener::_inst;
 
-	int client;
-	ev_type type;
-};
-
-typedef std::vector<WinListener>::iterator win_iter;
-
-static int drvId;
-static std::mutex mutex;
-static std::vector<WinListener> list;
-
-void listener_init(int id) {
-	drvId = id;
-}
-
-bool listener_add(int client,ev_type type) {
+bool Listener::add(int client,ev_type type) {
 	if(type != ev_type::TYPE_CREATED && type != ev_type::TYPE_DESTROYED &&
 		type != ev_type::TYPE_ACTIVE)
 		return false;
 
-	std::lock_guard<std::mutex> guard(mutex);
-	list.push_back(WinListener(client,type));
+	std::lock_guard<std::mutex> guard(_mutex);
+	_list.push_back(WinListener(client,type));
 	return true;
 }
 
-void listener_notify(const esc::WinMngEvents::Event *ev) {
-	std::lock_guard<std::mutex> guard(mutex);
-	for(auto l = list.begin(); l != list.end(); ++l) {
+void Listener::notify(const esc::WinMngEvents::Event *ev) {
+	std::lock_guard<std::mutex> guard(_mutex);
+	for(auto l = _list.begin(); l != _list.end(); ++l) {
 		if(l->type == ev->type)
 			send(l->client,MSG_WIN_EVENT,ev,sizeof(*ev));
 	}
 }
 
-void listener_remove(int client,ev_type type) {
-	std::lock_guard<std::mutex> guard(mutex);
-	for(auto l = list.begin(); l != list.end(); ++l) {
+void Listener::remove(int client,ev_type type) {
+	std::lock_guard<std::mutex> guard(_mutex);
+	for(auto l = _list.begin(); l != _list.end(); ++l) {
 		if(l->client == client && l->type == type) {
-			list.erase(l);
+			_list.erase(l);
 			break;
 		}
 	}
 }
 
-void listener_removeAll(int client) {
-	std::lock_guard<std::mutex> guard(mutex);
-	while(!list.empty()) {
-		win_iter it = std::find_if(list.begin(),list.end(),[client] (const WinListener &l) {
+void Listener::removeAll(int client) {
+	std::lock_guard<std::mutex> guard(_mutex);
+	while(!_list.empty()) {
+		win_iter it = std::find_if(_list.begin(),_list.end(),[client] (const WinListener &l) {
 			return l.client == client;
 		});
-		if(it == list.end())
+		if(it == _list.end())
 			break;
-		list.erase(it);
+		_list.erase(it);
 	}
 }

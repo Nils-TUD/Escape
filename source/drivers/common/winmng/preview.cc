@@ -24,105 +24,99 @@
 #include <string.h>
 
 #include "preview.h"
-#include "window.h"
+#include "winlist.h"
 
-static void preview_handleIntersec(char *shmem,const gui::Rectangle &curRec,
-		const gui::Rectangle &intersec,size_t i,gsize_t xres,gsize_t yres);
-static void preview_clearRegion(char *shmem,gpos_t x,gpos_t y,gsize_t w,gsize_t h);
-static void preview_copyRegion(char *src,char *dst,gsize_t width,gsize_t height,gpos_t x1,gpos_t y1,
-		gpos_t x2,gpos_t y2,gsize_t w1,gsize_t w2,gsize_t h1);
+Preview *Preview::_inst;
 
-static gui::Rectangle previewRect;
-static gsize_t previewThickness;
-static char *previewRectCopies[4];
-
-void preview_updateRect(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-	gsize_t xres = win_getMode()->width;
-	gsize_t yres = win_getMode()->height;
+void Preview::updateRect(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+	const esc::Screen::Mode &mode = WinList::get().getMode();
+	gsize_t xres = mode.width;
+	gsize_t yres = mode.height;
 	gui::Rectangle upRec(x,y,width,height);
 	/* look if we have to update the preview-rectangle */
-	if(previewRectCopies[0]) {
-		gui::Rectangle curRec(previewRect.x(),previewRect.y(),previewRect.width(),previewThickness);
+	if(_rectCopies[0]) {
+		gui::Rectangle curRec(_rect.x(),_rect.y(),_rect.width(),_thickness);
 		gui::Rectangle intersec;
 
 		/* top */
 		intersec = gui::intersection(curRec,upRec);
 		if(!intersec.empty())
-			preview_handleIntersec(shmem,curRec,intersec,0,xres,yres);
+			handleIntersec(shmem,curRec,intersec,0,xres,yres);
 
 		/* bottom */
-		curRec.setPos(curRec.x(),previewRect.y() + previewRect.height() - previewThickness);
+		curRec.setPos(curRec.x(),_rect.y() + _rect.height() - _thickness);
 		intersec = gui::intersection(curRec,upRec);
 		if(!intersec.empty())
-			preview_handleIntersec(shmem,curRec,intersec,2,xres,yres);
+			handleIntersec(shmem,curRec,intersec,2,xres,yres);
 
 		/* left */
-		curRec.setPos(curRec.x(),previewRect.y());
-		curRec.setSize(previewThickness,previewRect.height());
+		curRec.setPos(curRec.x(),_rect.y());
+		curRec.setSize(_thickness,_rect.height());
 		intersec = gui::intersection(curRec,upRec);
 		if(!intersec.empty())
-			preview_handleIntersec(shmem,curRec,intersec,3,xres,yres);
+			handleIntersec(shmem,curRec,intersec,3,xres,yres);
 
 		/* right */
-		curRec.setPos(previewRect.x() + previewRect.width() - previewThickness,curRec.y());
+		curRec.setPos(_rect.x() + _rect.width() - _thickness,curRec.y());
 		intersec = gui::intersection(curRec,upRec);
 		if(!intersec.empty())
-			preview_handleIntersec(shmem,curRec,intersec,1,xres,yres);
+			handleIntersec(shmem,curRec,intersec,1,xres,yres);
 	}
 }
 
-void preview_set(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsize_t thickness) {
-	gsize_t xres = win_getMode()->width;
-	gsize_t yres = win_getMode()->height;
-	gsize_t pxSize = win_getMode()->bitsPerPixel / 8;
+void Preview::set(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsize_t thickness) {
+	const esc::Screen::Mode &mode = WinList::get().getMode();
+	gsize_t xres = mode.width;
+	gsize_t yres = mode.height;
+	gsize_t pxSize = mode.bitsPerPixel / 8;
 
-	if(previewRectCopies[0]) {
+	if(_rectCopies[0]) {
 		/* copy old content back */
 		/* top */
-		preview_copyRegion(previewRectCopies[0],shmem,
-				previewRect.width(),previewThickness,0,0,previewRect.x(),previewRect.y(),
-				previewRect.width(),xres,previewThickness);
-		win_notifyUimng(previewRect.x(),previewRect.y(),previewRect.width(),previewThickness);
+		copyRegion(_rectCopies[0],shmem,
+				_rect.width(),_thickness,0,0,_rect.x(),_rect.y(),
+				_rect.width(),xres,_thickness);
+		WinList::get().notifyUimng(_rect.x(),_rect.y(),_rect.width(),_thickness);
 		/* right */
-		preview_copyRegion(previewRectCopies[1],shmem,
-				previewThickness,previewRect.height(),0,0,
-				previewRect.x() + previewRect.width() - previewThickness,previewRect.y(),
-				previewThickness,xres,previewRect.height());
-		win_notifyUimng(previewRect.x() + previewRect.width() - previewThickness,previewRect.y(),
-			previewThickness,previewRect.height());
+		copyRegion(_rectCopies[1],shmem,
+				_thickness,_rect.height(),0,0,
+				_rect.x() + _rect.width() - _thickness,_rect.y(),
+				_thickness,xres,_rect.height());
+		WinList::get().notifyUimng(_rect.x() + _rect.width() - _thickness,_rect.y(),
+			_thickness,_rect.height());
 		/* bottom */
-		preview_copyRegion(previewRectCopies[2],shmem,
-				previewRect.width(),previewThickness,0,0,previewRect.x(),
-				previewRect.y() + previewRect.height() - previewThickness,
-				previewRect.width(),xres,previewThickness);
-		win_notifyUimng(previewRect.x(),previewRect.y() + previewRect.height() - previewThickness,
-			previewRect.width(),previewThickness);
+		copyRegion(_rectCopies[2],shmem,
+				_rect.width(),_thickness,0,0,_rect.x(),
+				_rect.y() + _rect.height() - _thickness,
+				_rect.width(),xres,_thickness);
+		WinList::get().notifyUimng(_rect.x(),_rect.y() + _rect.height() - _thickness,
+			_rect.width(),_thickness);
 		/* left */
-		preview_copyRegion(previewRectCopies[3],shmem,
-				previewThickness,previewRect.height(),0,0,previewRect.x(),previewRect.y(),
-				previewThickness,xres,previewRect.height());
-		win_notifyUimng(previewRect.x(),previewRect.y(),previewThickness,previewRect.height());
+		copyRegion(_rectCopies[3],shmem,
+				_thickness,_rect.height(),0,0,_rect.x(),_rect.y(),
+				_thickness,xres,_rect.height());
+		WinList::get().notifyUimng(_rect.x(),_rect.y(),_thickness,_rect.height());
 
-		if(thickness != previewThickness || width != previewRect.width() ||
-				height != previewRect.height()) {
-			free(previewRectCopies[0]);
-			previewRectCopies[0] = NULL;
-			free(previewRectCopies[1]);
-			previewRectCopies[1] = NULL;
-			free(previewRectCopies[2]);
-			previewRectCopies[2] = NULL;
-			free(previewRectCopies[3]);
-			previewRectCopies[3] = NULL;
+		if(thickness != _thickness || width != _rect.width() ||
+				height != _rect.height()) {
+			free(_rectCopies[0]);
+			_rectCopies[0] = NULL;
+			free(_rectCopies[1]);
+			_rectCopies[1] = NULL;
+			free(_rectCopies[2]);
+			_rectCopies[2] = NULL;
+			free(_rectCopies[3]);
+			_rectCopies[3] = NULL;
 		}
 	}
 
 	if(thickness > 0) {
-		if(thickness != previewThickness || width != previewRect.width() ||
-				height != previewRect.height()) {
-			previewRectCopies[0] = (char*)malloc(width * thickness * pxSize);
-			previewRectCopies[1] = (char*)malloc(height * thickness * pxSize);
-			previewRectCopies[2] = (char*)malloc(width * thickness * pxSize);
-			previewRectCopies[3] = (char*)malloc(height * thickness * pxSize);
+		if(thickness != _thickness || width != _rect.width() ||
+				height != _rect.height()) {
+			_rectCopies[0] = (char*)malloc(width * thickness * pxSize);
+			_rectCopies[1] = (char*)malloc(height * thickness * pxSize);
+			_rectCopies[2] = (char*)malloc(width * thickness * pxSize);
+			_rectCopies[3] = (char*)malloc(height * thickness * pxSize);
 		}
 
 		/* store preview rect */
@@ -138,58 +132,51 @@ void preview_set(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsiz
 			y = yres;
 		if(y + height >= yres)
 			height = yres - y;
-		previewRect.setPos(x,y);
-		previewRect.setSize(width,height);
+		_rect.setPos(x,y);
+		_rect.setSize(width,height);
 
 		/* save content */
 		/* top */
-		preview_copyRegion(shmem,previewRectCopies[0],
-				width,thickness,x,y,0,0,
-				xres,width,yres);
+		copyRegion(shmem,_rectCopies[0],width,thickness,x,y,0,0,xres,width,yres);
 		/* right */
-		preview_copyRegion(shmem,previewRectCopies[1],
-				thickness,height,x + width - thickness,y,0,0,
-				xres,thickness,yres);
+		copyRegion(shmem,_rectCopies[1],thickness,height,x + width - thickness,y,0,0,xres,thickness,yres);
 		/* bottom */
-		preview_copyRegion(shmem,previewRectCopies[2],
-				width,thickness,x,y + height - thickness,0,0,
-				xres,width,yres);
+		copyRegion(shmem,_rectCopies[2],width,thickness,x,y + height - thickness,0,0,xres,width,yres);
 		/* left */
-		preview_copyRegion(shmem,previewRectCopies[3],
-				thickness,height,x,y,0,0,
-				xres,thickness,yres);
+		copyRegion(shmem,_rectCopies[3],thickness,height,x,y,0,0,xres,thickness,yres);
 
 		/* draw rect */
 		/* top */
-		preview_clearRegion(shmem,x,y,width,thickness);
-		win_notifyUimng(x,y,width,thickness);
+		clearRegion(shmem,x,y,width,thickness);
+		WinList::get().notifyUimng(x,y,width,thickness);
 		/* right */
-		preview_clearRegion(shmem,x + width - thickness,y,thickness,height);
-		win_notifyUimng(x + width - thickness,y,thickness,height);
+		clearRegion(shmem,x + width - thickness,y,thickness,height);
+		WinList::get().notifyUimng(x + width - thickness,y,thickness,height);
 		/* bottom */
-		preview_clearRegion(shmem,x,y + height - thickness,width,thickness);
-		win_notifyUimng(x,y + height - thickness,width,thickness);
+		clearRegion(shmem,x,y + height - thickness,width,thickness);
+		WinList::get().notifyUimng(x,y + height - thickness,width,thickness);
 		/* left */
-		preview_clearRegion(shmem,x,y,thickness,height);
-		win_notifyUimng(x,y,thickness,height);
+		clearRegion(shmem,x,y,thickness,height);
+		WinList::get().notifyUimng(x,y,thickness,height);
 	}
 
-	previewThickness = thickness;
+	_thickness = thickness;
 }
 
-static void preview_handleIntersec(char *shmem,const gui::Rectangle &curRec,
+void Preview::handleIntersec(char *shmem,const gui::Rectangle &curRec,
 		const gui::Rectangle &intersec,size_t i,gsize_t xres,gsize_t yres) {
-	preview_copyRegion(shmem,previewRectCopies[i],intersec.width(),intersec.height(),
+	copyRegion(shmem,_rectCopies[i],intersec.width(),intersec.height(),
 		intersec.x(),intersec.y(),intersec.x() - curRec.x(),intersec.y() - curRec.y(),
 		xres,curRec.width(),yres);
-	preview_clearRegion(shmem,curRec.x(),curRec.y(),curRec.width(),curRec.height());
+	clearRegion(shmem,curRec.x(),curRec.y(),curRec.width(),curRec.height());
 }
 
-static void preview_clearRegion(char *shmem,gpos_t x,gpos_t y,gsize_t w,gsize_t h) {
-	gsize_t xres = win_getMode()->width;
-	gsize_t yres = win_getMode()->height;
+void Preview::clearRegion(char *shmem,gpos_t x,gpos_t y,gsize_t w,gsize_t h) {
+	const esc::Screen::Mode &mode = WinList::get().getMode();
+	gsize_t xres = mode.width;
+	gsize_t yres = mode.height;
 	gpos_t maxy = esc::Util::min(yres,y + h);
-	gsize_t pxSize = win_getMode()->bitsPerPixel / 8;
+	gsize_t pxSize = mode.bitsPerPixel / 8;
 	size_t count = esc::Util::min(xres - x,w) * pxSize;
 	size_t dstInc = xres * pxSize;
 	uint8_t *dst = (uint8_t*)shmem + (y * xres + x) * pxSize;
@@ -200,10 +187,10 @@ static void preview_clearRegion(char *shmem,gpos_t x,gpos_t y,gsize_t w,gsize_t 
  	}
 }
 
-static void preview_copyRegion(char *src,char *dst,gsize_t width,gsize_t height,gpos_t x1,gpos_t y1,
+void Preview::copyRegion(char *src,char *dst,gsize_t width,gsize_t height,gpos_t x1,gpos_t y1,
 		gpos_t x2,gpos_t y2,gsize_t w1,gsize_t w2,gsize_t h1) {
 	gpos_t maxy = esc::Util::min(h1,y1 + height);
-	gsize_t pxSize = win_getMode()->bitsPerPixel / 8;
+	gsize_t pxSize = WinList::get().getMode().bitsPerPixel / 8;
 	size_t count = esc::Util::min(w2 - x2,esc::Util::min(w1 - x1,width)) * pxSize;
 	size_t srcInc = w1 * pxSize;
 	size_t dstInc = w2 * pxSize;

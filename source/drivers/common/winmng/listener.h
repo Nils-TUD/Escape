@@ -22,11 +22,45 @@
 #include <esc/proto/winmng.h>
 #include <sys/common.h>
 #include <sys/messages.h>
+#include <mutex>
+#include <vector>
 
-typedef esc::WinMngEvents::Event::Type ev_type;
+class Listener {
+public:
+	typedef esc::WinMngEvents::Event::Type ev_type;
 
-void listener_init(int id);
-bool listener_add(int client,ev_type type);
-void listener_notify(const esc::WinMngEvents::Event *ev);
-void listener_remove(int client,ev_type type);
-void listener_removeAll(int client);
+private:
+	struct WinListener {
+		explicit WinListener() : client(), type() {
+		}
+		explicit WinListener(int client,ev_type type) : client(client), type(type) {
+		}
+
+		int client;
+		ev_type type;
+	};
+
+	typedef std::vector<WinListener>::iterator win_iter;
+
+	explicit Listener(int id) : _drvId(id), _mutex(), _list() {
+	}
+
+public:
+	static void create(int id) {
+		_inst = new Listener(id);
+	}
+	static Listener &get() {
+		return *_inst;
+	}
+
+	bool add(int client,ev_type type);
+	void notify(const esc::WinMngEvents::Event *ev);
+	void remove(int client,ev_type type);
+	void removeAll(int client);
+
+private:
+	int _drvId;
+	std::mutex _mutex;
+	std::vector<WinListener> _list;
+	static Listener *_inst;
+};

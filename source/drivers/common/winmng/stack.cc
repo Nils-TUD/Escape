@@ -19,7 +19,7 @@
 
 #include "input.h"
 #include "stack.h"
-#include "window.h"
+#include "winlist.h"
 
 std::list<gwinid_t> Stack::stack;
 std::list<gwinid_t>::iterator Stack::pos;
@@ -50,7 +50,7 @@ void Stack::start() {
 
 void Stack::stop() {
 	if(switched) {
-		Window *win = win_getActive();
+		Window *win = WinList::get().getActive();
 		if(!win)
 			return;
 
@@ -68,7 +68,7 @@ void Stack::prev() {
 		pos = stack.end();
 	--pos;
 	// make it active
-	win_setActive(*pos,true,input_getMouseX(),input_getMouseY(),false);
+	WinList::get().setActive(WinList::get().get(*pos),true,false);
 	switched = true;
 }
 
@@ -81,6 +81,6 @@ void Stack::next() {
 	if(pos == stack.end())
 		pos = stack.begin();
 	// make it active
-	win_setActive(*pos,true,input_getMouseX(),input_getMouseY(),false);
+	WinList::get().setActive(WinList::get().get(*pos),true,false);
 	switched = true;
 }

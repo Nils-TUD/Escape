@@ -27,35 +27,27 @@
 #include <stdlib.h>
 
 #include "infodev.h"
-#include "window.h"
+#include "winlist.h"
 
-class WinInfoDevice : public esc::FileDevice {
-public:
-	explicit WinInfoDevice(const char *path,mode_t mode)
-		: esc::FileDevice(path,mode) {
-	}
-
-	virtual std::string handleRead() {
-		esc::OStringStream os;
-		size_t i;
-		for(i = 0; i < WINDOW_COUNT; i++) {
-			Window *w = win_get(i);
-			if(w) {
-				os << "Window " << w->id << "\n";
-				os << "\tOwner: " << w->owner << "\n";
-				os << "\tPosition: " << w->x() << "," << w->y() << "," << w->z << "\n";
-				os << "\tSize: " << w->width() << " x " << w->height() << "\n";
-				os << "\tStyle: 0x" << esc::fmt(w->style,"x") << "\n";
-			}
+std::string InfoDev::handleRead() {
+	esc::OStringStream os;
+	size_t i;
+	for(i = 0; i < WINDOW_COUNT; i++) {
+		Window *w = WinList::get().get(i);
+		if(w) {
+			os << "Window " << w->id << "\n";
+			os << "\tOwner: " << w->owner << "\n";
+			os << "\tPosition: " << w->x() << "," << w->y() << "," << w->z << "\n";
+			os << "\tSize: " << w->width() << " x " << w->height() << "\n";
+			os << "\tStyle: 0x" << esc::fmt(w->style,"x") << "\n";
 		}
-		return os.str();
 	}
-};
+	return os.str();
+}
 
-int infodev_thread(void *arg) {
-	char path[MAX_PATH_LEN];
-	snprintf(path,sizeof(path),"/sys/%s-windows",(const char*)arg);
-	WinInfoDevice dev(path,0444);
-	dev.loop();
+int InfoDev::thread(void *arg) {
+	InfoDev *dev = static_cast<InfoDev*>(arg);
+	dev->bindto(gettid());
+	dev->loop();
 	return 0;
 }

@@ -38,416 +38,115 @@
 #include "preview.h"
 #include "stack.h"
 #include "window.h"
+#include "winlist.h"
 
-static void win_destroyBuf(Window *win);
-static gwinid_t win_getTop(void);
-static bool win_validateRect(gui::Rectangle &r);
-static void win_repaint(const gui::Rectangle &r,Window *win,gpos_t z);
-static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY);
-static void win_getRepaintRegions(std::vector<WinRect> &list,gwinid_t id,Window *win,gpos_t z,
-	const gui::Rectangle &r);
-static void win_clearRegion(char *mem,const gui::Rectangle &r);
-static void win_copyRegion(char *mem,const gui::Rectangle &r,gwinid_t id);
-static void win_notifyWinCreate(gwinid_t id,const char *title);
-static void win_notifyWinActive(gwinid_t id);
-static void win_notifyWinDestroy(gwinid_t id);
+Window::Window(gwinid_t id,gpos_t x,gpos_t y,gpos_t z,gsize_t width,gsize_t height,int owner,uint style,
+	gsize_t titleBarHeight,const char *title)
+	: WinRect(gui::Rectangle(gui::Pos(x,y),gui::Size(width,height))), z(z), owner(owner),
+	  evfd(-1), style(style), titleBarHeight(titleBarHeight), winbuf(), ready(false) {
+	this->id = id;
 
-static esc::UI *ui;
-static int drvId;
+	if(style == STYLE_DEFAULT)
+		Stack::add(id);
 
-static std::string theme = "default";
-static esc::Screen::Mode mode;
-static esc::FrameBuffer *fb;
-
-static size_t activeWindow = WINDOW_COUNT;
-static size_t topWindow = WINDOW_COUNT;
-static Window windows[WINDOW_COUNT];
-
-static size_t pixelSize() {
-	return mode.bitsPerPixel / 8;
+	print("Created window %d: %s @ (%d,%d,%d) with size %zux%zu",id,title,x,y,z,width,height);
+	notifyWinCreate(title);
 }
 
-static void resetWindows() {
-	for(size_t i = 0; i < WINDOW_COUNT; i++) {
-		if(windows[i].id != WINID_UNUSED) {
-			win_destroyBuf(windows + i);
+Window::~Window() {
+	/* destroy shm area */
+	destroybuf();
 
-			/* let the window reset everything, i.e. create to new buffer, repaint, ... */
-			esc::WinMngEvents::Event ev;
-			ev.type = esc::WinMngEvents::Event::TYPE_RESET;
-			ev.wid = windows[i].id;
-			send(windows[i].evfd,MSG_WIN_EVENT,&ev,sizeof(ev));
-		}
-	}
+	if(style == STYLE_DEFAULT)
+		Stack::remove(id);
+
+	print("Destroyed window %d @ (%d,%d,%d) with size %zux%zu",id,x(),y(),z,width(),height());
+	notifyWinDestroy();
 }
 
-int win_init(int sid,esc::UI *uiobj,gsize_t width,gsize_t height,gcoldepth_t bpp) {
-	drvId = sid;
-	ui = uiobj;
-	srand(time(NULL));
-
-	return win_setMode(width,height,bpp);
+void Window::destroybuf() {
+	delete winbuf;
+	winbuf = NULL;
 }
 
-const std::string &win_getTheme() {
-	return theme;
-}
+int Window::joinbuf(int fd) {
+	destroybuf();
 
-void win_setTheme(const char *name) {
-	print("Setting theme '%s'",name);
-	theme = name;
-
-	resetWindows();
-}
-
-const esc::Screen::Mode *win_getMode(void) {
-	return &mode;
-}
-
-void win_setCursor(gpos_t x,gpos_t y,uint cursor) {
-	ui->setCursor(x,y,cursor);
-}
-
-int win_setMode(gsize_t width,gsize_t height,gcoldepth_t bpp) {
-	print("Getting video mode for %zux%zux%u",width,height,bpp);
-
-	esc::Screen::Mode newmode = ui->findGraphicsMode(width,height,bpp);
-
-	/* first destroy the old one because we use the same shm-name again */
-	delete fb;
-
-	try {
-		print("Creating new framebuffer");
-		std::unique_ptr<esc::FrameBuffer> newfb(
-			new esc::FrameBuffer(newmode,esc::Screen::MODE_TYPE_GUI));
-		print("Setting mode %d: %zux%zux%u",newmode.id,newmode.width,newmode.height,newmode.bitsPerPixel);
-		ui->setMode(esc::Screen::MODE_TYPE_GUI,newmode.id,newfb->fd(),true);
-
-		mode = newmode;
-		fb = newfb.release();
-
-		/* recreate window buffers */
-		resetWindows();
-	}
-	catch(const std::exception &e) {
-		printe("%s",e.what());
-		print("Restoring old framebuffer and mode");
-		fb = new esc::FrameBuffer(mode,esc::Screen::MODE_TYPE_GUI);
-		ui->setMode(esc::Screen::MODE_TYPE_GUI,mode.id,fb->fd(),true);
-		/* we have to repaint everything */
-		for(size_t i = 0; i < WINDOW_COUNT; i++) {
-			if(windows[i].id != WINID_UNUSED)
-				win_update(i,0,0,windows[i].width(),windows[i].height());
-		}
-		throw;
-	}
-	return mode.id;
-}
-
-gwinid_t win_create(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,uint style,
-		gsize_t titleBarHeight,const char *title) {
-	gwinid_t i;
-	for(i = 0; i < WINDOW_COUNT; i++) {
-		if(windows[i].id == WINID_UNUSED) {
-			windows[i].id = i;
-			windows[i].setPos(x,y);
-			windows[i].setSize(width,height);
-			if(style == WIN_STYLE_DESKTOP)
-				windows[i].z = 0;
-			else {
-				gwinid_t top = win_getTop();
-				if(top != WINID_UNUSED)
-					windows[i].z = windows[top].z + 1;
-				else
-					windows[i].z = 1;
-			}
-			if(style == WIN_STYLE_DEFAULT)
-				Stack::add(i);
-			windows[i].owner = owner;
-			windows[i].evfd = -1;
-			windows[i].style = style;
-			windows[i].titleBarHeight = titleBarHeight;
-			windows[i].ready = false;
-			print("Created window %d: %s @ (%d,%d,%d) with size %zux%zu",
-				i,title,x,y,windows[i].z,width,height);
-			win_notifyWinCreate(i,title);
-			return i;
-		}
-	}
-	return WINID_UNUSED;
-}
-
-static void win_destroyBuf(Window *win) {
-	delete win->fb;
-	win->fb = NULL;
-}
-
-int win_joinbuf(gwinid_t winid,int fd) {
-	if(!win_exists(winid))
-		return -EINVAL;
-
-	if(windows[winid].fb != NULL)
-		delete windows[winid].fb;
-
-	esc::Screen::Mode winMode = mode;
+	esc::Screen::Mode winMode = WinList::get().getMode();
 	winMode.guiHeaderSize = winMode.tuiHeaderSize = 0;
-	winMode.width = windows[winid].width();
-	winMode.height = windows[winid].height();
-	windows[winid].fb = new esc::FrameBuffer(winMode,fd,esc::Screen::MODE_TYPE_GUI);
+	winMode.width = width();
+	winMode.height = height();
+	winbuf = new esc::FrameBuffer(winMode,fd,esc::Screen::MODE_TYPE_GUI);
 
-	memclear(windows[winid].fb->addr(),
-		windows[winid].width() * windows[winid].height() * (mode.bitsPerPixel / 8));
+	memclear(winbuf->addr(),width() * height() * (winMode.bitsPerPixel / 8));
 	return 0;
 }
 
-void win_attach(gwinid_t winid,int fd) {
-	if(win_exists(winid) && windows[winid].evfd == -1) {
-		windows[winid].evfd = fd;
-		if(activeWindow == WINDOW_COUNT || windows[winid].style != WIN_STYLE_DESKTOP)
-			win_setActive(winid,false,input_getMouseX(),input_getMouseY(),true);
+void Window::attach(int fd) {
+	if(evfd == -1) {
+		evfd = fd;
+		if(!WinList::get().getActive() || style != STYLE_DESKTOP)
+			WinList::get().setActive(this,false,true);
 	}
 }
 
-void win_detachAll(int fd) {
-	for(size_t i = 0; i < WINDOW_COUNT; ++i) {
-		if(windows[i].evfd == fd)
-			windows[i].evfd = -1;
-	}
-}
-
-void win_destroyWinsOf(int cid,gpos_t mouseX,gpos_t mouseY) {
-	gwinid_t id;
-	for(id = 0; id < WINDOW_COUNT; id++) {
-		if(windows[id].id != WINID_UNUSED && windows[id].owner == cid)
-			win_destroy(id,mouseX,mouseY);
-	}
-}
-
-void win_destroy(gwinid_t id,gpos_t mouseX,gpos_t mouseY) {
-	/* destroy shm area */
-	win_destroyBuf(windows + id);
-
-	/* mark unused */
-	windows[id].id = WINID_UNUSED;
-	win_notifyWinDestroy(id);
-
-	if(windows[id].style == WIN_STYLE_DEFAULT)
-		Stack::remove(id);
-
-	print("Destroyed window %d @ (%d,%d,%d) with size %zux%zu",
-		id,windows[id].x(),windows[id].y(),windows[id].z,windows[id].width(),windows[id].height());
-
-	/* repaint window-area */
-	win_repaint(windows[id],NULL,-1);
-
-	/* set highest window active */
-	if(activeWindow == id || topWindow == id) {
-		gwinid_t winId = win_getTop();
-		if(winId != WINID_UNUSED)
-			win_setActive(winId,false,mouseX,mouseY,true);
-	}
-}
-
-Window *win_get(gwinid_t id) {
-	if(id >= WINDOW_COUNT || windows[id].id == WINID_UNUSED)
-		return NULL;
-	return windows + id;
-}
-
-bool win_exists(gwinid_t id) {
-	return id < WINDOW_COUNT && windows[id].id != WINID_UNUSED;
-}
-
-Window *win_getAt(gpos_t x,gpos_t y) {
-	gwinid_t i;
-	gpos_t maxz = -1;
-	gwinid_t winId = WINDOW_COUNT;
-	Window *w = windows;
-	for(i = 0; i < WINDOW_COUNT; i++) {
-		if(w->id != WINID_UNUSED && w->z > maxz && w->contains(x,y)) {
-			winId = i;
-			maxz = w->z;
-		}
-		w++;
-	}
-	if(winId != WINDOW_COUNT)
-		return windows + winId;
-	return NULL;
-}
-
-Window *win_getActive(void) {
-	if(activeWindow != WINDOW_COUNT)
-		return windows + activeWindow;
-	return NULL;
-}
-
-void win_setActive(gwinid_t id,bool repaint,gpos_t mouseX,gpos_t mouseY,bool updateWinStack) {
-	gwinid_t i;
-	gpos_t curz = windows[id].z;
-	gpos_t maxz = 0;
-	Window *w = windows;
-	if(id != WINDOW_COUNT && windows[id].style != WIN_STYLE_DESKTOP) {
-		for(i = 0; i < WINDOW_COUNT; i++) {
-			if(w->id != WINID_UNUSED && w->z > curz && w->style != WIN_STYLE_POPUP) {
-				if(w->z > maxz)
-					maxz = w->z;
-				w->z--;
-			}
-			w++;
-		}
-		if(maxz > 0)
-			windows[id].z = maxz;
-	}
-
-	if(id != activeWindow) {
-		if(activeWindow != WINDOW_COUNT)
-			win_sendActive(activeWindow,false,mouseX,mouseY);
-
-		if(updateWinStack && windows[id].style == WIN_STYLE_DEFAULT)
-			Stack::activate(id);
-
-		activeWindow = id;
-		if(windows[activeWindow].style != WIN_STYLE_DESKTOP)
-			topWindow = id;
-		if(activeWindow != WINDOW_COUNT) {
-			win_sendActive(activeWindow,true,mouseX,mouseY);
-			win_notifyWinActive(activeWindow);
-
-			if(repaint && windows[activeWindow].style != WIN_STYLE_DESKTOP)
-				win_repaint(windows[activeWindow],windows + activeWindow,windows[activeWindow].z);
-		}
-	}
-}
-
-void win_previewResize(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-	preview_set(fb->addr(),x,y,width,height,2);
-}
-
-void win_previewMove(gwinid_t window,gpos_t x,gpos_t y) {
-	Window *w = windows + window;
-	preview_set(fb->addr(),x,y,w->width(),w->height(),2);
-}
-
-void win_resize(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-	Window *w = windows + window;
-
+void Window::resize(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	/* exchange buffer */
-	win_destroyBuf(w);
+	destroybuf();
 
-	if(x != w->x() || y != w->y())
-		win_moveTo(window,x,y,width,height);
+	if(x != this->x() || y != this->y())
+		moveTo(x,y,width,height);
 	else {
-		gsize_t oldWidth = w->width();
-		gsize_t oldHeight = w->height();
-		w->setSize(width,height);
+		gsize_t oldWidth = this->width();
+		gsize_t oldHeight = this->height();
+		setSize(width,height);
 
-		/* remove preview */
-		preview_set(fb->addr(),0,0,0,0,0);
+		WinList::get().removePreview();
 
 		if(width < oldWidth) {
-			gui::Rectangle nrect(w->x() + width,w->y(),oldWidth - width,oldHeight);
-			win_repaint(nrect,NULL,-1);
+			gui::Rectangle nrect(this->x() + width,this->y(),oldWidth - width,oldHeight);
+			WinList::get().repaint(nrect,NULL,-1);
 		}
 		if(height < oldHeight) {
-			gui::Rectangle nrect(w->x(),w->y() + height,oldWidth,oldHeight - height);
-			win_repaint(nrect,NULL,-1);
+			gui::Rectangle nrect(this->x(),this->y() + height,oldWidth,oldHeight - height);
+			WinList::get().repaint(nrect,NULL,-1);
 		}
 	}
+
+	esc::WinMngEvents::Event ev;
+	ev.type = esc::WinMngEvents::Event::TYPE_RESIZE;
+	ev.wid = id;
+	send(evfd,MSG_WIN_EVENT,&ev,sizeof(ev));
 }
 
-void win_moveTo(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-	Window *w = windows + window;
-
-	/* remove preview */
-	preview_set(fb->addr(),0,0,0,0,0);
+void Window::moveTo(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+	WinList::get().removePreview();
 
 	/* save old position */
-	gui::Rectangle orect(*w);
+	gui::Rectangle orect(*this);
 	gui::Rectangle nrect(x,y,width,height);
 	std::vector<gui::Rectangle> rects = gui::substraction(orect,nrect);
 
-	w->setPos(nrect.getPos());
-	w->setSize(nrect.getSize());
+	setPos(nrect.getPos());
+	setSize(nrect.getSize());
 
 	/* clear old position */
 	if(!rects.empty()) {
 		/* if there is an intersection, use the splitted parts */
 		for(auto rect = rects.begin(); rect != rects.end(); ++rect)
-			win_repaint(*rect,NULL,-1);
+			WinList::get().repaint(*rect,NULL,-1);
 	}
 	else {
 		/* no intersection, so use the whole old rectangle */
-		win_repaint(orect,NULL,-1);
+		WinList::get().repaint(orect,NULL,-1);
 	}
 
 	/* repaint new position */
-	win_repaint(nrect,w,w->z);
+	WinList::get().repaint(nrect,this,z);
 }
 
-void win_update(gwinid_t window,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-	Window *w = windows + window;
-	w->ready = true;
-
-	gui::Rectangle rect(w->x() + x,w->y() + y,width,height);
-	if(win_validateRect(rect)) {
-		if(topWindow == window)
-			win_copyRegion(fb->addr(),rect,window);
-		else
-			win_repaint(rect,w,w->z);
-	}
-}
-
-static gwinid_t win_getTop(void) {
-	gwinid_t i,winId = WINID_UNUSED;
-	int maxz = -1;
-	Window *w = windows;
-	for(i = 0; i < WINDOW_COUNT; i++) {
-		if(w->id != WINID_UNUSED && w->z > maxz) {
-			winId = i;
-			maxz = w->z;
-		}
-		w++;
-	}
-	return winId;
-}
-
-static bool win_validateRect(gui::Rectangle &r) {
-	if(r.x() < 0) {
-		if(-r.x() > (gpos_t)r.width())
-			return false;
-
-		r.setSize(r.width() + r.x(),r.height());
-		r.setPos(0,r.y());
-	}
-
-	if(r.x() >= (gpos_t)mode.width || r.y() >= (gpos_t)mode.height)
-		return false;
-
-	gsize_t width = esc::Util::min((gsize_t)mode.width - r.x(),r.width());
-	gsize_t height = esc::Util::min((gsize_t)mode.height - r.y(),r.height());
-	r.setSize(width,height);
-	return true;
-}
-
-static void win_repaint(const gui::Rectangle &r,Window *win,gpos_t z) {
-	std::vector<WinRect> rects;
-	win_getRepaintRegions(rects,0,win,z,r);
-	for(auto rect = rects.begin(); rect != rects.end(); ++rect) {
-		/* validate rect */
-		if(!win_validateRect(*rect))
-			continue;
-
-		/* if it doesn't belong to a window, we have to clear it */
-		if(rect->id == WINDOW_COUNT)
-			win_clearRegion(fb->addr(),*rect);
-		/* otherwise copy from the window buffer */
-		else
-			win_copyRegion(fb->addr(),*rect,rect->id);
-	}
-}
-
-static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY) {
-	if(windows[id].evfd == -1)
+void Window::sendActive(bool isActive,gpos_t mouseX,gpos_t mouseY) {
+	if(evfd == -1)
 		return;
 
 	esc::WinMngEvents::Event ev;
@@ -456,123 +155,36 @@ static void win_sendActive(gwinid_t id,bool isActive,gpos_t mouseX,gpos_t mouseY
 	ev.d.setactive.active = isActive;
 	ev.d.setactive.mouseX = mouseX;
 	ev.d.setactive.mouseY = mouseY;
-	send(windows[id].evfd,MSG_WIN_EVENT,&ev,sizeof(ev));
+	send(evfd,MSG_WIN_EVENT,&ev,sizeof(ev));
 }
 
-static void win_getRepaintRegions(std::vector<WinRect> &list,gwinid_t id,Window *win,gpos_t z,
-		const gui::Rectangle &r) {
-	for(; id < WINDOW_COUNT; id++) {
-		Window *w = windows + id;
-		/* skip unused, ourself and rects behind ourself */
-		if((win && w->id == win->id) || w->id == WINID_UNUSED || w->z < z || !w->ready)
-			continue;
-
-		/* substract the window-rectangle from r */
-		std::vector<gui::Rectangle> rects = gui::substraction(r,*w);
-
-		gui::Rectangle inter = gui::intersection(*w,r);
-		if(!inter.empty())
-			win_getRepaintRegions(list,id + 1,w,w->z,inter);
-
-		if(!rects.empty()) {
-			/* split all by all other windows */
-			for(auto rect = rects.begin(); rect != rects.end(); ++rect)
-				win_getRepaintRegions(list,id + 1,win,z,*rect);
-		}
-
-		/* if we made a recursive call we can leave here */
-		if(!rects.empty() || !inter.empty())
-			return;
-	}
-
-	/* no split, so its on top */
-	WinRect final(r);
-	if(win)
-		final.id = win->id;
-	else
-		final.id = WINDOW_COUNT;
-	list.push_back(final);
-}
-
-static void win_clearRegion(char *mem,const gui::Rectangle &r) {
-	gpos_t y = r.y();
-	size_t count = r.width() * pixelSize();
-	gpos_t maxy = y + r.height();
-	mem += (y * mode.width + r.x()) * pixelSize();
-	while(y < maxy) {
-		memclear(mem,count);
-		mem += mode.width * pixelSize();
-		y++;
-	}
-
-	preview_updateRect(mem,r.x(),r.y(),r.width(),r.height());
-	win_notifyUimng(r.x(),r.y(),r.width(),r.height());
-}
-
-static void win_copyRegion(char *mem,const gui::Rectangle &r,gwinid_t id) {
-	Window *w = windows + id;
-	/* ignore that if we don't have a framebuffer yet */
-	if(!w->fb)
-		return;
-
-	gpos_t x = r.x() - w->x();
-	gpos_t y = r.y() - w->y();
-
-	char *src,*dst;
-	gpos_t endy = y + r.height();
-	size_t count = r.width() * pixelSize();
-	size_t srcAdd = w->width() * pixelSize();
-	size_t dstAdd = mode.width * pixelSize();
-	src = w->fb->addr() + (y * w->width() + x) * pixelSize();
-	dst = mem + ((w->y() + y) * mode.width + (w->x() + x)) * pixelSize();
-
-	while(y < endy) {
-		memcpy(dst,src,count);
-		src += srcAdd;
-		dst += dstAdd;
-		y++;
-	}
-
-	preview_updateRect(mem,w->x() + x,w->y() + (endy - r.height()),r.width(),r.height());
-	win_notifyUimng(w->x() + x,w->y() + (endy - r.height()),r.width(),r.height());
-}
-
-void win_notifyUimng(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-	if(x < 0) {
-		width += x;
-		x = 0;
-	}
-	ui->update(x,y,esc::Util::min((gsize_t)mode.width - x,width),
-		esc::Util::min((gsize_t)mode.height - y,height));
-}
-
-static void win_notifyWinCreate(gwinid_t id,const char *title) {
-	if(windows[id].style == WIN_STYLE_POPUP || windows[id].style == WIN_STYLE_DESKTOP)
+void Window::notifyWinCreate(const char *title) {
+	if(style == STYLE_POPUP || style == STYLE_DESKTOP)
 		return;
 
 	esc::WinMngEvents::Event ev;
 	ev.type = esc::WinMngEvents::Event::TYPE_CREATED;
 	ev.wid = id;
 	strnzcpy(ev.d.created.title,title,sizeof(ev.d.created.title));
-	listener_notify(&ev);
+	Listener::get().notify(&ev);
 }
 
-static void win_notifyWinActive(gwinid_t id) {
-	if(windows[id].style == WIN_STYLE_POPUP)
+void Window::notifyWinActive() {
+	if(style == STYLE_POPUP)
 		return;
 
 	esc::WinMngEvents::Event ev;
 	ev.type = esc::WinMngEvents::Event::TYPE_ACTIVE;
 	ev.wid = id;
-	listener_notify(&ev);
+	Listener::get().notify(&ev);
 }
 
-static void win_notifyWinDestroy(gwinid_t id) {
-	if(windows[id].style == WIN_STYLE_POPUP || windows[id].style == WIN_STYLE_DESKTOP)
+void Window::notifyWinDestroy() {
+	if(style == STYLE_POPUP || style == STYLE_DESKTOP)
 		return;
 
 	esc::WinMngEvents::Event ev;
 	ev.type = esc::WinMngEvents::Event::TYPE_DESTROYED;
 	ev.wid = id;
-	listener_notify(&ev);
+	Listener::get().notify(&ev);
 }

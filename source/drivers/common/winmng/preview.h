@@ -19,29 +19,51 @@
 
 #pragma once
 
-#include <sys/common.h>
+#include <gui/graphics/rectangle.h>
 
-/**
- * Paints the given rect s a preview-rectangle with the given thickness in <shmem>. If <thickness>
- * is 0, it is removed.
- *
- * @param shmem the screen memory
- * @param x the x-coordinate
- * @param y the y-coordinate
- * @param width the width
- * @param height the height
- * @param thickness the thickness of the lines
- */
-void preview_set(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsize_t thickness);
+class Preview {
+public:
+	static void create() {
+		_inst = new Preview();
+	}
+	static Preview &get() {
+		return *_inst;
+	}
 
-/**
- * Ensures that the currently set preview-rectangle is painted again, if the given rectangle
- * intersects with it.
- *
- * @param shmem the screen memory
- * @param x the x-coordinate
- * @param y the y-coordinate
- * @param width the width
- * @param height the height
- */
-void preview_updateRect(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+	/**
+	 * Paints the given rect s a preview-rectangle with the given thickness in <shmem>. If <thickness>
+	 * is 0, it is removed.
+	 *
+	 * @param shmem the screen memory
+	 * @param x the x-coordinate
+	 * @param y the y-coordinate
+	 * @param width the width
+	 * @param height the height
+	 * @param thickness the thickness of the lines
+	 */
+	void set(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsize_t thickness);
+
+	/**
+	 * Ensures that the currently set preview-rectangle is painted again, if the given rectangle
+	 * intersects with it.
+	 *
+	 * @param shmem the screen memory
+	 * @param x the x-coordinate
+	 * @param y the y-coordinate
+	 * @param width the width
+	 * @param height the height
+	 */
+	void updateRect(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+
+private:
+	void handleIntersec(char *shmem,const gui::Rectangle &curRec,
+		const gui::Rectangle &intersec,size_t i,gsize_t xres,gsize_t yres);
+	void clearRegion(char *shmem,gpos_t x,gpos_t y,gsize_t w,gsize_t h);
+	void copyRegion(char *src,char *dst,gsize_t width,gsize_t height,gpos_t x1,gpos_t y1,
+		gpos_t x2,gpos_t y2,gsize_t w1,gsize_t w2,gsize_t h1);
+
+	gui::Rectangle _rect;
+	gsize_t _thickness;
+	char *_rectCopies[4];
+	static Preview *_inst;
+};

@@ -20,13 +20,48 @@
 #pragma once
 
 #include <esc/proto/ui.h>
+#include <esc/proto/winmng.h>
 #include <sys/common.h>
+#include <sys/thread.h>
+#include <stdlib.h>
 
-typedef struct {
-	esc::UIEvents *uiev;
-	const char *winmng;
-} sInputThread;
+#include "window.h"
 
-gpos_t input_getMouseX(void);
-gpos_t input_getMouseY(void);
-int input_thread(void *arg);
+class Input {
+	explicit Input(esc::UIEvents *uiev,const char *winmng)
+		: _buttons(), _curX(), _curY(), _cursor(esc::Screen::CURSOR_DEFAULT), _mouseWin(),
+		   _uiev(uiev), _winmng(winmng) {
+		if(startthread(thread,this) < 0)
+			error("Unable to start input thread");
+	}
+
+public:
+	static void create(esc::UIEvents *uiev,const char *winmng) {
+		_inst = new Input(uiev,winmng);
+	}
+	static Input &get() {
+		return *_inst;
+	}
+
+	gpos_t getMouseX() const {
+		return _curX;
+	}
+	gpos_t getMouseY() const {
+		return _curY;
+	}
+
+private:
+	void handleKbMessage(esc::UIEvents::Event *data);
+	void handleMouseMessage(esc::WinMng &winmng,esc::UIEvents::Event *data);
+
+	static int thread(void *arg);
+
+	uchar _buttons;
+	gpos_t _curX;
+	gpos_t _curY;
+	uchar _cursor;
+	Window *_mouseWin;
+	esc::UIEvents *_uiev;
+	const char *_winmng;
+	static Input *_inst;
+};

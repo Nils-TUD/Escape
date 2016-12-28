@@ -55,7 +55,7 @@ void Stack::stop() {
 			return;
 
 		// move the active window to the top of the stack
-		activate(win->id);
+		activate(win->id());
 	}
 }
 

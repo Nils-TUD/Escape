@@ -85,7 +85,7 @@ void Input::handleKbMessage(esc::UIEvents::Event *data) {
 
 	esc::WinMngEvents::Event ev;
 	ev.type = esc::WinMngEvents::Event::TYPE_KEYBOARD;
-	ev.wid = active->id;
+	ev.wid = active->id();
 	ev.d.keyb.keycode = data->d.keyb.keycode;
 	ev.d.keyb.modifier = data->d.keyb.modifier;
 	ev.d.keyb.character = data->d.keyb.character;
@@ -113,7 +113,7 @@ void Input::handleMouseMessage(esc::WinMng &winmng,esc::UIEvents::Event *data) {
 			if(w) {
 				/* do that via message passing so that only one thread performs changes on the
 				 * windows */
-				winmng.setActive(w->id);
+				winmng.setActive(w->id());
 			}
 			_mouseWin = w;
 		}
@@ -154,7 +154,7 @@ void Input::handleMouseMessage(esc::WinMng &winmng,esc::UIEvents::Event *data) {
 	if(w && w->evfd != -1) {
 		esc::WinMngEvents::Event ev;
 		ev.type = esc::WinMngEvents::Event::TYPE_MOUSE;
-		ev.wid = w->id;
+		ev.wid = w->id();
 		ev.d.mouse.x = _cur.x;
 		ev.d.mouse.y = _cur.y;
 		ev.d.mouse.movedX = data->d.mouse.x;

@@ -31,17 +31,7 @@
 
 std::string InfoDev::handleRead() {
 	esc::OStringStream os;
-	size_t i;
-	for(i = 0; i < WINDOW_COUNT; i++) {
-		Window *w = WinList::get().get(i);
-		if(w) {
-			os << "Window " << w->id << "\n";
-			os << "\tOwner: " << w->owner << "\n";
-			os << "\tPosition: " << w->x() << "," << w->y() << "," << w->z << "\n";
-			os << "\tSize: " << w->width() << " x " << w->height() << "\n";
-			os << "\tStyle: 0x" << esc::fmt(w->style,"x") << "\n";
-		}
-	}
+	WinList::get().print(os);
 	return os.str();
 }
 

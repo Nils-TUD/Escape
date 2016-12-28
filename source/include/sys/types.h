@@ -74,4 +74,4 @@ typedef uint32_t time_t;
 typedef size_t gsize_t;
 typedef int gpos_t;
 typedef uchar gcoldepth_t;
-typedef ushort gwinid_t;
+typedef int gwinid_t;

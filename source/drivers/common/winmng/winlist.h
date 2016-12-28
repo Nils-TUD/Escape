@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <esc/col/dlisttreap.h>
 #include <esc/proto/ui.h>
 #include <gui/graphics/rectangle.h>
 #include <sys/common.h>
@@ -137,17 +138,7 @@ public:
 	 * @return the window with given id or NULL
 	 */
 	Window *get(gwinid_t id) {
-		if(id >= WINDOW_COUNT || !windows[id])
-			return NULL;
-		return windows[id];
-	}
-
-	/**
-	 * @param id the window-id
-	 * @return whether the window with given id exists
-	 */
-	bool exists(gwinid_t id) {
-		return id < WINDOW_COUNT && windows[id];
+		return windows.find(id);
 	}
 
 	/**
@@ -170,7 +161,7 @@ public:
 	 */
 	Window *getActive() {
 		if(activeWindow != WINID_UNUSED)
-			return windows[activeWindow];
+			return get(activeWindow);
 		return NULL;
 	}
 
@@ -238,11 +229,18 @@ public:
 	 */
 	void notifyUimng(const gui::Rectangle &r);
 
+	/**
+	 * Prints information about all windows to given stream.
+	 *
+	 * @param os the output stream
+	 */
+	void print(esc::OStream &os);
+
 private:
 	void resetAll();
 	bool validateRect(gui::Rectangle &r);
-	void getRepaintRegions(std::vector<WinRect> &list,gwinid_t id,Window *win,gpos_t z,
-		const gui::Rectangle &r);
+	void getRepaintRegions(std::vector<WinRect> &list,esc::DListTreap<Window>::iterator w,
+		Window *win,gpos_t z,const gui::Rectangle &r);
 	void clearRegion(char *mem,const gui::Rectangle &r);
 	void copyRegion(char *mem,const gui::Rectangle &r,gwinid_t id);
 
@@ -253,8 +251,9 @@ private:
 	esc::Screen::Mode mode;
 	esc::FrameBuffer *fb;
 
-	size_t activeWindow;
-	size_t topWindow;
-	Window *windows[WINDOW_COUNT];
+	gwinid_t activeWindow;
+	gwinid_t topWindow;
+	esc::DListTreap<Window> windows;
+	static gwinid_t nextId;
 	static WinList *_inst;
 };

@@ -19,26 +19,30 @@
 
 #pragma once
 
+#include <esc/col/dlisttreap.h>
 #include <esc/proto/ui.h>
 #include <gui/graphics/rectangle.h>
 #include <sys/common.h>
 #include <sys/messages.h>
 
-static const size_t WINDOW_COUNT	= 32;
-static const gwinid_t WINID_UNUSED	= WINDOW_COUNT;
+static const gwinid_t WINID_UNUSED	= -1;
 
 class Input;
 class InfoDev;
 class WinList;
 
-class WinRect : public gui::Rectangle {
+class WinRect : public gui::Rectangle, public esc::DListTreapNode<gwinid_t> {
 public:
-	explicit WinRect() : gui::Rectangle(), id(WINID_UNUSED) {
+	explicit WinRect()
+		: gui::Rectangle(), esc::DListTreapNode<gwinid_t>(WINID_UNUSED) {
 	}
-	explicit WinRect(const gui::Rectangle &r) : gui::Rectangle(r), id(WINID_UNUSED) {
+	explicit WinRect(const gui::Rectangle &r,gwinid_t id = WINID_UNUSED)
+		: gui::Rectangle(r), esc::DListTreapNode<gwinid_t>(id) {
 	}
 
-	gwinid_t id;
+	gwinid_t id() const {
+		return key();
+	}
 };
 
 class Window : public WinRect {

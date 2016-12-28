@@ -42,15 +42,14 @@
 
 Window::Window(gwinid_t id,const gui::Rectangle &r,gpos_t z,int owner,uint style,
 	gsize_t titleBarHeight,const char *title)
-	: WinRect(r), z(z), owner(owner),
+	: WinRect(r,id), z(z), owner(owner),
 	  evfd(-1), style(style), titleBarHeight(titleBarHeight), winbuf(), ready(false) {
-	this->id = id;
 
 	if(style == STYLE_DEFAULT)
 		Stack::add(id);
 
-	print("Created window %d: %s @ (%d,%d,%d) with size %zux%zu",
-		id,title,r.x(),r.y(),z,r.width(),r.height());
+	::print("Created window %d: %s @ (%d,%d,%d) with size %zux%zu",
+		this->id(),title,r.x(),r.y(),z,r.width(),r.height());
 	notifyWinCreate(title);
 }
 
@@ -59,9 +58,9 @@ Window::~Window() {
 	destroybuf();
 
 	if(style == STYLE_DEFAULT)
-		Stack::remove(id);
+		Stack::remove(id());
 
-	print("Destroyed window %d @ (%d,%d,%d) with size %zux%zu",id,x(),y(),z,width(),height());
+	::print("Destroyed window %d @ (%d,%d,%d) with size %zux%zu",id(),x(),y(),z,width(),height());
 	notifyWinDestroy();
 }
 
@@ -116,7 +115,7 @@ void Window::resize(const gui::Rectangle &r) {
 
 	esc::WinMngEvents::Event ev;
 	ev.type = esc::WinMngEvents::Event::TYPE_RESIZE;
-	ev.wid = id;
+	ev.wid = id();
 	send(evfd,MSG_WIN_EVENT,&ev,sizeof(ev));
 }
 
@@ -151,7 +150,7 @@ void Window::sendActive(bool isActive,const gui::Pos &mouse) {
 
 	esc::WinMngEvents::Event ev;
 	ev.type = esc::WinMngEvents::Event::TYPE_SET_ACTIVE;
-	ev.wid = id;
+	ev.wid = id();
 	ev.d.setactive.active = isActive;
 	ev.d.setactive.mouseX = mouse.x;
 	ev.d.setactive.mouseY = mouse.y;
@@ -164,7 +163,7 @@ void Window::notifyWinCreate(const char *title) {
 
 	esc::WinMngEvents::Event ev;
 	ev.type = esc::WinMngEvents::Event::TYPE_CREATED;
-	ev.wid = id;
+	ev.wid = id();
 	strnzcpy(ev.d.created.title,title,sizeof(ev.d.created.title));
 	Listener::get().notify(&ev);
 }
@@ -175,7 +174,7 @@ void Window::notifyWinActive() {
 
 	esc::WinMngEvents::Event ev;
 	ev.type = esc::WinMngEvents::Event::TYPE_ACTIVE;
-	ev.wid = id;
+	ev.wid = id();
 	Listener::get().notify(&ev);
 }
 
@@ -185,6 +184,6 @@ void Window::notifyWinDestroy() {
 
 	esc::WinMngEvents::Event ev;
 	ev.type = esc::WinMngEvents::Event::TYPE_DESTROYED;
-	ev.wid = id;
+	ev.wid = id();
 	Listener::get().notify(&ev);
 }

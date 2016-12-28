@@ -70,7 +70,8 @@ public:
 		CStringBuf<WinMngEvents::MAX_WINTITLE_LEN> title;
 		is >> x >> y >> width >> height >> style >> titleBarHeight >> title;
 
-		gwinid_t id = WinList::get().add(x,y,width,height,is.fd(),style,titleBarHeight,title.str());
+		gui::Rectangle r(x,y,width,height);
+		gwinid_t id = WinList::get().add(r,is.fd(),style,titleBarHeight,title.str());
 
 		is << ValueResponse<gwinid_t>::result(id) << Reply();
 	}
@@ -92,7 +93,7 @@ public:
 
 		Window *win = WinList::get().get(wid);
 		if(win)
-			WinList::get().setActive(win,true,Input::get().getMouseX(),Input::get().getMouseY(),true);
+			WinList::get().setActive(win,true,Input::get().getMouse(),true);
 	}
 
 	void destroy(IPCStream &is) {
@@ -114,9 +115,9 @@ public:
 		Window *win = WinList::get().get(wid);
 		if(win && x < (gpos_t)mode.width && y < (gpos_t)mode.height) {
 			if(finished)
-				win->moveTo(x,y,win->width(),win->height());
+				win->moveTo(gui::Rectangle(x,y,win->width(),win->height()));
 			else
-				WinList::get().previewMove(win,x,y);
+				WinList::get().previewMove(win,gui::Pos(x,y));
 		}
 	}
 
@@ -127,12 +128,13 @@ public:
 		bool finished;
 		is >> wid >> x >> y >> width >> height >> finished;
 
+		gui::Rectangle r(x,y,width,height);
 		Window *win = WinList::get().get(wid);
 		if(win) {
 			if(finished)
-				win->resize(x,y,width,height);
+				win->resize(r);
 			else
-				WinList::get().previewResize(x,y,width,height);
+				WinList::get().previewResize(r);
 		}
 	}
 
@@ -147,7 +149,7 @@ public:
 			if((gpos_t)(x + width) > x &&
 					(gpos_t)(y + height) > y && x + width <= win->width() &&
 					y + height <= win->height()) {
-				WinList::get().update(win,x,y,width,height);
+				WinList::get().update(win,gui::Rectangle(x,y,width,height));
 			}
 			else
 				wid = -EINVAL;
@@ -191,7 +193,7 @@ public:
 		gcoldepth_t bpp;
 		is >> width >> height >> bpp;
 
-		errcode_t res = WinList::get().setMode(width,height,bpp);
+		errcode_t res = WinList::get().setMode(gui::Size(width,height),bpp);
 		is << res << Reply();
 	}
 
@@ -294,7 +296,7 @@ int main(int argc,char *argv[]) {
 	/* open input device and attach */
 	UIEvents *uiev = new UIEvents(*ui);
 
-	WinList::create(windev.id(),ui,atoi(argv[1]),atoi(argv[2]),DEF_BPP);
+	WinList::create(windev.id(),ui,gui::Size(atoi(argv[1]),atoi(argv[2])),DEF_BPP);
 
 	/* start helper modules */
 	Listener::create(windev.id());

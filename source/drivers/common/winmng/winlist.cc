@@ -28,12 +28,12 @@
 
 WinList *WinList::_inst;
 
-WinList::WinList(int sid,esc::UI *uiobj,gsize_t width,gsize_t height,gcoldepth_t bpp)
+WinList::WinList(int sid,esc::UI *uiobj,const gui::Size &size,gcoldepth_t bpp)
 	: ui(uiobj), drvId(sid), theme("default"), mode(), fb(), activeWindow(WINID_UNUSED),
 	  topWindow(WINID_UNUSED), windows() {
 	srand(time(NULL));
 
-	setMode(width,height,bpp);
+	setMode(size,bpp);
 }
 
 void WinList::setTheme(const char *name) {
@@ -43,10 +43,10 @@ void WinList::setTheme(const char *name) {
 	resetAll();
 }
 
-int WinList::setMode(gsize_t width,gsize_t height,gcoldepth_t bpp) {
-	print("Getting video mode for %zux%zux%u",width,height,bpp);
+int WinList::setMode(const gui::Size &size,gcoldepth_t bpp) {
+	print("Getting video mode for %zux%zux%u",size.width,size.height,bpp);
 
-	esc::Screen::Mode newmode = ui->findGraphicsMode(width,height,bpp);
+	esc::Screen::Mode newmode = ui->findGraphicsMode(size.width,size.height,bpp);
 
 	/* first destroy the old one because we use the same shm-name again */
 	delete fb;
@@ -72,14 +72,14 @@ int WinList::setMode(gsize_t width,gsize_t height,gcoldepth_t bpp) {
 		/* we have to repaint everything */
 		for(size_t i = 0; i < WINDOW_COUNT; i++) {
 			if(windows[i])
-				update(windows[i],0,0,windows[i]->width(),windows[i]->height());
+				update(windows[i],gui::Rectangle(gui::Pos(0,0),windows[i]->getSize()));
 		}
 		throw;
 	}
 	return mode.id;
 }
 
-gwinid_t WinList::add(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,uint style,
+gwinid_t WinList::add(const gui::Rectangle &r,int owner,uint style,
 		gsize_t titleBarHeight,const char *title) {
 	gpos_t z;
 	if(style == Window::STYLE_DESKTOP)
@@ -94,7 +94,7 @@ gwinid_t WinList::add(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,u
 
 	for(gwinid_t i = 0; i < WINDOW_COUNT; i++) {
 		if(!windows[i]) {
-			windows[i] = new Window(i,x,y,z,width,height,owner,style,titleBarHeight,title);
+			windows[i] = new Window(i,r,z,owner,style,titleBarHeight,title);
 			return i;
 		}
 	}
@@ -118,7 +118,7 @@ void WinList::remove(Window *win) {
 			activeWindow = WINID_UNUSED;
 		Window *top = getTop();
 		if(top)
-			setActive(top,false,Input::get().getMouseX(),Input::get().getMouseY(),true);
+			setActive(top,false,Input::get().getMouse(),true);
 	}
 }
 
@@ -151,12 +151,12 @@ void WinList::destroyWinsOf(int cid) {
 	}
 }
 
-Window *WinList::getAt(gpos_t x,gpos_t y) {
+Window *WinList::getAt(const gui::Pos &pos) {
 	gpos_t maxz = -1;
 	gwinid_t winId = WINDOW_COUNT;
 	for(gwinid_t i = 0; i < WINDOW_COUNT; i++) {
 		Window *w = windows[i];
-		if(w && w->z > maxz && w->contains(x,y)) {
+		if(w && w->z > maxz && w->contains(pos.x,pos.y)) {
 			winId = i;
 			maxz = w->z;
 		}
@@ -181,7 +181,7 @@ Window *WinList::getTop() {
 	return NULL;
 }
 
-void WinList::setActive(Window *win,bool repaint,gpos_t mouseX,gpos_t mouseY,bool updateWinStack) {
+void WinList::setActive(Window *win,bool repaint,const gui::Pos &mouse,bool updateWinStack) {
 	gpos_t curz = win->z;
 	gpos_t maxz = 0;
 	if(win->id != WINDOW_COUNT && win->style != Window::STYLE_DESKTOP) {
@@ -199,7 +199,7 @@ void WinList::setActive(Window *win,bool repaint,gpos_t mouseX,gpos_t mouseY,boo
 
 	if(win->id != activeWindow) {
 		if(activeWindow != WINDOW_COUNT)
-			windows[activeWindow]->sendActive(false,mouseX,mouseY);
+			windows[activeWindow]->sendActive(false,mouse);
 
 		if(updateWinStack && win->style == Window::STYLE_DEFAULT)
 			Stack::activate(win->id);
@@ -208,7 +208,7 @@ void WinList::setActive(Window *win,bool repaint,gpos_t mouseX,gpos_t mouseY,boo
 		if(windows[activeWindow]->style != Window::STYLE_DESKTOP)
 			topWindow = win->id;
 		if(activeWindow != WINDOW_COUNT) {
-			windows[activeWindow]->sendActive(true,mouseX,mouseY);
+			windows[activeWindow]->sendActive(true,mouse);
 			windows[activeWindow]->notifyWinActive();
 
 			if(repaint && windows[activeWindow]->style != Window::STYLE_DESKTOP)
@@ -217,10 +217,10 @@ void WinList::setActive(Window *win,bool repaint,gpos_t mouseX,gpos_t mouseY,boo
 	}
 }
 
-void WinList::update(Window *win,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+void WinList::update(Window *win,const gui::Rectangle &r) {
 	win->ready = true;
 
-	gui::Rectangle rect(win->x() + x,win->y() + y,width,height);
+	gui::Rectangle rect(win->x() + r.x(),win->y() + r.y(),r.width(),r.height());
 	if(validateRect(rect)) {
 		if(topWindow == win->id)
 			copyRegion(fb->addr(),rect,win->id);
@@ -311,8 +311,8 @@ void WinList::clearRegion(char *mem,const gui::Rectangle &r) {
 		y++;
 	}
 
-	Preview::get().updateRect(mem,r.x(),r.y(),r.width(),r.height());
-	notifyUimng(r.x(),r.y(),r.width(),r.height());
+	Preview::get().updateRect(mem,r);
+	notifyUimng(r);
 }
 
 void WinList::copyRegion(char *mem,const gui::Rectangle &r,gwinid_t id) {
@@ -340,15 +340,18 @@ void WinList::copyRegion(char *mem,const gui::Rectangle &r,gwinid_t id) {
 		y++;
 	}
 
-	Preview::get().updateRect(mem,w->x() + x,w->y() + (endy - r.height()),r.width(),r.height());
-	notifyUimng(w->x() + x,w->y() + (endy - r.height()),r.width(),r.height());
+	gui::Rectangle rect(gui::Pos(w->x() + x,w->y() + (endy - r.height())),r.getSize());
+	Preview::get().updateRect(mem,rect);
+	notifyUimng(rect);
 }
 
-void WinList::notifyUimng(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+void WinList::notifyUimng(const gui::Rectangle &r) {
+	gpos_t x = r.x();
+	gsize_t width = r.width();
 	if(x < 0) {
 		width += x;
 		x = 0;
 	}
-	ui->update(x,y,esc::Util::min((gsize_t)mode.width - x,width),
-		esc::Util::min((gsize_t)mode.height - y,height));
+	ui->update(x,r.y(),esc::Util::min((gsize_t)mode.width - x,width),
+		esc::Util::min((gsize_t)mode.height - r.y(),r.height()));
 }

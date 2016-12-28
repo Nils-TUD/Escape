@@ -94,21 +94,22 @@ void Input::handleKbMessage(esc::UIEvents::Event *data) {
 
 void Input::handleMouseMessage(esc::WinMng &winmng,esc::UIEvents::Event *data) {
 	const esc::Screen::Mode &mode = WinList::get().getMode();
-	gpos_t oldx = _curX;
-	gpos_t oldy = _curY;
+	gui::Pos old = _cur;
 	bool btnChanged = false;
 	Window *w;
 	Window *wheelWin = NULL;
 
-	_curX = esc::Util::max(0,esc::Util::min((gpos_t)mode.width - 1,_curX + data->d.mouse.x));
-	_curY = esc::Util::max(0,esc::Util::min((gpos_t)mode.height - 1,_curY - data->d.mouse.y));
+	_cur = gui::Pos(
+		esc::Util::max(0,esc::Util::min((gpos_t)mode.width - 1,_cur.x + data->d.mouse.x)),
+		esc::Util::max(0,esc::Util::min((gpos_t)mode.height - 1,_cur.y - data->d.mouse.y))
+	);
 
 	/* set active window */
 	if(data->d.mouse.buttons != _buttons) {
 		btnChanged = true;
 		_buttons = data->d.mouse.buttons;
 		if(_buttons) {
-			w = WinList::get().getAt(_curX,_curY);
+			w = WinList::get().getAt(_cur);
 			if(w) {
 				/* do that via message passing so that only one thread performs changes on the
 				 * windows */
@@ -118,19 +119,19 @@ void Input::handleMouseMessage(esc::WinMng &winmng,esc::UIEvents::Event *data) {
 		}
 	}
 	else if(data->d.mouse.z)
-		wheelWin = WinList::get().getAt(_curX,_curY);
+		wheelWin = WinList::get().getAt(_cur);
 
 	/* if no buttons are pressed, change the cursor if we're at a window-border */
 	if(!_buttons) {
-		w = _mouseWin ? _mouseWin : WinList::get().getAt(_curX,_curY);
+		w = _mouseWin ? _mouseWin : WinList::get().getAt(_cur);
 		_cursor = esc::Screen::CURSOR_DEFAULT;
 		if(w && w->style != Window::STYLE_POPUP && w->style != Window::STYLE_DESKTOP) {
 			gsize_t tbh = w->titleBarHeight;
-			bool left = _curY >= (gpos_t)(w->y() + tbh) &&
-					_curX < (gpos_t)(w->x() + esc::Screen::CURSOR_RESIZE_WIDTH);
-			bool right = _curY >= (gpos_t)(w->y() + tbh) &&
-					_curX >= (gpos_t)(w->x() + w->width() - esc::Screen::CURSOR_RESIZE_WIDTH);
-			bool bottom = _curY >= (gpos_t)(w->y() + w->height() - esc::Screen::CURSOR_RESIZE_WIDTH);
+			bool left = _cur.y >= (gpos_t)(w->y() + tbh) &&
+					_cur.x < (gpos_t)(w->x() + esc::Screen::CURSOR_RESIZE_WIDTH);
+			bool right = _cur.y >= (gpos_t)(w->y() + tbh) &&
+					_cur.x >= (gpos_t)(w->x() + w->width() - esc::Screen::CURSOR_RESIZE_WIDTH);
+			bool bottom = _cur.y >= (gpos_t)(w->y() + w->height() - esc::Screen::CURSOR_RESIZE_WIDTH);
 			if(left && bottom)
 				_cursor = esc::Screen::CURSOR_RESIZE_BL;
 			else if(left)
@@ -145,8 +146,8 @@ void Input::handleMouseMessage(esc::WinMng &winmng,esc::UIEvents::Event *data) {
 	}
 
 	/* let vesa draw the cursor */
-	if(_curX != oldx || _curY != oldy)
-		WinList::get().setCursor(_curX,_curY,_cursor);
+	if(_cur != old)
+		WinList::get().setCursor(_cur,_cursor);
 
 	/* send to window */
 	w = wheelWin ? wheelWin : (_mouseWin ? _mouseWin : WinList::get().getActive());
@@ -154,8 +155,8 @@ void Input::handleMouseMessage(esc::WinMng &winmng,esc::UIEvents::Event *data) {
 		esc::WinMngEvents::Event ev;
 		ev.type = esc::WinMngEvents::Event::TYPE_MOUSE;
 		ev.wid = w->id;
-		ev.d.mouse.x = _curX;
-		ev.d.mouse.y = _curY;
+		ev.d.mouse.x = _cur.x;
+		ev.d.mouse.y = _cur.y;
 		ev.d.mouse.movedX = data->d.mouse.x;
 		ev.d.mouse.movedY = -data->d.mouse.y;
 		ev.d.mouse.movedZ = data->d.mouse.z;

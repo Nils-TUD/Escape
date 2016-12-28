@@ -35,25 +35,19 @@ public:
 	 * is 0, it is removed.
 	 *
 	 * @param shmem the screen memory
-	 * @param x the x-coordinate
-	 * @param y the y-coordinate
-	 * @param width the width
-	 * @param height the height
+	 * @param r the rectangle
 	 * @param thickness the thickness of the lines
 	 */
-	void set(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsize_t thickness);
+	void set(char *shmem,const gui::Rectangle &r,gsize_t thickness);
 
 	/**
 	 * Ensures that the currently set preview-rectangle is painted again, if the given rectangle
 	 * intersects with it.
 	 *
 	 * @param shmem the screen memory
-	 * @param x the x-coordinate
-	 * @param y the y-coordinate
-	 * @param width the width
-	 * @param height the height
+	 * @param r the rectangle
 	 */
-	void updateRect(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+	void updateRect(char *shmem,const gui::Rectangle &r);
 
 private:
 	void handleIntersec(char *shmem,const gui::Rectangle &curRec,

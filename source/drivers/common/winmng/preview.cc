@@ -28,43 +28,42 @@
 
 Preview *Preview::_inst;
 
-void Preview::updateRect(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+void Preview::updateRect(char *shmem,const gui::Rectangle &r) {
 	const esc::Screen::Mode &mode = WinList::get().getMode();
 	gsize_t xres = mode.width;
 	gsize_t yres = mode.height;
-	gui::Rectangle upRec(x,y,width,height);
 	/* look if we have to update the preview-rectangle */
 	if(_rectCopies[0]) {
 		gui::Rectangle curRec(_rect.x(),_rect.y(),_rect.width(),_thickness);
 		gui::Rectangle intersec;
 
 		/* top */
-		intersec = gui::intersection(curRec,upRec);
+		intersec = gui::intersection(curRec,r);
 		if(!intersec.empty())
 			handleIntersec(shmem,curRec,intersec,0,xres,yres);
 
 		/* bottom */
 		curRec.setPos(curRec.x(),_rect.y() + _rect.height() - _thickness);
-		intersec = gui::intersection(curRec,upRec);
+		intersec = gui::intersection(curRec,r);
 		if(!intersec.empty())
 			handleIntersec(shmem,curRec,intersec,2,xres,yres);
 
 		/* left */
 		curRec.setPos(curRec.x(),_rect.y());
 		curRec.setSize(_thickness,_rect.height());
-		intersec = gui::intersection(curRec,upRec);
+		intersec = gui::intersection(curRec,r);
 		if(!intersec.empty())
 			handleIntersec(shmem,curRec,intersec,3,xres,yres);
 
 		/* right */
 		curRec.setPos(_rect.x() + _rect.width() - _thickness,curRec.y());
-		intersec = gui::intersection(curRec,upRec);
+		intersec = gui::intersection(curRec,r);
 		if(!intersec.empty())
 			handleIntersec(shmem,curRec,intersec,1,xres,yres);
 	}
 }
 
-void Preview::set(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsize_t thickness) {
+void Preview::set(char *shmem,const gui::Rectangle &r,gsize_t thickness) {
 	const esc::Screen::Mode &mode = WinList::get().getMode();
 	gsize_t xres = mode.width;
 	gsize_t yres = mode.height;
@@ -76,29 +75,29 @@ void Preview::set(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsi
 		copyRegion(_rectCopies[0],shmem,
 				_rect.width(),_thickness,0,0,_rect.x(),_rect.y(),
 				_rect.width(),xres,_thickness);
-		WinList::get().notifyUimng(_rect.x(),_rect.y(),_rect.width(),_thickness);
+		WinList::get().notifyUimng(gui::Rectangle(_rect.x(),_rect.y(),_rect.width(),_thickness));
 		/* right */
 		copyRegion(_rectCopies[1],shmem,
 				_thickness,_rect.height(),0,0,
 				_rect.x() + _rect.width() - _thickness,_rect.y(),
 				_thickness,xres,_rect.height());
-		WinList::get().notifyUimng(_rect.x() + _rect.width() - _thickness,_rect.y(),
-			_thickness,_rect.height());
+		WinList::get().notifyUimng(gui::Rectangle(_rect.x() + _rect.width() - _thickness,_rect.y(),
+			_thickness,_rect.height()));
 		/* bottom */
 		copyRegion(_rectCopies[2],shmem,
 				_rect.width(),_thickness,0,0,_rect.x(),
 				_rect.y() + _rect.height() - _thickness,
 				_rect.width(),xres,_thickness);
-		WinList::get().notifyUimng(_rect.x(),_rect.y() + _rect.height() - _thickness,
-			_rect.width(),_thickness);
+		WinList::get().notifyUimng(gui::Rectangle(_rect.x(),_rect.y() + _rect.height() - _thickness,
+			_rect.width(),_thickness));
 		/* left */
 		copyRegion(_rectCopies[3],shmem,
 				_thickness,_rect.height(),0,0,_rect.x(),_rect.y(),
 				_thickness,xres,_rect.height());
-		WinList::get().notifyUimng(_rect.x(),_rect.y(),_thickness,_rect.height());
+		WinList::get().notifyUimng(gui::Rectangle(_rect.x(),_rect.y(),_thickness,_rect.height()));
 
-		if(thickness != _thickness || width != _rect.width() ||
-				height != _rect.height()) {
+		if(thickness != _thickness || r.width() != _rect.width() ||
+				r.height() != _rect.height()) {
 			free(_rectCopies[0]);
 			_rectCopies[0] = NULL;
 			free(_rectCopies[1]);
@@ -111,15 +110,19 @@ void Preview::set(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsi
 	}
 
 	if(thickness > 0) {
-		if(thickness != _thickness || width != _rect.width() ||
-				height != _rect.height()) {
-			_rectCopies[0] = (char*)malloc(width * thickness * pxSize);
-			_rectCopies[1] = (char*)malloc(height * thickness * pxSize);
-			_rectCopies[2] = (char*)malloc(width * thickness * pxSize);
-			_rectCopies[3] = (char*)malloc(height * thickness * pxSize);
+		if(thickness != _thickness || r.width() != _rect.width() ||
+				r.height() != _rect.height()) {
+			_rectCopies[0] = (char*)malloc(r.width() * thickness * pxSize);
+			_rectCopies[1] = (char*)malloc(r.height() * thickness * pxSize);
+			_rectCopies[2] = (char*)malloc(r.width() * thickness * pxSize);
+			_rectCopies[3] = (char*)malloc(r.height() * thickness * pxSize);
 		}
 
 		/* store preview rect */
+		gpos_t x = r.x();
+		gpos_t y = r.y();
+		gsize_t width = r.width();
+		gsize_t height = r.height();
 		if(x < 0) {
 			width = esc::Util::max(0,(int)(width + x));
 			x = 0;
@@ -148,16 +151,16 @@ void Preview::set(char *shmem,gpos_t x,gpos_t y,gsize_t width,gsize_t height,gsi
 		/* draw rect */
 		/* top */
 		clearRegion(shmem,x,y,width,thickness);
-		WinList::get().notifyUimng(x,y,width,thickness);
+		WinList::get().notifyUimng(gui::Rectangle(x,y,width,thickness));
 		/* right */
 		clearRegion(shmem,x + width - thickness,y,thickness,height);
-		WinList::get().notifyUimng(x + width - thickness,y,thickness,height);
+		WinList::get().notifyUimng(gui::Rectangle(x + width - thickness,y,thickness,height));
 		/* bottom */
 		clearRegion(shmem,x,y + height - thickness,width,thickness);
-		WinList::get().notifyUimng(x,y + height - thickness,width,thickness);
+		WinList::get().notifyUimng(gui::Rectangle(x,y + height - thickness,width,thickness));
 		/* left */
 		clearRegion(shmem,x,y,thickness,height);
-		WinList::get().notifyUimng(x,y,thickness,height);
+		WinList::get().notifyUimng(gui::Rectangle(x,y,thickness,height));
 	}
 
 	_thickness = thickness;

@@ -29,7 +29,7 @@
 
 class Input {
 	explicit Input(esc::UIEvents *uiev,const char *winmng)
-		: _buttons(), _curX(), _curY(), _cursor(esc::Screen::CURSOR_DEFAULT), _mouseWin(),
+		: _buttons(), _cur(), _cursor(esc::Screen::CURSOR_DEFAULT), _mouseWin(),
 		   _uiev(uiev), _winmng(winmng) {
 		if(startthread(thread,this) < 0)
 			error("Unable to start input thread");
@@ -43,11 +43,8 @@ public:
 		return *_inst;
 	}
 
-	gpos_t getMouseX() const {
-		return _curX;
-	}
-	gpos_t getMouseY() const {
-		return _curY;
+	const gui::Pos &getMouse() const {
+		return _cur;
 	}
 
 private:
@@ -57,8 +54,7 @@ private:
 	static int thread(void *arg);
 
 	uchar _buttons;
-	gpos_t _curX;
-	gpos_t _curY;
+	gui::Pos _cur;
 	uchar _cursor;
 	Window *_mouseWin;
 	esc::UIEvents *_uiev;

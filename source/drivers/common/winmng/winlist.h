@@ -29,7 +29,7 @@
 #include "window.h"
 
 class WinList {
-	explicit WinList(int sid,esc::UI *ui,gsize_t width,gsize_t height,gcoldepth_t bpp);
+	explicit WinList(int sid,esc::UI *ui,const gui::Size &size,gcoldepth_t bpp);
 
 public:
 	/**
@@ -37,13 +37,12 @@ public:
 	 *
 	 * @param sid the device-id
 	 * @param ui the ui
-	 * @param width the desired screen width
-	 * @param height the desired screen height
+	 * @param size the desired screen size
 	 * @param bpp the desired bits per pixel
 	 * @return the mode id on success
 	 */
-	static void create(int sid,esc::UI *ui,gsize_t width,gsize_t height,gcoldepth_t bpp) {
-		_inst = new WinList(sid,ui,width,height,bpp);
+	static void create(int sid,esc::UI *ui,const gui::Size &size,gcoldepth_t bpp) {
+		_inst = new WinList(sid,ui,size,bpp);
 	}
 
 	/**
@@ -84,22 +83,20 @@ public:
 	/**
 	 * Changes the mode to the given one.
 	 *
-	 * @param width the desired screen width
-	 * @param height the desired screen height
+	 * @param size the desired screen size
 	 * @param bpp the desired bits per pixel
 	 * @return 0 on success
 	 */
-	int setMode(gsize_t width,gsize_t height,gcoldepth_t bpp);
+	int setMode(const gui::Size &size,gcoldepth_t bpp);
 
 	/**
 	 * Sets the cursor at given position (writes to vesa)
 	 *
-	 * @param x the x-coordinate
-	 * @param y the y-coordinate
+	 * @param pos the position
 	 * @param cursor the cursor to use
 	 */
-	void setCursor(gpos_t x,gpos_t y,uint cursor) {
-		ui->setCursor(x,y,cursor);
+	void setCursor(const gui::Pos &pos,uint cursor) {
+		ui->setCursor(pos.x,pos.y,cursor);
 	}
 
 	/**
@@ -119,18 +116,14 @@ public:
 	/**
 	 * Creates a new window
 	 *
-	 * @param x the x-coordinate
-	 * @param y the y-coordinate
-	 * @param width the width
-	 * @param height the height
+	 * @param r the rectangle
 	 * @param owner the window-owner (fd)
 	 * @param style style-attributes
 	 * @param titleBarHeight the height of the titlebar of that window
 	 * @param title the title of the window
 	 * @return the window id or an error code
 	 */
-	gwinid_t add(gpos_t x,gpos_t y,gsize_t width,gsize_t height,int owner,uint style,
-		gsize_t titleBarHeight,const char *title);
+	gwinid_t add(const gui::Rectangle &r,int owner,uint style,gsize_t titleBarHeight,const char *title);
 
 	/**
 	 * Removes the given window
@@ -160,11 +153,10 @@ public:
 	/**
 	 * Determines the window at given position
 	 *
-	 * @param x the x-coordinate
-	 * @param y the y-coordinate
+	 * @param pos the position
 	 * @return the window or NULL
 	 */
-	Window *getAt(gpos_t x,gpos_t y);
+	Window *getAt(const gui::Pos &pos);
 
 	/**
 	 * Get window at the top
@@ -188,25 +180,21 @@ public:
 	 *
 	 * @param win the window
 	 * @param repaint whether the window should receive a repaint-event
-	 * @param mouseX the current x-coordinate of the mouse
-	 * @param mouseY the current y-coordinate of the mouse
+	 * @param mouse the current mouse position
 	 * @param updateWinStack whether to update the window stack
 	 */
 	void setActive(Window *win,bool repaint,bool updateWinStack) {
-		setActive(win,repaint,Input::get().getMouseX(),Input::get().getMouseY(),updateWinStack);
+		setActive(win,repaint,Input::get().getMouse(),updateWinStack);
 	}
-	void setActive(Window *win,bool repaint,gpos_t mouseX,gpos_t mouseY,bool updateWinStack);
+	void setActive(Window *win,bool repaint,const gui::Pos &mouse,bool updateWinStack);
 
 	/**
 	 * Sends update-events to the window to update the given area
 	 *
 	 * @param win the window
-	 * @param x the x-coordinate in the window
-	 * @param y the y-coordinate in the window
-	 * @param width the width
-	 * @param height the height
+	 * @param r the rectangle
 	 */
-	void update(Window *win,gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+	void update(Window *win,const gui::Rectangle &r);
 
 	/**
 	 * Repaints the given rectangle of the screen.
@@ -221,40 +209,34 @@ public:
 	 * Removes the preview rectangle, if necessary.
 	 */
 	void removePreview() {
-		Preview::get().set(fb->addr(),0,0,0,0,0);
+		Preview::get().set(fb->addr(),gui::Rectangle(),0);
 	}
 
 	/**
 	 * Shows a preview for the given resize-operation
 	 *
-	 * @param x the x-coordinate
-	 * @param y the y-coordinate
-	 * @param width the new width
-	 * @param height the new height
+	 * @param r the rectangle
 	 */
-	void previewResize(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
-		Preview::get().set(fb->addr(),x,y,width,height,2);
+	void previewResize(const gui::Rectangle &r) {
+		Preview::get().set(fb->addr(),r,2);
 	}
 
 	/**
 	 * Shows a preview for the given move-operation
 	 *
-	 * @param x the x-coordinate
-	 * @param y the y-coordinate
+	 * @param win the window
+	 * @param pos the position
 	 */
-	void previewMove(Window *win,gpos_t x,gpos_t y) {
-		Preview::get().set(fb->addr(),x,y,win->width(),win->height(),2);
+	void previewMove(Window *win,const gui::Pos &pos) {
+		Preview::get().set(fb->addr(),gui::Rectangle(pos,win->getSize()),2);
 	}
 
 	/**
 	 * Notifies the UI-manager that the given rectangle has changed.
 	 *
-	 * @param x the x-coordinate
-	 * @param y the y-coordinate
-	 * @param width the width
-	 * @param height the height
+	 * @param r the rectangle
 	 */
-	void notifyUimng(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+	void notifyUimng(const gui::Rectangle &r);
 
 private:
 	void resetAll();

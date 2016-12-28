@@ -57,17 +57,14 @@ public:
 	 * Creates a new window
 	 *
 	 * @param id the window id
-	 * @param x the x-coordinate
-	 * @param y the y-coordinate
+	 * @param r the rectangle
 	 * @param z the z-coordinate
-	 * @param width the width
-	 * @param height the height
 	 * @param owner the window-owner (fd)
 	 * @param style style-attributes
 	 * @param titleBarHeight the height of the titlebar of that window
 	 * @param title the title of the window
 	 */
-	explicit Window(gwinid_t id,gpos_t x,gpos_t y,gpos_t z,gsize_t width,gsize_t height,int owner,
+	explicit Window(gwinid_t id,const gui::Rectangle &r,gpos_t z,int owner,
 		uint style,gsize_t titleBarHeight,const char *title);
 
 	/**
@@ -105,26 +102,20 @@ public:
 	/**
 	 * Resizes the window to the given size
 	 *
-	 * @param x the x-coordinate
-	 * @param y the y-coordinate
-	 * @param width the new width
-	 * @param height the new height
+	 * @param r the rectangle
 	 * @param winmng the window-manager name
 	 */
-	void resize(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+	void resize(const gui::Rectangle &r);
 
 	/**
 	 * Moves the window to given position and optionally changes the size
 	 *
-	 * @param x the x-coordinate
-	 * @param y the y-coordinate
-	 * @param width the new width
-	 * @param height the new height
+	 * @param r the rectangle
 	 */
-	void moveTo(gpos_t x,gpos_t y,gsize_t width,gsize_t height);
+	void moveTo(const gui::Rectangle &r);
 
 private:
-	void sendActive(bool isActive,gpos_t mouseX,gpos_t mouseY);
+	void sendActive(bool isActive,const gui::Pos &mouse);
 	void notifyWinCreate(const char *title);
 	void notifyWinActive();
 	void notifyWinDestroy();

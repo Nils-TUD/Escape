@@ -40,16 +40,17 @@
 #include "window.h"
 #include "winlist.h"
 
-Window::Window(gwinid_t id,gpos_t x,gpos_t y,gpos_t z,gsize_t width,gsize_t height,int owner,uint style,
+Window::Window(gwinid_t id,const gui::Rectangle &r,gpos_t z,int owner,uint style,
 	gsize_t titleBarHeight,const char *title)
-	: WinRect(gui::Rectangle(gui::Pos(x,y),gui::Size(width,height))), z(z), owner(owner),
+	: WinRect(r), z(z), owner(owner),
 	  evfd(-1), style(style), titleBarHeight(titleBarHeight), winbuf(), ready(false) {
 	this->id = id;
 
 	if(style == STYLE_DEFAULT)
 		Stack::add(id);
 
-	print("Created window %d: %s @ (%d,%d,%d) with size %zux%zu",id,title,x,y,z,width,height);
+	print("Created window %d: %s @ (%d,%d,%d) with size %zux%zu",
+		id,title,r.x(),r.y(),z,r.width(),r.height());
 	notifyWinCreate(title);
 }
 
@@ -90,25 +91,25 @@ void Window::attach(int fd) {
 	}
 }
 
-void Window::resize(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+void Window::resize(const gui::Rectangle &r) {
 	/* exchange buffer */
 	destroybuf();
 
-	if(x != this->x() || y != this->y())
-		moveTo(x,y,width,height);
+	if(r.x() != this->x() || r.y() != this->y())
+		moveTo(r);
 	else {
 		gsize_t oldWidth = this->width();
 		gsize_t oldHeight = this->height();
-		setSize(width,height);
+		setSize(r.getSize());
 
 		WinList::get().removePreview();
 
-		if(width < oldWidth) {
-			gui::Rectangle nrect(this->x() + width,this->y(),oldWidth - width,oldHeight);
+		if(r.width() < oldWidth) {
+			gui::Rectangle nrect(this->x() + r.width(),this->y(),oldWidth - r.width(),oldHeight);
 			WinList::get().repaint(nrect,NULL,-1);
 		}
-		if(height < oldHeight) {
-			gui::Rectangle nrect(this->x(),this->y() + height,oldWidth,oldHeight - height);
+		if(r.height() < oldHeight) {
+			gui::Rectangle nrect(this->x(),this->y() + r.height(),oldWidth,oldHeight - r.height());
 			WinList::get().repaint(nrect,NULL,-1);
 		}
 	}
@@ -119,16 +120,15 @@ void Window::resize(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	send(evfd,MSG_WIN_EVENT,&ev,sizeof(ev));
 }
 
-void Window::moveTo(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+void Window::moveTo(const gui::Rectangle &r) {
 	WinList::get().removePreview();
 
 	/* save old position */
 	gui::Rectangle orect(*this);
-	gui::Rectangle nrect(x,y,width,height);
-	std::vector<gui::Rectangle> rects = gui::substraction(orect,nrect);
+	std::vector<gui::Rectangle> rects = gui::substraction(orect,r);
 
-	setPos(nrect.getPos());
-	setSize(nrect.getSize());
+	setPos(r.getPos());
+	setSize(r.getSize());
 
 	/* clear old position */
 	if(!rects.empty()) {
@@ -142,10 +142,10 @@ void Window::moveTo(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 	}
 
 	/* repaint new position */
-	WinList::get().repaint(nrect,this,z);
+	WinList::get().repaint(r,this,z);
 }
 
-void Window::sendActive(bool isActive,gpos_t mouseX,gpos_t mouseY) {
+void Window::sendActive(bool isActive,const gui::Pos &mouse) {
 	if(evfd == -1)
 		return;
 
@@ -153,8 +153,8 @@ void Window::sendActive(bool isActive,gpos_t mouseX,gpos_t mouseY) {
 	ev.type = esc::WinMngEvents::Event::TYPE_SET_ACTIVE;
 	ev.wid = id;
 	ev.d.setactive.active = isActive;
-	ev.d.setactive.mouseX = mouseX;
-	ev.d.setactive.mouseY = mouseY;
+	ev.d.setactive.mouseX = mouse.x;
+	ev.d.setactive.mouseY = mouse.y;
 	send(evfd,MSG_WIN_EVENT,&ev,sizeof(ev));
 }
 

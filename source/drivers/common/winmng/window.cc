@@ -85,7 +85,7 @@ int Window::joinbuf(int fd) {
 void Window::attach(int fd) {
 	if(evfd == -1) {
 		evfd = fd;
-		if(!WinList::get().getActive() || style != STYLE_DESKTOP)
+		if(WinList::get().getActive() == WINID_UNUSED || style != STYLE_DESKTOP)
 			WinList::get().setActive(this,false,true);
 	}
 }

@@ -38,6 +38,9 @@ void Stack::remove(gwinid_t id) {
 }
 
 void Stack::activate(gwinid_t id) {
+	if(id == WINID_UNUSED)
+		return;
+
 	remove(id);
 	stack.push_front(id);
 	start();
@@ -50,12 +53,8 @@ void Stack::start() {
 
 void Stack::stop() {
 	if(switched) {
-		Window *win = WinList::get().getActive();
-		if(!win)
-			return;
-
 		// move the active window to the top of the stack
-		activate(win->id());
+		activate(WinList::get().getActive());
 	}
 }
 
@@ -68,7 +67,7 @@ void Stack::prev() {
 		pos = stack.end();
 	--pos;
 	// make it active
-	WinList::get().setActive(WinList::get().get(*pos),true,false);
+	WinList::get().setActive(*pos,true,false);
 	switched = true;
 }
 
@@ -81,6 +80,6 @@ void Stack::next() {
 	if(pos == stack.end())
 		pos = stack.begin();
 	// make it active
-	WinList::get().setActive(WinList::get().get(*pos),true,false);
+	WinList::get().setActive(*pos,true,false);
 	switched = true;
 }

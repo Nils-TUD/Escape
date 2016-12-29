@@ -26,6 +26,7 @@
 #include "stack.h"
 #include "winlist.h"
 
+std::mutex WinList::winMutex;
 gwinid_t WinList::nextId;
 WinList *WinList::_inst;
 
@@ -38,6 +39,7 @@ WinList::WinList(int sid,esc::UI *uiobj,const gui::Size &size,gcoldepth_t bpp)
 }
 
 void WinList::setTheme(const char *name) {
+	std::lock_guard<std::mutex> guard(winMutex);
 	::print("Setting theme '%s'",name);
 	theme = name;
 
@@ -45,6 +47,7 @@ void WinList::setTheme(const char *name) {
 }
 
 int WinList::setMode(const gui::Size &size,gcoldepth_t bpp) {
+	std::lock_guard<std::mutex> guard(winMutex);
 	::print("Getting video mode for %zux%zux%u",size.width,size.height,bpp);
 
 	esc::Screen::Mode newmode = ui->findGraphicsMode(size.width,size.height,bpp);
@@ -80,6 +83,7 @@ int WinList::setMode(const gui::Size &size,gcoldepth_t bpp) {
 
 gwinid_t WinList::add(const gui::Rectangle &r,int owner,uint style,
 		gsize_t titleBarHeight,const char *title) {
+	std::lock_guard<std::mutex> guard(winMutex);
 	gpos_t z;
 	if(style == Window::STYLE_DESKTOP)
 		z = 0;
@@ -95,8 +99,16 @@ gwinid_t WinList::add(const gui::Rectangle &r,int owner,uint style,
 	return nextId - 1;
 }
 
+void WinList::remove(gwinid_t wid) {
+	std::lock_guard<std::mutex> guard(winMutex);
+	Window *win = get(wid);
+	if(!win)
+		return;
+	remove(win);
+}
+
 void WinList::remove(Window *win) {
-	gwinid_t winid = win->id();
+	gwinid_t wid = win->id();
 	/* remove window */
 	windows.remove(win);
 
@@ -107,16 +119,32 @@ void WinList::remove(Window *win) {
 	delete win;
 
 	/* set highest window active */
-	if(activeWindow == winid || topWindow == winid) {
-		if(activeWindow == winid)
+	if(activeWindow == wid || topWindow == wid) {
+		if(activeWindow == wid)
 			activeWindow = WINID_UNUSED;
 		Window *top = getTop();
 		if(top)
-			setActive(top,false,Input::get().getMouse(),true);
+			setActive(top,false,true);
 	}
 }
 
+int WinList::joinbuf(gwinid_t wid,int fd) {
+	std::lock_guard<std::mutex> guard(winMutex);
+	Window *win = get(wid);
+	if(win)
+		return win->joinbuf(fd);
+	return -ENOTFOUND;
+}
+
+void WinList::attach(gwinid_t wid,int fd) {
+	std::lock_guard<std::mutex> guard(winMutex);
+	Window *win = get(wid);
+	if(win)
+		win->attach(fd);
+}
+
 void WinList::detachAll(int fd) {
+	std::lock_guard<std::mutex> guard(winMutex);
 	for(auto w = windows.begin(); w != windows.end(); ++w) {
 		if(w->evfd == fd)
 			w->evfd = -1;
@@ -136,6 +164,7 @@ void WinList::resetAll() {
 }
 
 void WinList::destroyWinsOf(int cid) {
+	std::lock_guard<std::mutex> guard(winMutex);
 	for(auto w = windows.begin(); w != windows.end(); ) {
 		auto old = w++;
 		if(old->owner == cid)
@@ -143,7 +172,7 @@ void WinList::destroyWinsOf(int cid) {
 	}
 }
 
-Window *WinList::getAt(const gui::Pos &pos) {
+gwinid_t WinList::getAt(const gui::Pos &pos) {
 	gpos_t maxz = -1;
 	gwinid_t winId = WINID_UNUSED;
 	for(auto w = windows.begin(); w != windows.end(); ++w) {
@@ -152,9 +181,7 @@ Window *WinList::getAt(const gui::Pos &pos) {
 			maxz = w->z;
 		}
 	}
-	if(winId != WINID_UNUSED)
-		return windows.find(winId);
-	return NULL;
+	return winId;
 }
 
 Window *WinList::getTop() {
@@ -171,7 +198,27 @@ Window *WinList::getTop() {
 	return NULL;
 }
 
-void WinList::setActive(Window *win,bool repaint,const gui::Pos &mouse,bool updateWinStack) {
+bool WinList::getInfo(gwinid_t wid,gui::Rectangle *r,size_t *titleBarHeight,uint *style) {
+	std::lock_guard<std::mutex> guard(winMutex);
+	Window *win = get(wid);
+	if(win) {
+		*r = *win;
+		*titleBarHeight = win->titleBarHeight;
+		*style = win->style;
+		return true;
+	}
+	return false;
+}
+
+void WinList::setActive(gwinid_t wid,bool repaint,bool updateWinStack) {
+	std::lock_guard<std::mutex> guard(winMutex);
+	Window *win = get(wid);
+	if(!win)
+		return;
+	setActive(win,repaint,updateWinStack);
+}
+
+void WinList::setActive(Window *win,bool repaint,bool updateWinStack) {
 	gpos_t curz = win->z;
 	gpos_t maxz = 0;
 	if(win->id() != WINID_UNUSED && win->style != Window::STYLE_DESKTOP) {
@@ -187,9 +234,9 @@ void WinList::setActive(Window *win,bool repaint,const gui::Pos &mouse,bool upda
 	}
 
 	if(win->id() != activeWindow) {
-		Window *active = getActive();
+		Window *active = getActiveWin();
 		if(active)
-			active->sendActive(false,mouse);
+			active->sendActive(false,Input::get().getMouse());
 
 		if(updateWinStack && win->style == Window::STYLE_DEFAULT)
 			Stack::activate(win->id());
@@ -198,12 +245,45 @@ void WinList::setActive(Window *win,bool repaint,const gui::Pos &mouse,bool upda
 		if(win->style != Window::STYLE_DESKTOP)
 			topWindow = win->id();
 
-		win->sendActive(true,mouse);
+		win->sendActive(true,Input::get().getMouse());
 		win->notifyWinActive();
 
 		if(repaint && win->style != Window::STYLE_DESKTOP)
 			this->repaint(*win,win,win->z);
 	}
+}
+
+void WinList::resize(gwinid_t wid,const gui::Rectangle &r,bool finished) {
+	std::lock_guard<std::mutex> guard(winMutex);
+	Window *win = get(wid);
+	if(win) {
+		if(finished)
+			win->resize(r);
+		else
+			Preview::get().set(fb->addr(),r,2);
+	}
+}
+
+void WinList::moveTo(gwinid_t wid,const gui::Pos &pos,bool finished) {
+	std::lock_guard<std::mutex> guard(winMutex);
+	Window *win = get(wid);
+	if(win && pos.x < (gpos_t)mode.width && pos.y < (gpos_t)mode.height) {
+		gui::Rectangle r(pos,win->getSize());
+		if(finished)
+			win->moveTo(r);
+		else
+			Preview::get().set(fb->addr(),r,2);
+	}
+}
+
+int WinList::update(gwinid_t wid,const gui::Rectangle &r) {
+	std::lock_guard<std::mutex> guard(winMutex);
+	Window *win = get(wid);
+	if(win && r.x() + r.width() <= win->width() && r.y() + r.height() <= win->height()) {
+		update(win,r);
+		return 0;
+	}
+	return -EINVAL;
 }
 
 void WinList::update(Window *win,const gui::Rectangle &r) {
@@ -216,6 +296,39 @@ void WinList::update(Window *win,const gui::Rectangle &r) {
 		else
 			repaint(rect,win,win->z);
 	}
+}
+
+void WinList::sendKeyEvent(const esc::UIEvents::Event &data) {
+	std::lock_guard<std::mutex> guard(winMutex);
+	Window *active = getActiveWin();
+	if(!active || active->evfd == -1)
+		return;
+
+	esc::WinMngEvents::Event ev;
+	ev.type = esc::WinMngEvents::Event::TYPE_KEYBOARD;
+	ev.wid = active->id();
+	ev.d.keyb.keycode = data.d.keyb.keycode;
+	ev.d.keyb.modifier = data.d.keyb.modifier;
+	ev.d.keyb.character = data.d.keyb.character;
+	send(active->evfd,MSG_WIN_EVENT,&ev,sizeof(ev));
+}
+
+void WinList::sendMouseEvent(gwinid_t wid,const gui::Pos &mouse,const esc::UIEvents::Event &data) {
+	std::lock_guard<std::mutex> guard(winMutex);
+	Window *win = get(wid);
+	if(!win || win->evfd == -1)
+		return;
+
+	esc::WinMngEvents::Event ev;
+	ev.type = esc::WinMngEvents::Event::TYPE_MOUSE;
+	ev.wid = wid;
+	ev.d.mouse.x = mouse.x;
+	ev.d.mouse.y = mouse.y;
+	ev.d.mouse.movedX = data.d.mouse.x;
+	ev.d.mouse.movedY = -data.d.mouse.y;
+	ev.d.mouse.movedZ = data.d.mouse.z;
+	ev.d.mouse.buttons = data.d.mouse.buttons;
+	send(win->evfd,MSG_WIN_EVENT,&ev,sizeof(ev));
 }
 
 bool WinList::validateRect(gui::Rectangle &r) {
@@ -352,6 +465,7 @@ void WinList::notifyUimng(const gui::Rectangle &r) {
 }
 
 void WinList::print(esc::OStream &os) {
+	std::lock_guard<std::mutex> guard(winMutex);
 	for(auto w = windows.begin(); w != windows.end(); ++w) {
 		os << "Window " << w->id() << "\n";
 		os << "\tOwner: " << w->owner << "\n";

@@ -28,16 +28,15 @@
 #include "window.h"
 
 class Input {
-	explicit Input(esc::UIEvents *uiev,const char *winmng)
-		: _buttons(), _cur(), _cursor(esc::Screen::CURSOR_DEFAULT), _mouseWin(),
-		   _uiev(uiev), _winmng(winmng) {
+	explicit Input(esc::UIEvents *uiev)
+		: _buttons(), _cur(), _cursor(esc::Screen::CURSOR_DEFAULT), _mouseWin(WINID_UNUSED), _uiev(uiev) {
 		if(startthread(thread,this) < 0)
 			error("Unable to start input thread");
 	}
 
 public:
-	static void create(esc::UIEvents *uiev,const char *winmng) {
-		_inst = new Input(uiev,winmng);
+	static void create(esc::UIEvents *uiev) {
+		_inst = new Input(uiev);
 	}
 	static Input &get() {
 		return *_inst;
@@ -49,15 +48,14 @@ public:
 
 private:
 	void handleKbMessage(esc::UIEvents::Event *data);
-	void handleMouseMessage(esc::WinMng &winmng,esc::UIEvents::Event *data);
+	void handleMouseMessage(esc::UIEvents::Event *data);
 
 	static int thread(void *arg);
 
 	uchar _buttons;
 	gui::Pos _cur;
 	uchar _cursor;
-	Window *_mouseWin;
+	gwinid_t _mouseWin;
 	esc::UIEvents *_uiev;
-	const char *_winmng;
 	static Input *_inst;
 };

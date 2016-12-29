@@ -80,10 +80,7 @@ public:
 		esc::DevDelegate::Request r;
 		is >> r;
 
-		int res = -EINVAL;
-		Window *win = WinList::get().get(r.arg);
-		if(win)
-			res = win->joinbuf(r.nfd);
+		int res = WinList::get().joinbuf(r.arg,r.nfd);
 		is << esc::DevDelegate::Response(res) << esc::Reply();
 	}
 
@@ -91,18 +88,14 @@ public:
 		gwinid_t wid;
 		is >> wid;
 
-		Window *win = WinList::get().get(wid);
-		if(win)
-			WinList::get().setActive(win,true,Input::get().getMouse(),true);
+		WinList::get().setActive(wid,true,true);
 	}
 
 	void destroy(IPCStream &is) {
 		gwinid_t wid;
 		is >> wid;
 
-		Window *win = WinList::get().get(wid);
-		if(win)
-			WinList::get().remove(win);
+		WinList::get().remove(wid);
 	}
 
 	void move(IPCStream &is) {
@@ -111,14 +104,7 @@ public:
 		bool finished;
 		is >> wid >> x >> y >> finished;
 
-		const esc::Screen::Mode &mode = WinList::get().getMode();
-		Window *win = WinList::get().get(wid);
-		if(win && x < (gpos_t)mode.width && y < (gpos_t)mode.height) {
-			if(finished)
-				win->moveTo(gui::Rectangle(x,y,win->width(),win->height()));
-			else
-				WinList::get().previewMove(win,gui::Pos(x,y));
-		}
+		WinList::get().moveTo(wid,gui::Pos(x,y),finished);
 	}
 
 	void resize(IPCStream &is) {
@@ -129,13 +115,7 @@ public:
 		is >> wid >> x >> y >> width >> height >> finished;
 
 		gui::Rectangle r(x,y,width,height);
-		Window *win = WinList::get().get(wid);
-		if(win) {
-			if(finished)
-				win->resize(r);
-			else
-				WinList::get().previewResize(r);
-		}
+		WinList::get().resize(wid,r,finished);
 	}
 
 	void update(IPCStream &is) {
@@ -144,16 +124,10 @@ public:
 		gsize_t width,height;
 		is >> wid >> x >> y >> width >> height;
 
-		Window *win = WinList::get().get(wid);
-		if(win != NULL) {
-			if((gpos_t)(x + width) > x &&
-					(gpos_t)(y + height) > y && x + width <= win->width() &&
-					y + height <= win->height()) {
-				WinList::get().update(win,gui::Rectangle(x,y,width,height));
-			}
-			else
-				wid = -EINVAL;
-		}
+		if((gpos_t)(x + width) > x && (gpos_t)(y + height) > y)
+			wid = WinList::get().update(wid,gui::Rectangle(x,y,width,height));
+		else
+			wid = -EINVAL;
 
 		is << ValueResponse<gwinid_t>::result(wid) << Reply();
 	}
@@ -230,9 +204,7 @@ public:
 		gwinid_t winid;
 		is >> winid;
 
-		Window *win = WinList::get().get(winid);
-		if(win)
-			win->attach(is.fd());
+		WinList::get().attach(winid,is.fd());
 	}
 
 	void addListener(IPCStream &is) {
@@ -300,7 +272,7 @@ int main(int argc,char *argv[]) {
 
 	/* start helper modules */
 	Listener::create(windev.id());
-	Input::create(uiev,path);
+	Input::create(uiev);
 	InfoDev::create(argv[3]);
 	Preview::create();
 

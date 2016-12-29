@@ -24,12 +24,15 @@
 #include <gui/graphics/rectangle.h>
 #include <sys/common.h>
 #include <sys/messages.h>
+#include <mutex>
 
 #include "input.h"
 #include "preview.h"
 #include "window.h"
 
 class WinList {
+	friend class Window;
+
 	explicit WinList(int sid,esc::UI *ui,const gui::Size &size,gcoldepth_t bpp);
 
 public:
@@ -101,6 +104,23 @@ public:
 	}
 
 	/**
+	 * Attaches the buffer <fd> to window <wid>.
+	 *
+	 * @param wid the window id
+	 * @param fd the buffer
+	 * @return 0 on success
+	 */
+	int joinbuf(gwinid_t wid,int fd);
+
+	/**
+	 * Attaches the given fd as event-channel to the given window
+	 *
+	 * @param wid the window id
+	 * @param fd the fd for the event-channel
+	 */
+	void attach(gwinid_t wid,int fd);
+
+	/**
 	 * Detaches the given fd from the windows that uses it.
 	 *
 	 * @param fd the fd for the event-channel
@@ -129,97 +149,77 @@ public:
 	/**
 	 * Removes the given window
 	 *
-	 * @param win the window
+	 * @param wid the window id
 	 */
-	void remove(Window *win);
-
-	/**
-	 * @param id the window-id
-	 * @return the window with given id or NULL
-	 */
-	Window *get(gwinid_t id) {
-		return windows.find(id);
-	}
+	void remove(gwinid_t wid);
 
 	/**
 	 * Determines the window at given position
 	 *
 	 * @param pos the position
-	 * @return the window or NULL
+	 * @return the window id or WINID_UNUSED
 	 */
-	Window *getAt(const gui::Pos &pos);
+	gwinid_t getAt(const gui::Pos &pos);
 
 	/**
-	 * Get window at the top
+	 * Retrieves information about the window with given id.
 	 *
-	 * @return the window
+	 * @param wid the window id
+	 * @param r will be set to the window rectangle
+	 * @param titleBarHeight will be set to its title bar height
+	 * @param style will be set to its style
+	 * @return true if it succeeded
 	 */
-	Window *getTop();
+	bool getInfo(gwinid_t wid,gui::Rectangle *r,size_t *titleBarHeight,uint *style);
 
 	/**
-	 * @return the currently active window; NULL if no one is active
+	 * @return the id of the active window (or WINID_UNUSED)
 	 */
-	Window *getActive() {
-		if(activeWindow != WINID_UNUSED)
-			return get(activeWindow);
-		return NULL;
+	gwinid_t getActive() {
+		return activeWindow;
 	}
-
 	/**
 	 * Makes the given window the active window. This will put it to the front and windows that
 	 * are above one step behind (z-coordinate)
 	 *
-	 * @param win the window
+	 * @param wid the window id
 	 * @param repaint whether the window should receive a repaint-event
-	 * @param mouse the current mouse position
 	 * @param updateWinStack whether to update the window stack
 	 */
-	void setActive(Window *win,bool repaint,bool updateWinStack) {
-		setActive(win,repaint,Input::get().getMouse(),updateWinStack);
-	}
-	void setActive(Window *win,bool repaint,const gui::Pos &mouse,bool updateWinStack);
+	void setActive(gwinid_t wid,bool repaint,bool updateWinStack);
+
+	/**
+	 * Resizes the given window to the given size
+	 *
+	 * @param wid the window id
+	 * @param r the rectangle
+	 * @param finished whether the operation is finished
+	 */
+	void resize(gwinid_t wid,const gui::Rectangle &r,bool finished);
+
+	/**
+	 * Moves the given window to given position and optionally changes the size
+	 *
+	 * @param wid the window id
+	 * @param r the rectangle
+	 * @param finished whether the operation is finished
+	 */
+	void moveTo(gwinid_t wid,const gui::Pos &p,bool finished);
 
 	/**
 	 * Sends update-events to the window to update the given area
 	 *
-	 * @param win the window
+	 * @param wid the window id
 	 * @param r the rectangle
+	 * @return 0 on success
 	 */
-	void update(Window *win,const gui::Rectangle &r);
-
-	/**
-	 * Repaints the given rectangle of the screen.
-	 *
-	 * @param r the rectangle
-	 * @param win the window (NULL if the remaining area should be cleared)
-	 * @param z the z-position (all windows behind are not painted)
-	 */
-	void repaint(const gui::Rectangle &r,Window *win,gpos_t z);
+	int update(gwinid_t wid,const gui::Rectangle &r);
 
 	/**
 	 * Removes the preview rectangle, if necessary.
 	 */
 	void removePreview() {
 		Preview::get().set(fb->addr(),gui::Rectangle(),0);
-	}
-
-	/**
-	 * Shows a preview for the given resize-operation
-	 *
-	 * @param r the rectangle
-	 */
-	void previewResize(const gui::Rectangle &r) {
-		Preview::get().set(fb->addr(),r,2);
-	}
-
-	/**
-	 * Shows a preview for the given move-operation
-	 *
-	 * @param win the window
-	 * @param pos the position
-	 */
-	void previewMove(Window *win,const gui::Pos &pos) {
-		Preview::get().set(fb->addr(),gui::Rectangle(pos,win->getSize()),2);
 	}
 
 	/**
@@ -230,6 +230,18 @@ public:
 	void notifyUimng(const gui::Rectangle &r);
 
 	/**
+	 * Sends the given key event to the active window.
+	 *
+	 * @param data the event data
+	 */
+	void sendKeyEvent(const esc::UIEvents::Event &data);
+
+	/**
+	 * Sends the given mouse event to the given window
+	 */
+	void sendMouseEvent(gwinid_t wid,const gui::Pos &mouse,const esc::UIEvents::Event &data);
+
+	/**
 	 * Prints information about all windows to given stream.
 	 *
 	 * @param os the output stream
@@ -237,6 +249,20 @@ public:
 	void print(esc::OStream &os);
 
 private:
+	Window *get(gwinid_t id) {
+		return windows.find(id);
+	}
+	Window *getActiveWin() {
+		if(activeWindow != WINID_UNUSED)
+			return get(activeWindow);
+		return NULL;
+	}
+	Window *getTop();
+
+	void remove(Window *win);
+	void setActive(Window *win,bool repaint,bool updateWinStack);
+	void repaint(const gui::Rectangle &r,Window *win,gpos_t z);
+	void update(Window *win,const gui::Rectangle &r);
 	void resetAll();
 	bool validateRect(gui::Rectangle &r);
 	void getRepaintRegions(std::vector<WinRect> &list,esc::DListTreap<Window>::iterator w,
@@ -254,6 +280,7 @@ private:
 	gwinid_t activeWindow;
 	gwinid_t topWindow;
 	esc::DListTreap<Window> windows;
+	static std::mutex winMutex;
 	static gwinid_t nextId;
 	static WinList *_inst;
 };

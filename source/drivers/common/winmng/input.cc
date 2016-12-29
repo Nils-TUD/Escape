@@ -38,8 +38,6 @@ Input *Input::_inst;
 
 int Input::thread(void *) {
 	Input &in = Input::get();
-	/* open ourself to send set-active-requests to us */
-	esc::WinMng winmng(in._winmng);
 
 	/* read from uimanager and handle the keys */
 	while(1) {
@@ -52,7 +50,7 @@ int Input::thread(void *) {
 				break;
 
 			case esc::UIEvents::Event::TYPE_MOUSE:
-				in.handleMouseMessage(winmng,&ev);
+				in.handleMouseMessage(&ev);
 				break;
 
 			default:
@@ -79,25 +77,15 @@ void Input::handleKbMessage(esc::UIEvents::Event *data) {
 	else
 		Stack::stop();
 
-	Window *active = WinList::get().getActive();
-	if(!active || active->evfd == -1)
-		return;
-
-	esc::WinMngEvents::Event ev;
-	ev.type = esc::WinMngEvents::Event::TYPE_KEYBOARD;
-	ev.wid = active->id();
-	ev.d.keyb.keycode = data->d.keyb.keycode;
-	ev.d.keyb.modifier = data->d.keyb.modifier;
-	ev.d.keyb.character = data->d.keyb.character;
-	send(active->evfd,MSG_WIN_EVENT,&ev,sizeof(ev));
+	WinList::get().sendKeyEvent(*data);
 }
 
-void Input::handleMouseMessage(esc::WinMng &winmng,esc::UIEvents::Event *data) {
+void Input::handleMouseMessage(esc::UIEvents::Event *data) {
 	const esc::Screen::Mode &mode = WinList::get().getMode();
 	gui::Pos old = _cur;
 	bool btnChanged = false;
-	Window *w;
-	Window *wheelWin = NULL;
+	gwinid_t wid;
+	gwinid_t wheelWin = WINID_UNUSED;
 
 	_cur = gui::Pos(
 		esc::Util::max(0,esc::Util::min((gpos_t)mode.width - 1,_cur.x + data->d.mouse.x)),
@@ -109,13 +97,10 @@ void Input::handleMouseMessage(esc::WinMng &winmng,esc::UIEvents::Event *data) {
 		btnChanged = true;
 		_buttons = data->d.mouse.buttons;
 		if(_buttons) {
-			w = WinList::get().getAt(_cur);
-			if(w) {
-				/* do that via message passing so that only one thread performs changes on the
-				 * windows */
-				winmng.setActive(w->id());
-			}
-			_mouseWin = w;
+			wid = WinList::get().getAt(_cur);
+			if(wid != WINID_UNUSED)
+				WinList::get().setActive(wid,true,true);
+			_mouseWin = wid;
 		}
 	}
 	else if(data->d.mouse.z)
@@ -123,25 +108,30 @@ void Input::handleMouseMessage(esc::WinMng &winmng,esc::UIEvents::Event *data) {
 
 	/* if no buttons are pressed, change the cursor if we're at a window-border */
 	if(!_buttons) {
-		w = _mouseWin ? _mouseWin : WinList::get().getAt(_cur);
+		wid = _mouseWin != WINID_UNUSED ? _mouseWin : WinList::get().getAt(_cur);
 		_cursor = esc::Screen::CURSOR_DEFAULT;
-		if(w && w->style != Window::STYLE_POPUP && w->style != Window::STYLE_DESKTOP) {
-			gsize_t tbh = w->titleBarHeight;
-			bool left = _cur.y >= (gpos_t)(w->y() + tbh) &&
-					_cur.x < (gpos_t)(w->x() + esc::Screen::CURSOR_RESIZE_WIDTH);
-			bool right = _cur.y >= (gpos_t)(w->y() + tbh) &&
-					_cur.x >= (gpos_t)(w->x() + w->width() - esc::Screen::CURSOR_RESIZE_WIDTH);
-			bool bottom = _cur.y >= (gpos_t)(w->y() + w->height() - esc::Screen::CURSOR_RESIZE_WIDTH);
-			if(left && bottom)
-				_cursor = esc::Screen::CURSOR_RESIZE_BL;
-			else if(left)
-				_cursor = esc::Screen::CURSOR_RESIZE_L;
-			if(right && bottom)
-				_cursor = esc::Screen::CURSOR_RESIZE_BR;
-			else if(right)
-				_cursor = esc::Screen::CURSOR_RESIZE_R;
-			else if(bottom && !left)
-				_cursor = esc::Screen::CURSOR_RESIZE_VERT;
+
+		gui::Rectangle r;
+		gsize_t tbh;
+		uint style;
+		if(WinList::get().getInfo(wid,&r,&tbh,&style)) {
+			if(style != Window::STYLE_POPUP && style != Window::STYLE_DESKTOP) {
+				bool left = _cur.y >= (gpos_t)(r.y() + tbh) &&
+						_cur.x < (gpos_t)(r.x() + esc::Screen::CURSOR_RESIZE_WIDTH);
+				bool right = _cur.y >= (gpos_t)(r.y() + tbh) &&
+						_cur.x >= (gpos_t)(r.x() + r.width() - esc::Screen::CURSOR_RESIZE_WIDTH);
+				bool bottom = _cur.y >= (gpos_t)(r.y() + r.height() - esc::Screen::CURSOR_RESIZE_WIDTH);
+				if(left && bottom)
+					_cursor = esc::Screen::CURSOR_RESIZE_BL;
+				else if(left)
+					_cursor = esc::Screen::CURSOR_RESIZE_L;
+				if(right && bottom)
+					_cursor = esc::Screen::CURSOR_RESIZE_BR;
+				else if(right)
+					_cursor = esc::Screen::CURSOR_RESIZE_R;
+				else if(bottom && !left)
+					_cursor = esc::Screen::CURSOR_RESIZE_VERT;
+			}
 		}
 	}
 
@@ -150,20 +140,10 @@ void Input::handleMouseMessage(esc::WinMng &winmng,esc::UIEvents::Event *data) {
 		WinList::get().setCursor(_cur,_cursor);
 
 	/* send to window */
-	w = wheelWin ? wheelWin : (_mouseWin ? _mouseWin : WinList::get().getActive());
-	if(w && w->evfd != -1) {
-		esc::WinMngEvents::Event ev;
-		ev.type = esc::WinMngEvents::Event::TYPE_MOUSE;
-		ev.wid = w->id();
-		ev.d.mouse.x = _cur.x;
-		ev.d.mouse.y = _cur.y;
-		ev.d.mouse.movedX = data->d.mouse.x;
-		ev.d.mouse.movedY = -data->d.mouse.y;
-		ev.d.mouse.movedZ = data->d.mouse.z;
-		ev.d.mouse.buttons = data->d.mouse.buttons;
-		send(w->evfd,MSG_WIN_EVENT,&ev,sizeof(ev));
-	}
+	wid = wheelWin != WINID_UNUSED ? wheelWin :
+			(_mouseWin != WINID_UNUSED ? _mouseWin : WinList::get().getActive());
+	WinList::get().sendMouseEvent(wid,_cur,*data);
 
 	if(btnChanged && !_buttons)
-		_mouseWin = NULL;
+		_mouseWin = WINID_UNUSED;
 }

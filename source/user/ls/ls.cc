@@ -383,6 +383,8 @@ static void printMode(file::mode_type mode) {
 	char exec = 'x';
 	if(S_ISCHR(mode) || S_ISBLK(mode) || S_ISFS(mode) || S_ISSERV(mode))
 		exec = 'm';
+	else if(S_ISIRQ(mode))
+		exec = 'i';
 
 	if(S_ISDIR(mode))
 		sout << 'd';
@@ -394,6 +396,10 @@ static void printMode(file::mode_type mode) {
 		sout << 'f';
 	else if(S_ISSERV(mode))
 		sout << 's';
+	else if(S_ISMS(mode))
+		sout << 'm';
+	else if(S_ISIRQ(mode))
+		sout << 'i';
 	else
 		sout << '-';
 

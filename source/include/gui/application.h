@@ -232,6 +232,7 @@ namespace gui {
 		 * thread (of course it is executed in the GUI thread later) or to execute a piece of code
 		 * after an event passed through the whole chain. The latter is required if you want to
 		 * remove controls as a reaction on an event.
+		 * Note that <functor> is free'd via delete after the execution.
 		 *
 		 * @param functor the functor to call
 		 */
@@ -242,6 +243,7 @@ namespace gui {
 		/**
 		 * Executes the given functor after <msecs> milliseconds. That is, it uses alarm() to get
 		 * a signal later which will then execute the function.
+		 * Note that <functor> is free'd via delete after the execution.
 		 *
 		 * @param msecs the number of milliseconds to wait
 		 * @param functor the functor to call

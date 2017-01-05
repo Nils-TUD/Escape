@@ -120,6 +120,7 @@ namespace gui {
 			_timequeue.pop_front();
 			_queueMutex.unlock();
 			(*(cur.functor))();
+			delete cur.functor;
 			_queueMutex.lock();
 		}
 

@@ -137,13 +137,6 @@ public:
 	}
 
 	/**
-	 * @return the screen instance for this client (might be NULL)
-	 */
-	esc::Screen *screen() {
-		return _screen;
-	}
-
-	/**
 	 * @return the framebuffer for this client (might be NULL)
 	 */
 	esc::FrameBuffer *fb() {
@@ -200,6 +193,14 @@ public:
 	 * Sets the cursor to given position
 	 */
 	void setCursor(gpos_t x,gpos_t y,int cursor);
+
+	/**
+	 * Updates the given rectangle, i.e., copies it from the buffer to the screen.
+	 */
+	void update(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
+		if(_screen)
+			_screen->update(x,y,width,height);
+	}
 
 	/**
 	 * Removes this client from the active-client-list

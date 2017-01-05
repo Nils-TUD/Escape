@@ -144,11 +144,11 @@ void UIClient::setMode(int ntype,const esc::Screen::Mode &mode,esc::Screen *scr,
 }
 
 void UIClient::setCursor(gpos_t x,gpos_t y,int cursor) {
-	if(screen()) {
+	if(_screen) {
 		_cursor.x = x;
 		_cursor.y = y + Header::getHeight(type());
 		_cursor.cursor = cursor;
-		screen()->setCursor(_cursor.x,_cursor.y,_cursor.cursor);
+		_screen->setCursor(_cursor.x,_cursor.y,_cursor.cursor);
 	}
 }
 

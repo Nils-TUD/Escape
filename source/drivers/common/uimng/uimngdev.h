@@ -73,7 +73,7 @@ public:
 		/* update header */
 		gsize_t width,height;
 		if(Header::update(c,&width,&height))
-			c->screen()->update(0,0,width,height);
+			c->update(0,0,width,height);
 
 		is << esc::DevObtain::Response::success(nfd,O_MSGS) << esc::Reply();
 	}
@@ -151,7 +151,7 @@ public:
 			if(c->isActive()) {
 				gsize_t width,height;
 				if(Header::update(c,&width,&height))
-					c->screen()->update(0,0,width,height);
+					c->update(0,0,width,height);
 			}
 		}
 		is << errcode_t(0) << esc::Reply();
@@ -175,7 +175,7 @@ public:
 
 		if(c->isActive()) {
 			y += Header::getHeight(c->type());
-			c->screen()->update(x,y,w,h);
+			c->update(x,y,w,h);
 		}
 	}
 

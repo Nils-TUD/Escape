@@ -222,7 +222,7 @@ static int headerThread(A_UNUSED void *arg) {
 				gsize_t width,height;
 				try {
 					if(Header::rebuild(active,&width,&height))
-						active->screen()->update(0,0,width,height);
+						active->update(0,0,width,height);
 				}
 				catch(const std::exception &e) {
 					printe("headerThread: %s",e.what());

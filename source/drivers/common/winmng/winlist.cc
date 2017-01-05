@@ -369,6 +369,9 @@ void WinList::repaint(const gui::Rectangle &r,Window *win,gpos_t z) {
 
 void WinList::getRepaintRegions(std::vector<WinRect> &list,esc::DListTreap<Window>::iterator w,
 		Window *win,gpos_t z,const gui::Rectangle &r) {
+	/* we walk through the window list exactly once, even when recursing, because we do not change
+	 * the parameters in recursive call in such a way that we have to check the previous windows
+	 * again. this is because we do only split the rectangle */
 	for(; w != windows.end(); ) {
 		auto next = w;
 		++next;

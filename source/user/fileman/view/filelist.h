@@ -87,7 +87,7 @@ public:
 	};
 
 	explicit FileList(std::shared_ptr<PathBar> pathbar)
-		 : Panel(), _selected(-1), _files(0), _path(), _pathbar(pathbar) {
+		 : Panel(), _selected(-1), _mode(MODE_LIST), _files(0), _path(), _pathbar(pathbar) {
 	}
 
 	void loadParent() {

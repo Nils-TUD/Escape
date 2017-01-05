@@ -360,8 +360,9 @@ void WinList::repaint(const gui::Rectangle &r,Window *win,gpos_t z) {
 		/* if it doesn't belong to a window, we have to clear it */
 		if(rect->id() == WINID_UNUSED)
 			clearRegion(fb->addr(),*rect);
-		/* otherwise copy from the window buffer */
-		else
+		/* otherwise copy from the window buffer. only do that if we either want to update the
+		 * screen or if it's from the specific window we want to update */
+		else if(!win || rect->id() == win->id())
 			copyRegion(fb->addr(),*rect,rect->id());
 	}
 }

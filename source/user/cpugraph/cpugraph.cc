@@ -50,10 +50,10 @@ static vector<shared_ptr<CPUGraph>> graphs;
 static vector<list<double>> cpus;
 
 void CPUGraph::paint(Graphics &g) {
-	g.setColor(Color(0xFF,0xFF,0xFF));
+	g.setColor(getTheme().getColor(Theme::TEXT_BACKGROUND));
 	g.fillRect(0,0,getSize().width,getSize().height);
 
-	g.setColor(Color(0,0,0));
+	g.setColor(getTheme().getColor(Theme::SEL_BACKGROUND));
 	list<double> &l = cpus[_idx];
 	gpos_t x = 0;
 	gsize_t height = getSize().height;

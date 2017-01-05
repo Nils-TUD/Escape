@@ -122,6 +122,9 @@ void ProcBase::init() {
 	if(p->msnode == NULL)
 		Util::panic("Unable to create initial mountspace");
 
+	/* add to procs */
+	add(p);
+
 	VFS::mountAll(p);
 	if(Sems::init(p) < 0)
 		Util::panic("Unable to init semaphores");
@@ -142,9 +145,6 @@ void ProcBase::init() {
 	/* init virt mem (this has to be done separately, because we cannot do that when the global
 	 * object is constructed) */
 	p->virtmem.init();
-
-	/* add to procs */
-	add(p);
 }
 
 const char *ProcBase::getProgram() const {

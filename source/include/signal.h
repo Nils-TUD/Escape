@@ -66,15 +66,13 @@ static inline sighandler_t signal(int sig,sighandler_t handler) {
 }
 
 /**
- * Sends the given signal to given process
+ * Sends the given signal to given process. To do so, write access to /sys/proc/<pid> is required.
  *
  * @param pid the process-id
  * @param signal the signal
  * @return 0 on success
  */
-static inline int kill(pid_t pid,int signal) {
-	return syscall2(SYSCALL_SENDSIG,pid,signal);
-}
+int kill(pid_t pid,int signal);
 
 /**
  * raise()  sends  a  signal  to  the current process.  It is

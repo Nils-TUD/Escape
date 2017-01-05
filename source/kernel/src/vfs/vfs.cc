@@ -283,6 +283,8 @@ void VFS::closeFileDesc(pid_t pid,int fd) {
 ino_t VFS::createProcess(pid_t pid,VFSNode *ms) {
 	VFSNode *proc = procsNode,*dir,*nn;
 	int res = -ENOMEM;
+	Proc *p = Proc::getByPid(pid);
+	assert(p != NULL);
 
 	/* build name */
 	char *name = (char*)Cache::alloc(12);
@@ -294,6 +296,9 @@ ino_t VFS::createProcess(pid_t pid,VFSNode *ms) {
 	dir = createObj<VFSDir>(KERNEL_PID,proc,name,DIR_DEF_MODE);
 	if(dir == NULL)
 		goto errorName;
+	/* change owner to user+group of process */
+	if(dir->chown(KERNEL_PID,p->getEUid(),p->getEGid()) < 0)
+		goto errorDir;
 
 	/* create process-info-node */
 	nn = createObj<VFSInfo::ProcFile>(KERNEL_PID,dir);
@@ -350,6 +355,12 @@ errorDir:
 errorName:
 	Cache::free(name);
 	return res;
+}
+
+void VFS::chownProcess(pid_t pid,uid_t uid,gid_t gid) {
+	const Proc *p = Proc::getByPid(pid);
+	VFSNode *node = VFSNode::get(p->getThreadsDir());
+	node->getParent()->chown(KERNEL_PID,uid,gid);
 }
 
 void VFS::removeProcess(pid_t pid) {

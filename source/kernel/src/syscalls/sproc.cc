@@ -55,6 +55,7 @@ int Syscalls::setuid(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EPERM);
 
 	p->setUid(uid);
+	VFS::chownProcess(p->getPid(),p->getEUid(),p->getEGid());
 	SYSC_RET1(stack,0);
 }
 
@@ -69,6 +70,7 @@ int Syscalls::setgid(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EPERM);
 
 	p->setGid(gid);
+	VFS::chownProcess(p->getPid(),p->getEUid(),p->getEGid());
 	SYSC_RET1(stack,0);
 }
 
@@ -85,6 +87,7 @@ int Syscalls::seteuid(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EPERM);
 
 	p->setEUid(uid);
+	VFS::chownProcess(p->getPid(),p->getEUid(),p->getEGid());
 	SYSC_RET1(stack,0);
 }
 
@@ -101,6 +104,7 @@ int Syscalls::setegid(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EPERM);
 
 	p->setEGid(gid);
+	VFS::chownProcess(p->getPid(),p->getEUid(),p->getEGid());
 	SYSC_RET1(stack,0);
 }
 

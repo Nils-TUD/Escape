@@ -22,6 +22,7 @@
 #include <task/signals.h>
 #include <task/thread.h>
 #include <task/uenv.h>
+#include <task/filedesc.h>
 #include <common.h>
 #include <errno.h>
 #include <syscalls.h>
@@ -64,14 +65,35 @@ int Syscalls::acksignal(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	return 0;
 }
 
-int Syscalls::kill(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	pid_t pid = (pid_t)SYSC_ARG1(stack);
+int Syscalls::kill(Thread *t,IntrptStackFrame *stack) {
+	int fd = (int)SYSC_ARG1(stack);
 	int signal = (int)SYSC_ARG2(stack);
+	Proc *p = t->getProc();
 
 	if(EXPECT_FALSE(!Signals::canSend(signal)))
 		SYSC_ERROR(stack,-EINVAL);
 
-	int res = Proc::addSignalFor(pid,signal);
+	/* get file */
+	OpenFile *file = FileDesc::request(p,fd);
+	if(EXPECT_FALSE(file == NULL))
+		SYSC_ERROR(stack,-EBADF);
+
+	/* it needs to be a node in /sys/proc */
+	if(file->getDev() != VFS_DEV_NO || !VFS::isProcDir(file->getNode()) || !file->getNode()->isAlive()) {
+		FileDesc::release(file);
+		SYSC_ERROR(stack,-EINVAL);
+	}
+
+	/* write access is required */
+	int res = VFS::hasAccess(p->getPid(),file->getNode(),VFS_WRITE);
+	if(res < 0) {
+		FileDesc::release(file);
+		SYSC_ERROR(stack,res);
+	}
+
+	/* send signal to process */
+	res = Proc::addSignalFor(atoi(file->getNode()->getName()),signal);
+	FileDesc::release(file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 	SYSC_RET1(stack,0);

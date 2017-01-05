@@ -46,6 +46,13 @@ public:
 	}
 
 	/**
+	 * @return true if given node is a child of the /sys/proc node
+	 */
+	static bool isProcDir(VFSNode *node) {
+		return node->getParent() == procsNode;
+	}
+
+	/**
 	 * Mounts the virtual filesystems into the given process. Should only be used by init.
 	 *
 	 * @param p the process
@@ -143,6 +150,15 @@ public:
 	 * @return 0 on success
 	 */
 	static ino_t createProcess(pid_t pid,VFSNode *ms);
+
+	/**
+	 * Sets uid/gid for given process.
+	 *
+	 * @param pid the process-id
+	 * @param uid the user id
+	 * @param gid the group id
+	 */
+	static void chownProcess(pid_t pid,uid_t uid,gid_t gid);
 
 	/**
 	 * Removes all occurrences of the given process from VFS

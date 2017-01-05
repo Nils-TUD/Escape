@@ -76,12 +76,12 @@ static void refresh() {
 	}
 }
 
-static void sigusr1(int) {
+static void sigusr2(int) {
 	run = false;
 }
 
 static int refreshThread(void *) {
-	if(signal(SIGUSR1,sigusr1) == SIG_ERR)
+	if(signal(SIGUSR2,sigusr2) == SIG_ERR)
 		error("Unable to set USR1 handler");
 
 	uint64_t waittime = timetotsc(1000000);
@@ -121,7 +121,7 @@ int main() {
 	app->addWindow(win);
 	int res = app->run();
 
-	kill(getpid(),SIGUSR1);
+	kill(getpid(),SIGUSR2);
 	join(tid);
 	return res;
 }

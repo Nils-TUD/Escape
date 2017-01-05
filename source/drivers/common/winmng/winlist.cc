@@ -380,19 +380,22 @@ void WinList::getRepaintRegions(std::vector<WinRect> &list,esc::DListTreap<Windo
 
 		/* substract the window-rectangle from r */
 		std::vector<gui::Rectangle> rects = gui::substraction(r,*w);
+		bool rec = false;
 
 		gui::Rectangle inter = gui::intersection(*w,r);
-		if(!inter.empty())
+		if(!inter.empty()) {
 			getRepaintRegions(list,next,&*w,w->z,inter);
+			rec = true;
+		}
 
-		if(!rects.empty()) {
-			/* split all by all other windows */
-			for(auto rect = rects.begin(); rect != rects.end(); ++rect)
-				getRepaintRegions(list,next,win,z,*rect);
+		/* split all by all other windows */
+		for(auto rect = rects.begin(); rect != rects.end(); ++rect) {
+			getRepaintRegions(list,next,win,z,*rect);
+			rec = true;
 		}
 
 		/* if we made a recursive call we can leave here */
-		if(!rects.empty() || !inter.empty())
+		if(rec)
 			return;
 
 		w = next;

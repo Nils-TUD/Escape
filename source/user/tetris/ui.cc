@@ -62,7 +62,7 @@ void UI::paintBox(int px,int py,char color) {
 
 void UI::paintBorder() {
 	// fill bg
-	char *scr = fb();
+	char *scr = _fb->addr();
 	for(int i = 0; i < cols() * rows() * 2; i += 2) {
 		scr[i] = ' ';
 		scr[i + 1] = COLOR;

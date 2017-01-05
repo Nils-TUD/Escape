@@ -50,9 +50,6 @@ public:
 		_run = false;
 	}
 
-	char *fb() {
-		return _fb->addr();
-	}
 	int cols() const {
 		return _mode.cols;
 	}
@@ -88,8 +85,9 @@ private:
 		return (rows() - gridRows() * _rpp) / 2;
 	}
 	void set(int x,int y,char c,char col) {
-		fb()[y * cols() * 2 + x * 2] = c;
-		fb()[y * cols() * 2 + x * 2 + 1] = col;
+		char *fb = _fb->addr();
+		fb[y * cols() * 2 + x * 2] = c;
+		fb[y * cols() * 2 + x * 2 + 1] = col;
 	}
 
 	void paintRect(int posx,int posy,int width,int height,char color);

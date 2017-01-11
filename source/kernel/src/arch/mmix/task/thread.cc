@@ -83,7 +83,6 @@ extern uint64_t stackCopySize;
 Thread *Thread::cur = NULL;
 
 uintptr_t ThreadBase::addInitialStack() {
-	assert(tid == INIT_TID);
 	sassert(proc->getVM()->map(NULL,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
 			MAP_STACK | MAP_GROWABLE | MAP_POPULATE,NULL,0,stackRegions + 0) == 0);
 	sassert(proc->getVM()->map(NULL,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,

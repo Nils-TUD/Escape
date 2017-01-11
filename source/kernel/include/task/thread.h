@@ -44,8 +44,6 @@
 /* reset the runtime and update priorities every 1sec */
 #define RUNTIME_UPDATE_INTVAL	1000
 
-#define INIT_TID				0
-
 #define MAX_THREAD_COUNT		8192
 #define INVALID_TID				0xFFFF
 /* use an invalid tid to identify the kernel */

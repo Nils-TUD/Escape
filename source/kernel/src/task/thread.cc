@@ -292,7 +292,7 @@ void ThreadBase::printEvMask(OStream &os) const {
 }
 
 void ThreadBase::printShort(OStream &os) const {
-	os.writef("%d [state=%s, prio=%d, cpu=%d, time=%Lums, ev=",
+	os.writef("%d [state=%s, prio=%d, cpu=%d, time=%Luus, ev=",
 			tid,getStateName(state),priority,cpu,getRuntime());
 	this->printEvMask(os);
 	os.writef("]");

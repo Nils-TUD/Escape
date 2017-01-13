@@ -26,8 +26,10 @@
 #include <sys/io.h>
 #include <sys/keycodes.h>
 #include <sys/messages.h>
+#include <sys/proc.h>
 #include <sys/sync.h>
 #include <sys/thread.h>
+#include <sys/wait.h>
 #include <usergroup/usergroup.h>
 #include <errno.h>
 #include <mutex>
@@ -48,7 +50,16 @@ static int kbClientThread(void *arg);
 static int ctrlThread(A_UNUSED void *arg);
 static int headerThread(A_UNUSED void *arg);
 
+static volatile bool run = true;
+static UIMngDevice *dev;
 static std::mutex mutex;
+
+static void sigterm(int) {
+	run = false;
+	dev->stop();
+}
+static void sigstop(int) {
+}
 
 int main(int argc,char *argv[]) {
 	if(argc < 2) {
@@ -73,6 +84,8 @@ int main(int argc,char *argv[]) {
 		error("Unable to change clipboard owner");
 	close(fd);
 
+	dev = new UIMngDevice("/dev/uimng",0110,mutex);
+
 	/* start helper threads */
 	if(startthread(kbClientThread,NULL) < 0)
 		error("Unable to start thread for reading from kb");
@@ -83,12 +96,53 @@ int main(int argc,char *argv[]) {
 	if(startthread(headerThread,NULL) < 0)
 		error("Unable to start thread for drawing the header");
 
+	/* create first client */
+	Keystrokes::createTextConsole();
+
+	if(signal(SIGINT,sigterm) == SIG_ERR)
+		error("Unable to set signal handler");
+	if(signal(SIGTERM,sigterm) == SIG_ERR)
+		error("Unable to set signal handler");
+
 	/* now wait for terminated childs */
-	JobMng::wait();
+	bool stopped = false;
+	while(1) {
+		sExitState state;
+		int res = waitchild(&state,-1);
+		if(res == 0) {
+			if(state.signal != SIG_COUNT)
+				print("Child %d terminated because of signal %d",state.pid,state.signal);
+			else
+				print("Child %d terminated with exitcode %d",state.pid,state.exitCode);
+			fflush(stdout);
+
+			/* if no jobs are left, create a new one */
+			if(JobMng::terminate(state.pid)) {
+				if(run)
+					Keystrokes::createTextConsole();
+				/* all UIs terminated; stop */
+				else
+					break;
+			}
+		}
+
+		/* if we should stop, kill all UIs and wait for their termination */
+		if(!run && !stopped) {
+			JobMng::stopAll();
+			stopped = true;
+		}
+	}
+
+	/* stop other threads */
+	kill(getpid(),SIGUSR1);
+	join(0);
 	return 0;
 }
 
 static int mouseClientThread(A_UNUSED void *arg) {
+	if(signal(SIGUSR1,sigstop) == SIG_ERR)
+		error("Unable to set signal handler");
+
 	struct stat info;
 	if(stat("/dev/mouse",&info) < 0)
 		return EXIT_FAILURE;
@@ -96,8 +150,8 @@ static int mouseClientThread(A_UNUSED void *arg) {
 	/* open mouse */
 	esc::IPCStream ms("/dev/mouse");
 	esc::Mouse::Event ev;
-	while(1) {
-		ms >> esc::ReceiveData(&ev,sizeof(ev));
+	while(run) {
+		ms >> esc::ReceiveData(&ev,sizeof(ev),false);
 
 		esc::UIEvents::Event uiev;
 		uiev.type = esc::UIEvents::Event::TYPE_MOUSE;
@@ -170,11 +224,14 @@ static bool handleKey(esc::UIEvents::Event *data) {
 }
 
 static int kbClientThread(A_UNUSED void *arg) {
+	if(signal(SIGUSR1,sigstop) == SIG_ERR)
+		error("Unable to set signal handler");
+
 	/* open keyboard */
 	esc::IPCStream kb("/dev/keyb");
 	esc::Keyb::Event ev;
-	while(1) {
-		kb >> esc::ReceiveData(&ev,sizeof(ev));
+	while(run) {
+		kb >> esc::ReceiveData(&ev,sizeof(ev),false);
 
 		/* translate keycode */
 		esc::UIEvents::Event uiev;
@@ -204,17 +261,19 @@ static int kbClientThread(A_UNUSED void *arg) {
 }
 
 static int ctrlThread(A_UNUSED void *arg) {
-	UIMngDevice dev("/dev/uimng",0110,mutex);
+	if(signal(SIGUSR1,sigstop) == SIG_ERR)
+		error("Unable to set signal handler");
 
-	/* create first client */
-	Keystrokes::createTextConsole();
-
-	dev.loop();
+	dev->bindto(gettid());
+	dev->loop();
 	return 0;
 }
 
 static int headerThread(A_UNUSED void *arg) {
-	while(1) {
+	if(signal(SIGUSR1,sigstop) == SIG_ERR)
+		error("Unable to set signal handler");
+
+	while(run) {
 		{
 			std::lock_guard<std::mutex> guard(mutex);
 			UIClient *active = UIClient::getActive();

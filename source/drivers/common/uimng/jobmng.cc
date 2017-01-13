@@ -33,29 +33,6 @@
 std::mutex JobMng::_mutex;
 std::vector<JobMng::Job> JobMng::_jobs;
 
-void JobMng::wait() {
-	/* TODO not optimal, but we should wait at the beginning until the first child has been started,
-	 * which is done in another thread */
-	while(_jobs.size() == 0)
-		usleep(1000 * 50);
-
-	while(true) {
-		sExitState state;
-		int res = waitchild(&state,-1);
-		if(res == 0) {
-			if(state.signal != SIG_COUNT)
-				print("Child %d terminated because of signal %d",state.pid,state.signal);
-			else
-				print("Child %d terminated with exitcode %d",state.pid,state.exitCode);
-			fflush(stdout);
-
-			/* if no jobs are left, create a new one */
-			if(terminate(state.pid))
-				Keystrokes::createTextConsole();
-		}
-	}
-}
-
 int JobMng::requestId() {
 	std::lock_guard<std::mutex> guard(_mutex);
 	if(_jobs.size() >= UIClient::MAX_CLIENTS)
@@ -106,6 +83,12 @@ void JobMng::setLoginPid(int id,int pid) {
 	Job *job = get(id);
 	if(job)
 		job->loginPid = pid;
+}
+
+void JobMng::stopAll() {
+	std::lock_guard<std::mutex> guard(_mutex);
+	for(auto it = _jobs.begin(); it != _jobs.end(); ++it)
+		kill(it->termPid,SIGTERM);
 }
 
 bool JobMng::terminate(int pid) {

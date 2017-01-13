@@ -43,11 +43,6 @@ class JobMng {
 
 public:
 	/**
-	 * Waits for ever for terminated jobs.
-	 */
-	static void wait();
-
-	/**
 	 * Requests a new id for a job.
 	 *
 	 * @return the id or -1 if there is no free id anymore
@@ -85,9 +80,21 @@ public:
 	 */
 	static void setLoginPid(int id,int pid);
 
+	/**
+	 * Handles the termination of process <pid>.
+	 *
+	 * @param pid the process id
+	 * @return true if no jobs are left
+	 */
+	static bool terminate(int pid);
+
+	/**
+	 * Stops all jobs
+	 */
+	static void stopAll();
+
 private:
 	static Job *get(int id);
-	static bool terminate(int pid);
 
 	static std::mutex _mutex;
 	static std::vector<Job> _jobs;

@@ -28,9 +28,9 @@ def create_disk(image, parts, offset, flat, nogrub):
 	# create image
 	subprocess.call(["dd", "if=/dev/zero" , "of=" + str(image), "bs=512", "count=" + str(totalsecs)])
 
-	lodev = create_loop(image)
 	tmpfile = subprocess.check_output("mktemp").rstrip()
 	if not flat:
+		lodev = create_loop(image)
 		# build command file for fdisk
 		with open(tmpfile, "w") as f:
 			i = 1
@@ -56,6 +56,7 @@ def create_disk(image, parts, offset, flat, nogrub):
 				["sudo", "fdisk", "-u", "-C", str(hdcyl), "-S", str(hdheads), lodev], stdin=fin
 			)
 			p.wait()
+		free_loop(lodev)
 
 	# create filesystems
 	i = 0
@@ -83,7 +84,6 @@ def create_disk(image, parts, offset, flat, nogrub):
 
 	# remove temp file
 	subprocess.call(["rm", "-Rf", tmpfile])
-	free_loop(lodev)
 
 # mounts the partition in <image> @ <offset> to <dest>
 def mount_disk(image, offset, dest):

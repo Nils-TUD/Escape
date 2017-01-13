@@ -1,5 +1,3 @@
-# -*- Mode: Python -*-
-
 Import('env')
 
 if env['TGTTYPE'] == 'x86':

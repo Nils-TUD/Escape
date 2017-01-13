@@ -1,5 +1,3 @@
-# -*- Mode: Python -*-
-
 Import('env')
 env.EscapeCXXProg(
 	'bin', target = 'libguitest', source = [env.Glob('*.cc'), env.Glob('*/*.cc')], LIBS = ['gui']

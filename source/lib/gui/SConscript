@@ -1,5 +1,3 @@
-# -*- Mode: Python -*-
-
 Import('env')
 env.EscapeLib(target = 'gui', source = [env.Glob('*.cc'), env.Glob('*/*.cc')], LIBS = ['img'])
 env.Append(LIBDEPS = {'gui': ['img']})

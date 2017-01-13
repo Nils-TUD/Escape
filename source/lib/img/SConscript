@@ -1,5 +1,3 @@
-# -*- Mode: Python -*-
-
 Import('env')
 env.EscapeLib(target = 'img', source = env.Glob('*.cc'), LIBS = ['z'])
 env.Append(LIBDEPS = {'img': ['z']})

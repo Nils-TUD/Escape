@@ -1,4 +1,2 @@
-# -*- Mode: Python -*-
-
 Import('env')
 env.EscapeCXXProg('sbin', target = 'tarfs', source = env.Glob('*.cc'), LIBS = ['usergroup'])

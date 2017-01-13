@@ -1,5 +1,3 @@
-# -*- Mode: Python -*-
-
 Import('env')
 
 acsrc = [env.Glob('arch/$TGT/*.c'), env.Glob('arch/$TGTTYPE/*.c')]

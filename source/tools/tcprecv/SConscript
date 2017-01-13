@@ -1,4 +1,2 @@
-# -*- Mode: Python -*-
-
 Import('hostenv')
 hostenv.Program('tcprecv', hostenv.Glob('*.c'))

@@ -1,5 +1,3 @@
-# -*- Mode: Python -*-
-
 Import('hostenv')
 
 hostenv.SConscript(hostenv.Glob('*/SConscript'), 'hostenv')

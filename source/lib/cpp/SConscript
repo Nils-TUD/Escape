@@ -1,5 +1,3 @@
-# -*- Mode: Python -*-
-
 Import('env')
 myenv = env.Clone()
 # we need --whole-archive to put all stuff from libsupc++.a into the shared library

@@ -1,4 +1,2 @@
-# -*- Mode: Python -*-
-
 Import('env')
 env.EscapeCXXProg('sbin', target = 'term', source = env.Glob('*.cc'), LIBS = ['keymap'])

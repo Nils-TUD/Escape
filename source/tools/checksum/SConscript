@@ -1,5 +1,3 @@
-# -*- Mode: Python -*-
-
 Import('hostenv')
 
 prog = hostenv.Program('checksum', hostenv.Glob('*.cc'))

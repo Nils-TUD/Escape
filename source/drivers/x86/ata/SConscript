@@ -1,5 +1,3 @@
-# -*- Mode: Python -*-
-
 Import('env')
 env.EscapeCXXProg(
 	'sbin', target = 'ata', source = env.Glob('*.cc'), force_static = True

@@ -1,5 +1,3 @@
-# -*- Mode: Python -*-
-
 Import('env')
 env.EscapeCXXProg('bin', target = 'testperf', source = [
 	env.Glob('*.c'), env.Glob('*/*.c'), env.Glob('*/*.cc')

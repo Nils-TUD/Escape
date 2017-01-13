@@ -1,4 +1,2 @@
-# -*- Mode: Python -*-
-
 Import('env')
 env.EscapeCXXProg('sbin', target = 'winmng', source = env.Glob('*.cc'), LIBS = ['gui', 'usergroup'])

@@ -1,4 +1,2 @@
-# -*- Mode: Python -*-
-
 Import('env')
 env.EscapeCXXProg('bin', target = 'pktdump', source = env.Glob('*.cc'))

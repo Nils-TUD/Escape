@@ -1,5 +1,3 @@
-# -*- Mode: Python -*-
-
 Import('env')
 myenv = env.Clone()
 builddir = Dir('$BUILDDIR/user/gcalc')

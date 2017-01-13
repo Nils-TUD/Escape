@@ -22,6 +22,7 @@
 //===========================================
 
 	.extern	bspstart
+	.extern procstart
 	.extern unittesT_start
 
 	.extern	dbg_prints
@@ -143,15 +144,18 @@ start:
 	// call bspstart
 	add		$4,$16,$0						// give bspstart the load-progs-array
 	add		$5,$17,$0						// give bspstart the CPU speed
-	add		$6,$29,$0						// pointer to user stack-pointer
 	jal		bspstart
-	add		$16,$2,$0						// save entry-point
 	// if we've started the unittest-kernel, we'll register the tests here
 	jal		unittest_start
 
+	ldhi	$29,KERNEL_STACK				// load higher 16 bit
+	or		$29,$29,KERNEL_STACK			// or lower 16 bit
+	add		$4,$29,$0						// pointer to user stack-pointer
+	jal		procstart
+
 	// initloader has been loaded, so jump to it
 	ldw		$29,$29,0						// load user stack-pointer
-	add		$30,$0,$16						// smpstart returns the entry-point
+	add		$30,$0,$2						// procstart returns the entry-point
 	mvfs	$8,FS_PSW
 	// enable interrupts and user-mode
 	or		$8,$8,PINTRPT_FLAG | PUSER_MODE_FLAG

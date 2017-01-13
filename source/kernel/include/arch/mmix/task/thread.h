@@ -48,6 +48,10 @@ public:
 		return kstackFrame;
 	}
 
+	void makeIdle() {
+		flags |= T_IDLE;
+	}
+
 private:
 	static void startup() asm("thread_startup");
 	static int initSave(ThreadRegs *saveArea,void *newStack) asm("thread_initSave");

@@ -51,40 +51,47 @@ void bspstart(void *mbp) {
 
 uintptr_t smpstart(uintptr_t *usp) {
 	ELF::StartupInfo info;
-	size_t total = SMP::getCPUCount();
 	/* the running thread has been stored on a different stack last time */
-	Thread::setRunning(Thread::getById(0));
+	Thread *t = Thread::getById(0);
+	Thread::setRunning(t);
 
 	/* start an idle-thread for each cpu */
-	for(size_t i = 0; i < total; i++)
+	size_t total = SMP::getCPUCount();
+	for(size_t i = 1; i < total; i++)
 		Proc::startThread((uintptr_t)&idlestart,T_IDLE,NULL);
 
 	/* start all APs */
 	SMP::start();
 	Timer::start(true);
 
-	// remove initial page-directory entries. since all CPUs are started, we don't need that anymore
+	/* remove initial PTs. since all CPUs are started, we don't need that anymore */
 	(&proc0TLPD)[0] = 0;
 	for(int i = 0; i < PT_LEVELS - 1; ++i)
 		PageTables::flushAddr(PT_SIZE * i,true);
 
-	/* start the swapper-thread. it will never return */
+	/* start init process */
+	if(Proc::clone(P_KERNEL) == 0) {
+		/* load initloader */
+		if(ELF::load("/sys/boot/initloader",&info) < 0)
+			Util::panic("Unable to load initloader");
+
+		/* give the process some stack pages */
+		Thread *t = Thread::getRunning();
+		if(!t->reserveFrames(INITIAL_STACK_PAGES))
+			Util::panic("Not enough mem for initloader-stack");
+		*usp = t->addInitialStack() + INITIAL_STACK_PAGES * PAGE_SIZE - WORDSIZE * 3;
+		t->discardFrames();
+		return info.progEntry;
+	}
+
+	/* start the swapper-process. it will never return */
 	if(PhysMem::canSwap())
-		Proc::startThread((uintptr_t)&PhysMem::swapper,0,NULL);
-	/* start the terminator */
-	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
+		Proc::startKProc("[swapper]",&PhysMem::swapper);
+	/* and the terminator */
+	Proc::startKProc("[terminator]",&Terminator::start);
 
-	/* load initloader */
-	if(ELF::load("/sys/boot/initloader",&info) < 0)
-		Util::panic("Unable to load initloader");
-
-	/* give the process some stack pages */
-	Thread *t = Thread::getRunning();
-	if(!t->reserveFrames(INITIAL_STACK_PAGES))
-		Util::panic("Not enough mem for initloader-stack");
-	*usp = t->addInitialStack() + INITIAL_STACK_PAGES * PAGE_SIZE - WORDSIZE * 3;
-	t->discardFrames();
-	return info.progEntry;
+	thread_idle();
+	A_UNREACHED;
 }
 
 void apstart() {
@@ -109,9 +116,7 @@ void apstart() {
 }
 
 static void idlestart() {
-	if(!SMP::isBSP()) {
-		/* unlock the temporary kernel-stack, so that other CPUs can use it */
-		aplock.up();
-	}
+	/* unlock the temporary kernel-stack, so that other CPUs can use it */
+	aplock.up();
 	thread_idle();
 }

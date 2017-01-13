@@ -55,8 +55,8 @@ static const BootTask tasks[] = {
 	{"Initializing SMP...",SMP::init},
 	{"Initializing timer...",Timer::init},
 	{"Initializing VFS...",VFS::init},
-	{"Initializing processes...",Proc::init},
 	{"Initializing scheduler...",Sched::init},
+	{"Initializing processes...",Proc::init},
 	{"Creating MB module files...",Boot::createModFiles},
 	{"Start logging to VFS...",Log::vfsIsReady},
 	{"Initializing interrupts...",Interrupts::init},
@@ -66,7 +66,7 @@ BootTaskList Boot::taskList(tasks,ARRAY_SIZE(tasks));
 static Boot::Module mods[BOOT_PROG_MAX];
 static Boot::MemMap mmap;
 static BootInfo *binfo;
-static bool initialized = false;
+static int initPhase = 0;
 
 void Boot::archStart(void *nfo) {
 	binfo = (BootInfo*)nfo;
@@ -93,19 +93,46 @@ void Boot::parseBootInfo() {
 }
 
 int Boot::init(A_UNUSED IntrptStackFrame *stack) {
-	if(initialized)
+	if(initPhase > 3)
 		return -EEXIST;
 
 	if(unittests != NULL)
 		unittests();
 
-	/* we have to do the thread-starting here because we can only start threads when coming from
-	 * userland via trap */
+	/* we have to do the forking here because we have to leave to userland afterwards (the child
+	 * gets our kernel stack). furthermore, we can only do one fork at a time */
 
-	/* start idle-thread */
-	Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
-	/* start termination-thread */
-	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
-	initialized = true;
+	switch(initPhase) {
+		case 0:
+			if(Proc::clone(P_KERNEL) == 0) {
+				/* the child shouldn't try again */
+				return -EEXIST;
+			}
+			break;
+
+		case 1:
+			/* start the swapper-process. it will never return */
+			if(PhysMem::canSwap())
+				Proc::startKProc("[swapper]",&PhysMem::swapper);
+			break;
+
+		case 2:
+			/* and the terminator */
+			Proc::startKProc("[terminator]",&Terminator::start);
+			break;
+
+		case 3: {
+			Thread *t = Thread::getRunning();
+			/* we can remove all user regions now */
+			Proc::removeRegions(t->getProc()->getPid(),true);
+
+			/* stay in kernel idling */
+			t->makeIdle();
+			thread_idle();
+			A_UNREACHED;
+			break;
+		}
+	}
+	initPhase++;
 	return 0;
 }

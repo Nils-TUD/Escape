@@ -53,12 +53,14 @@ int ThreadBase::createArch(const Thread *src,Thread *dst,bool cloneProc) {
 		if(dst->kernelStack == 0)
 			return -ENOMEM;
 
-		/* add a new stack-region */
-		int res = dst->getProc()->getVM()->map(NULL,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
-				MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,dst->stackRegions + 0);
-		if(res < 0) {
-			dst->getProc()->getPageDir()->unmap(dst->kernelStack,1,alloc);
-			return res;
+		if(~dst->getFlags() & T_IDLE) {
+			/* add a new stack-region */
+			int res = dst->getProc()->getVM()->map(NULL,INITIAL_STACK_PAGES * PAGE_SIZE,0,PROT_READ | PROT_WRITE,
+					MAP_STACK | MAP_GROWABLE | MAP_GROWSDOWN,NULL,0,dst->stackRegions + 0);
+			if(res < 0) {
+				dst->getProc()->getPageDir()->unmap(dst->kernelStack,1,alloc);
+				return res;
+			}
 		}
 	}
 	FPU::cloneState(dst,src);

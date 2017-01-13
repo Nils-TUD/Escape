@@ -85,7 +85,7 @@ Thread *ThreadBase::init(Proc *p) {
 }
 
 Thread *ThreadBase::createInitial(Proc *p) {
-	Thread *t = new Thread(p,0);
+	Thread *t = new Thread(p,T_IDLE);
 	if(t == NULL)
 		Util::panic("Unable to allocate mem for initial thread");
 
@@ -100,6 +100,8 @@ Thread *ThreadBase::createInitial(Proc *p) {
 	t->threadDir = VFS::createThread(t->getTid());
 	if(t->threadDir < 0)
 		Util::panic("Unable to put first thread in vfs");
+
+	Sched::addIdleThread(t);
 	return t;
 }
 

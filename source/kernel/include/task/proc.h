@@ -45,6 +45,7 @@
 /* for marking unused */
 #define INVALID_PID			(MAX_PROC_COUNT + 1)
 #define KERNEL_PID			MAX_PROC_COUNT
+#define INIT_PID			1
 
 #define ROOT_UID			0
 #define ROOT_GID			0
@@ -53,6 +54,7 @@
 #define P_ZOMBIE			1
 #define P_PREZOMBIE			2
 #define P_KILLED			4
+#define P_KERNEL			8
 
 #define PLOCK_COUNT			3
 #define PMUTEX_COUNT		1
@@ -232,6 +234,14 @@ public:
 	 * @return the number of arguments on success or < 0
 	 */
 	static int buildArgs(const char *const *args,char *argBuffer,size_t *size);
+
+	/**
+	 * Starts a kernel process with given name and function.
+	 *
+	 * @param name the name to use
+	 * @param func the function to call (is not allowed to return)
+	 */
+	static void startKProc(const char *name,void (*func)());
 
 	/**
 	 * Clones the current process, gives the new process a clone of the current thread and saves this

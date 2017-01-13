@@ -128,7 +128,7 @@ void ProcBase::init() {
 	VFS::mountAll(p);
 	if(Sems::init(p) < 0)
 		Util::panic("Unable to init semaphores");
-	p->command = strdup("initloader");
+	p->command = strdup("[idle]");
 	/* create nodes in vfs */
 	p->threadsDir = VFS::createProcess(p->pid,p->getMS());
 	if(p->threadsDir < 0)
@@ -190,6 +190,21 @@ void ProcBase::setCommand(const char *cmd,int argc,const char *args) {
 		args += curlen + 1;
 	}
 	*curdst = '\0';
+}
+
+void ProcBase::startKProc(const char *name,void (*func)()) {
+	int res = Proc::clone(P_KERNEL);
+	if(res == 0) {
+		Proc *p = Proc::getByPid(Proc::getRunning());
+		p->setCommand(name,0,NULL);
+		/* we can remove all user regions now */
+		removeRegions(p->getPid(),true);
+
+		func();
+		A_UNREACHED;
+	}
+	else if(res < 0)
+		Util::panic("Unable to start %s",name);
 }
 
 void ProcBase::getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swapped) {
@@ -561,8 +576,8 @@ int ProcBase::addSignalFor(pid_t pid,int signal) {
 	if(!p)
 		return -ENOTFOUND;
 
-	/* don't send a signal to processes that are dying */
-	if(p->flags & (P_PREZOMBIE | P_ZOMBIE)) {
+	/* don't send a signal to processes that are dying or kernel processes */
+	if(p->flags & (P_PREZOMBIE | P_ZOMBIE | P_KERNEL)) {
 		release(p,PLOCK_PROG);
 		return -ENOTFOUND;
 	}
@@ -642,8 +657,8 @@ void ProcBase::terminate(int exitCode,int signal) {
 		if(signal != SIG_COUNT)
 			p->stats.exitSignal = signal;
 
-		if(p->getPid() == 0)
-			Util::panic("You can't terminate the initial process");
+		if(p->flags & P_KERNEL)
+			Util::panic("You can't terminate kernel processes");
 
 		/* print information to log */
 		if(signal != SIG_COUNT || exitCode != 0) {
@@ -691,17 +706,17 @@ void ProcBase::kill(pid_t pid) {
 	if(!p)
 		return;
 
-	/* give childs the ppid 0 */
+	/* give childs the ppid of init */
 	{
 		LockGuard<Mutex> g1(&childLock);
 		LockGuard<Mutex> g2(&procLock);
 		for(auto cp = procs.begin(); cp != procs.end(); ++cp) {
 			if(cp->parentPid == p->pid) {
-				cp->parentPid = 0;
+				cp->parentPid = INIT_PID;
 				/* if this process has already died, the parent can't wait for it since its dying
 				 * right now. therefore notify init of it */
 				if(cp->flags & P_ZOMBIE)
-					notifyProcDied(0);
+					notifyProcDied(INIT_PID);
 			}
 		}
 	}

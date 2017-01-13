@@ -84,7 +84,7 @@ public:
 };
 
 int main(void) {
-	if(getpid() != 0)
+	if(getpid() > 1)
 		exitmsg("It's not good to start init twice ;)");
 
 	if(startthread(driverThread,nullptr) < 0)

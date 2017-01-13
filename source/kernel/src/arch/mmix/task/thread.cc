@@ -96,6 +96,8 @@ int ThreadBase::initArch(Thread *t) {
 		return -ENOMEM;
 	t->tempStack = -1;
 	t->intrptLevel = 0;
+	/* at first, its not the idle thread, because we return to initloader with it */
+	t->flags &= ~T_IDLE;
 	return 0;
 }
 

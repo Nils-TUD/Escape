@@ -67,15 +67,18 @@ int main(void) {
 	/* give ourself a name */
 	strcpy(__progname,"initloader");
 
-	if(getpid() != 0)
+	if(getpid() > 1)
 		error("It's not good to start init twice ;)");
 
 	/* perform some additional initialization in the kernel */
-	syscall0(SYSCALL_INIT);
-
-	char tmp[12];
+	/* on MMIX, this needs multiple steps */
+	int res = 0;
+	do
+		res = syscall0(SYSCALL_INIT);
+	while(res == 0);
 
 	/* set sync file */
+	char tmp[12];
 	uint32_t cnt = 0;
 	int straceFd = open("/sys/strace",O_CREAT | O_TRUNC | O_RDWR,0666);
 	if(straceFd != STRACE_FILENO)

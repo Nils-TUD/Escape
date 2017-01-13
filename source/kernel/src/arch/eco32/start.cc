@@ -29,34 +29,42 @@
 #include <common.h>
 #include <util.h>
 
-EXTERN_C uintptr_t bspstart(BootInfo *bootinfo,uint32_t cpuSpeed,uintptr_t *usp);
+EXTERN_C void bspstart(BootInfo *bootinfo,uint32_t cpuSpeed);
+EXTERN_C uintptr_t procstart(uintptr_t *usp);
 
-uintptr_t bspstart(BootInfo *bootinfo,uint32_t cpuSpeed,uintptr_t *usp) {
+void bspstart(BootInfo *bootinfo,uint32_t cpuSpeed) {
 	Boot::start(bootinfo);
 
 	CPU::setSpeed(cpuSpeed);
 
-	/* start idle-thread */
-	Proc::startThread((uintptr_t)&thread_idle,T_IDLE,NULL);
-
-	/* TODO */
-#if 0
-	/* start the swapper-thread. it will never return */
-	if(PhysMem::canSwap())
-		Proc::startThread((uintptr_t)&PhysMem::swapper,0,NULL);
-#endif
-	Proc::startThread((uintptr_t)&Terminator::start,0,NULL);
-
-	/* load initloader */
-	ELF::StartupInfo info;
-	if(ELF::load("/sys/boot/initloader",&info) < 0)
-		Util::panic("Unable to load initloader");
-	Thread *t = Thread::getRunning();
-	if(!t->reserveFrames(INITIAL_STACK_PAGES))
-		Util::panic("Not enough mem for initloader-stack");
-	*usp = t->addInitialStack() + INITIAL_STACK_PAGES * PAGE_SIZE - WORDSIZE * 3;
-	t->discardFrames();
 	/* we have to set the kernel-stack for the first process */
+	Thread *t = Thread::getRunning();
 	PageDir::tlbSet(0,KERNEL_STACK,(t->getKernelStack() * PAGE_SIZE) | 0x3);
-	return info.progEntry;
+}
+
+uintptr_t procstart(uintptr_t *usp) {
+	/* start init process */
+	if(Proc::clone(P_KERNEL) == 0) {
+		ELF::StartupInfo info;
+		/* load initloader */
+		if(ELF::load("/sys/boot/initloader",&info) < 0)
+			Util::panic("Unable to load initloader");
+
+		/* give the process some stack pages */
+		Thread *t = Thread::getRunning();
+		if(!t->reserveFrames(INITIAL_STACK_PAGES))
+			Util::panic("Not enough mem for initloader-stack");
+		*usp = t->addInitialStack() + INITIAL_STACK_PAGES * PAGE_SIZE - WORDSIZE * 3;
+		t->discardFrames();
+		return info.progEntry;
+	}
+
+	/* start the swapper-process. it will never return */
+	if(PhysMem::canSwap())
+		Proc::startKProc("[swapper]",&PhysMem::swapper);
+	/* and the terminator */
+	Proc::startKProc("[terminator]",&Terminator::start);
+
+	thread_idle();
+	A_UNREACHED;
 }

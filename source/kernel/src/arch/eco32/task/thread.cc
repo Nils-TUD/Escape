@@ -72,13 +72,15 @@ int ThreadBase::createArch(A_UNUSED const Thread *src,Thread *dst,bool cloneProc
 		if(dst->kstackFrame == PhysMem::INVALID_FRAME)
 			return -ENOMEM;
 
-		/* add a new stack-region */
-		int res = dst->getProc()->getVM()->map(NULL,INITIAL_STACK_PAGES * PAGE_SIZE,0,
-				PROT_READ | PROT_WRITE,MAP_STACK | MAP_GROWSDOWN | MAP_GROWABLE,NULL,0,
-				dst->stackRegions + 0);
-		if(res < 0) {
-			PhysMem::free(dst->kstackFrame,PhysMem::KERN);
-			return res;
+		if(~dst->getFlags() & T_IDLE) {
+			/* add a new stack-region */
+			int res = dst->getProc()->getVM()->map(NULL,INITIAL_STACK_PAGES * PAGE_SIZE,0,
+					PROT_READ | PROT_WRITE,MAP_STACK | MAP_GROWSDOWN | MAP_GROWABLE,NULL,0,
+					dst->stackRegions + 0);
+			if(res < 0) {
+				PhysMem::free(dst->kstackFrame,PhysMem::KERN);
+				return res;
+			}
 		}
 	}
 	return 0;

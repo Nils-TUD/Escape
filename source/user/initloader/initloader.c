@@ -146,6 +146,7 @@ int main(void) {
 	int fd = open(line,O_RDWRMSG);
 	if(fd < 0)
 		error("Unable to open '%s'",line);
+	/* no fch{own,mod} here, because we want to change the device, not the channel */
 	if(chown(line,ROOT_UID,GROUP_STORAGE) < 0)
 		printe("Warning: unable to set owner of %s",line);
 	if(chmod(line,0770) < 0)

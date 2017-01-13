@@ -79,8 +79,7 @@ int main(int argc,char *argv[]) {
 	int fd = creat(esc::Clipboard::PATH,0660);
 	if(fd < 0)
 		error("Unable to create clipboard");
-	// TODO a fchown would be nice
-	if(chown(esc::Clipboard::PATH,-1,outgid) < 0)
+	if(fchown(fd,-1,outgid) < 0)
 		error("Unable to change clipboard owner");
 	close(fd);
 

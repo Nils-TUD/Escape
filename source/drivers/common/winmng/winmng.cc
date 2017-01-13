@@ -255,14 +255,14 @@ int main(int argc,char *argv[]) {
 	snprintf(path,sizeof(path),"/dev/%s-events",argv[3]);
 	print("Creating window-manager-events at %s",path);
 	WinMngEventDevice evdev(path,0110);
-	if(chown(path,ROOT_UID,gid) < 0)
+	if(fchown(evdev.id(),ROOT_UID,gid) < 0)
 		printe("Unable to add ui-group to group-list");
 
 	/* create device */
 	snprintf(path,sizeof(path),"/dev/%s",argv[3]);
 	print("Creating window-manager at %s",path);
 	WinMngDevice windev(path,0110);
-	if(chown(path,ROOT_UID,gid) < 0)
+	if(fchown(windev.id(),ROOT_UID,gid) < 0)
 		printe("Unable to add ui-group to group-list");
 
 	/* open input device and attach */

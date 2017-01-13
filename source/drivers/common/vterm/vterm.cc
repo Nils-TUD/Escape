@@ -130,7 +130,7 @@ int main(int argc,char **argv) {
 	int gid = usergroup_nameToId(GROUPS_PATH,argv[3]);
 	if(gid < 0)
 		printe("Unable to find ui-group '%s'",argv[3]);
-	else if(chown(path,ROOT_UID,gid) < 0)
+	else if(fchown(vtdev->id(),ROOT_UID,gid) < 0)
 		printe("Unable to add ui-group to group-list");
 
 	print("Getting video mode for %s columns, %s rows",argv[1],argv[2]);

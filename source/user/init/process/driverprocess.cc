@@ -77,28 +77,28 @@ void DriverProcess::load() {
 
 	// wait for all specified devices
 	for(auto it = _devices.begin(); it != _devices.end(); ++it) {
-		struct stat info;
 		sNamedItem *g;
-		int res;
+		int fd;
 		int j = 0;
 		do {
-			res = stat(it->name().c_str(),&info);
-			if(res < 0)
+			fd = open(it->name().c_str(),O_NOCHAN);
+			if(fd < 0)
 				usleep(RETRY_INTERVAL);
 		}
-		while(j++ < MAX_WAIT_RETRIES && res < 0);
-		if(res < 0)
+		while(j++ < MAX_WAIT_RETRIES && fd < 0);
+		if(fd < 0)
 			throw init_error(string("Max retries reached while waiting for '") + it->name() + "'");
 
 		// set permissions
-		if(chmod(it->name().c_str(),it->permissions()) < 0)
+		if(fchmod(fd,it->permissions()) < 0)
 			throw init_error(string("Unable to set permissions for '") + it->name() + "'");
 		// set group
 		g = usergroup_getByName(groupList,it->group().c_str());
 		if(!g)
 			throw init_error(string("Unable to find group '") + it->group() + "'");
-		if(chown(it->name().c_str(),-1,g->id) < 0)
+		if(fchown(fd,-1,g->id) < 0)
 			throw init_error(string("Unable to set group for '") + it->name() + "'");
+		close(fd);
 	}
 }
 

@@ -176,7 +176,7 @@ int main(int argc,char **argv) {
 	/* detect and init all devices */
 	createVFSEntry("hda",false);
 	DiskDevice dev("/dev/hda1",0700);
-	if(chown("/dev/hda1",-1,GROUP_STORAGE) < 0)
+	if(fchown(dev.id(),-1,GROUP_STORAGE) < 0)
 		error("Unable to set group for '%s'","/dev/hda1");
 	print("Registered device 'hda1' (device 1, partition 1)");
 	createVFSEntry("hda1",true);

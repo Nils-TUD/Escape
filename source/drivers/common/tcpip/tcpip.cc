@@ -492,35 +492,35 @@ static int receiveThread(void *arg) {
 
 static gid_t networkGid;
 
-static void setGroup(const char *path) {
-	if(chown(path,0,networkGid) < 0)
-		printe("Unable to chown '%s'",path);
+static void setGroup(int fd) {
+	if(fchown(fd,0,networkGid) < 0)
+		printe("chown failed");
 }
 
 static int linksFileThread(void*) {
 	LinksFileDevice dev("/sys/net/links",0440);
-	setGroup("/sys/net/links");
+	setGroup(dev.id());
 	dev.loop();
 	return 0;
 }
 
 static int routesFileThread(void*) {
 	RoutesFileDevice dev("/sys/net/routes",0440);
-	setGroup("/sys/net/routes");
+	setGroup(dev.id());
 	dev.loop();
 	return 0;
 }
 
 static int arpFileThread(void*) {
 	ARPFileDevice dev("/sys/net/arp",0440);
-	setGroup("/sys/net/arp");
+	setGroup(dev.id());
 	dev.loop();
 	return 0;
 }
 
 static int socketsFileThread(void*) {
 	SocketsFileDevice dev("/sys/net/sockets",0440);
-	setGroup("/sys/net/sockets");
+	setGroup(dev.id());
 	dev.loop();
 	return 0;
 }
@@ -540,9 +540,8 @@ static void createResolvConf() {
 		printe("Unable to create %s",resolvconf);
 		return;
 	}
+	setGroup(fd);
 	close(fd);
-
-	setGroup(resolvconf);
 }
 
 int main() {

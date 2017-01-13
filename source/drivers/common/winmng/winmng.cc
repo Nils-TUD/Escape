@@ -32,7 +32,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "infodev.h"
 #include "input.h"
 #include "listener.h"
 #include "preview.h"
@@ -47,7 +46,8 @@ static UI *ui;
 class WinMngDevice : public Device {
 public:
 	explicit WinMngDevice(const char *path,mode_t mode)
-		: Device(path,mode,DEV_TYPE_SERVICE,DEV_DELEGATE | DEV_CLOSE) {
+		: Device(path,mode,DEV_TYPE_SERVICE,DEV_READ | DEV_DELEGATE | DEV_CLOSE) {
+		set(MSG_FILE_READ,std::make_memfun(this,&WinMngDevice::read));
 		set(MSG_WIN_CREATE,std::make_memfun(this,&WinMngDevice::create));
 		set(MSG_WIN_SET_ACTIVE,std::make_memfun(this,&WinMngDevice::setActive),false);
 		set(MSG_WIN_DESTROY,std::make_memfun(this,&WinMngDevice::destroy));
@@ -61,6 +61,28 @@ public:
 		set(MSG_WIN_SETTHEME,std::make_memfun(this,&WinMngDevice::setTheme));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&WinMngDevice::close),false);
 		set(MSG_DEV_DELEGATE,std::make_memfun(this,&WinMngDevice::delegate),false);
+	}
+
+	void read(IPCStream &is) {
+		esc::FileRead::Request r;
+		is >> r;
+		if(r.offset + (off_t)r.count < r.offset)
+			VTHROWE("Invalid offset/count (" << r.offset << "," << r.count << ")",-EINVAL);
+
+		esc::OStringStream os;
+		WinList::get().print(os);
+
+		ssize_t res = 0;
+		if(r.offset >= os.str().length())
+			res = 0;
+		else if(r.offset + r.count > os.str().length())
+			res = os.str().length() - r.offset;
+		else
+			res = r.count;
+
+		is << FileRead::Response::result(res) << Reply();
+		if(res)
+			is << ReplyData(os.str().c_str(),res);
 	}
 
 	void create(IPCStream &is) {
@@ -261,7 +283,7 @@ int main(int argc,char *argv[]) {
 	/* create device */
 	snprintf(path,sizeof(path),"/dev/%s",argv[3]);
 	print("Creating window-manager at %s",path);
-	WinMngDevice windev(path,0110);
+	WinMngDevice windev(path,0550);
 	if(fchown(windev.id(),ROOT_UID,gid) < 0)
 		printe("Unable to add ui-group to group-list");
 
@@ -273,7 +295,6 @@ int main(int argc,char *argv[]) {
 	/* start helper modules */
 	Listener::create(windev.id());
 	Input::create(uiev);
-	InfoDev::create(argv[3]);
 	Preview::create();
 
 	if(startthread(eventThread,&evdev) < 0)

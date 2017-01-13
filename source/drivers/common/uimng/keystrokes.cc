@@ -51,7 +51,7 @@ void Keystrokes::createConsole(const char *mng,const char *cols,const char *rows
 
 	int maxfds = sysconf(CONF_MAX_FDS);
 
-	int id = JobMng::getId();
+	int id = JobMng::requestId();
 	if(id < 0) {
 		printe("Maximum number of clients reached");
 		return;
@@ -65,6 +65,7 @@ void Keystrokes::createConsole(const char *mng,const char *cols,const char *rows
 	if(mngPid < 0) {
 		printe("fork failed");
 		return;
+		JobMng::releaseId(id);
 	}
 	if(mngPid == 0) {
 		/* ATTENTION: since we have multiple threads, we have to be REALLY careful what we do here.
@@ -82,7 +83,7 @@ void Keystrokes::createConsole(const char *mng,const char *cols,const char *rows
 		error("exec with %s failed",mng);
 	}
 
-	JobMng::add(id,mngPid);
+	JobMng::setTermPid(id,mngPid);
 
 	print("Waiting for %s",path);
 	/* TODO not good */

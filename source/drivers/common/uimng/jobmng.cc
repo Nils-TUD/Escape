@@ -56,7 +56,7 @@ void JobMng::wait() {
 	}
 }
 
-int JobMng::getId() {
+int JobMng::requestId() {
 	std::lock_guard<std::mutex> guard(_mutex);
 	if(_jobs.size() >= UIClient::MAX_CLIENTS)
 		return -1;
@@ -70,6 +70,7 @@ int JobMng::getId() {
 		else
 			++it;
 	}
+	_jobs.push_back(Job(id,-1,-1));
 	return id;
 }
 
@@ -79,6 +80,32 @@ JobMng::Job *JobMng::get(int id) {
 			return &*it;
 	}
 	return NULL;
+}
+
+void JobMng::releaseId(int id) {
+	std::lock_guard<std::mutex> guard(_mutex);
+	for(auto it = _jobs.begin(); it != _jobs.end(); ++it) {
+		if(it->id == id) {
+			assert(it->termPid == -1);
+			assert(it->loginPid == -1);
+			_jobs.erase(it);
+			break;
+		}
+	}
+}
+
+void JobMng::setTermPid(int id,int pid) {
+	std::lock_guard<std::mutex> guard(_mutex);
+	Job *job = get(id);
+	if(job)
+		job->termPid = pid;
+}
+
+void JobMng::setLoginPid(int id,int pid) {
+	std::lock_guard<std::mutex> guard(_mutex);
+	Job *job = get(id);
+	if(job)
+		job->loginPid = pid;
 }
 
 bool JobMng::terminate(int pid) {

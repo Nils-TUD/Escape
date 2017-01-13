@@ -52,7 +52,7 @@ public:
 	 *
 	 * @return the id or -1 if there is no free id anymore
 	 */
-	static int getId();
+	static int requestId();
 
 	/**
 	 * @return true if the given job exists
@@ -63,15 +63,19 @@ public:
 	}
 
 	/**
-	 * Adds the given job to the list
+	 * Releases the previously requested id again.
+	 *
+	 * @param id the job id
+	 */
+	static void releaseId(int id);
+
+	/**
+	 * Sets the terminal pid for the given job
 	 *
 	 * @param id the job-id
-	 * @param termPid the pid for the terminal
+	 * @param pid the pid for the terminal
 	 */
-	static void add(int id,int termPid) {
-		std::lock_guard<std::mutex> guard(_mutex);
-		_jobs.push_back(Job(id,-1,termPid));
-	}
+	static void setTermPid(int id,int pid);
 
 	/**
 	 * Sets the login pid for the given job
@@ -79,12 +83,7 @@ public:
 	 * @param id the job-id
 	 * @param pid the login pid
 	 */
-	static void setLoginPid(int id,int pid) {
-		std::lock_guard<std::mutex> guard(_mutex);
-		Job *job = get(id);
-		if(job)
-			job->loginPid = pid;
-	}
+	static void setLoginPid(int id,int pid);
 
 private:
 	static Job *get(int id);

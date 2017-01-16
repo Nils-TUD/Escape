@@ -50,8 +50,7 @@ void Util::switchToVGA() {
 	if(VFS::openPath(pid,VFS_MSGS | VFS_NOBLOCK,0,"/dev/vga",&file) == 0) {
 		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 		esc::IPCBuf ib(buffer,sizeof(buffer));
-		/* use an empty shm-name here. we don't need that anyway */
-		ib << 3 << 1 << true << esc::CString("");
+		ib << 3 << 1 << true;
 
 		ssize_t res = file->sendMsg(pid,MSG_SCR_SETMODE,ib.buffer(),ib.pos(),NULL,0);
 		if(res > 0) {

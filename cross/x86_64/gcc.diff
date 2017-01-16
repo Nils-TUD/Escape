@@ -249,3 +249,46 @@ diff -rcN src/gcc-4.8.2/libstdc++-v3/libsupc++/vterminate.cc src/gcc/libstdc++-v
   
   	  fputs("terminate called after throwing an instance of '", stderr);
   	  if (status == 0)
+diff -rcN src/gcc/gcc-org/doc/gcc.texi src/gcc/gcc/doc/gcc.texi
+*** src/gcc/gcc-org/doc/gcc.texi	2017-01-16 14:27:27.795405663 +0100
+--- src/gcc/gcc/doc/gcc.texi	2017-01-16 14:28:41.271638428 +0100
+***************
+*** 83,93 ****
+  Published by:
+  @multitable @columnfractions 0.5 0.5
+  @item GNU Press
+! @tab Website: www.gnupress.org
+  @item a division of the
+! @tab General: @tex press@@gnu.org @end tex
+  @item Free Software Foundation
+! @tab Orders:  @tex sales@@gnu.org @end tex
+  @item 51 Franklin Street, Fifth Floor
+  @tab Tel 617-542-5942
+  @item Boston, MA 02110-1301 USA
+--- 83,93 ----
+  Published by:
+  @multitable @columnfractions 0.5 0.5
+  @item GNU Press
+! @tab Website: @uref{http://www.gnupress.org}
+  @item a division of the
+! @tab General: @email{press@@gnu.org}
+  @item Free Software Foundation
+! @tab Orders:  @email{sales@@gnu.org}
+  @item 51 Franklin Street, Fifth Floor
+  @tab Tel 617-542-5942
+  @item Boston, MA 02110-1301 USA
+diff -rcN src/gcc-org/gcc/cp/cfns.h src/gcc/gcc/cp/cfns.h
+*** src/gcc-org/gcc/cp/cfns.h	2017-01-16 14:41:17.453844930 +0100
+--- src/gcc/gcc/cp/cfns.h	2017-01-16 14:46:55.271854999 +0100
+***************
+*** 124,132 ****
+  
+  #ifdef __GNUC__
+  __inline
+- #ifdef __GNUC_STDC_INLINE__
+- __attribute__ ((__gnu_inline__))
+- #endif
+  #endif
+  const char *
+  libc_name_p (register const char *str, register unsigned int len)
+--- 124,129 ----

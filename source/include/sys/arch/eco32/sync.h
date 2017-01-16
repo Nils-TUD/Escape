@@ -32,7 +32,7 @@ static inline void usemdown(tUserSem *sem) {
 	IGNSIGS(semdown(sem->sem));
 }
 
-static inline bool usemtrydown(tUserSem *sem) {
+static inline bool usemtrydown(A_UNUSED tUserSem *sem) {
 	/* FIXME implement that for eco32 */
 	return false;
 }

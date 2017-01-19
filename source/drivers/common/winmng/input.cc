@@ -36,21 +36,21 @@
 
 Input *Input::_inst;
 
-int Input::thread(void *) {
-	Input &in = Input::get();
+int Input::thread(void *arg) {
+	Input *in = reinterpret_cast<Input*>(arg);
 
 	/* read from uimanager and handle the keys */
 	while(1) {
 		esc::UIEvents::Event ev;
-		*in._uiev >> ev;
+		*in->_uiev >> ev;
 
 		switch(ev.type) {
 			case esc::UIEvents::Event::TYPE_KEYBOARD:
-				in.handleKbMessage(&ev);
+				in->handleKbMessage(&ev);
 				break;
 
 			case esc::UIEvents::Event::TYPE_MOUSE:
-				in.handleMouseMessage(&ev);
+				in->handleMouseMessage(&ev);
 				break;
 
 			default:

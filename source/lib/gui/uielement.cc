@@ -21,9 +21,9 @@
 #include <gui/control.h>
 #include <gui/uielement.h>
 #include <gui/window.h>
+#include <esc/stream/ostringstream.h>
+#include <esc/stream/std.h>
 #include <sys/common.h>
-#include <iomanip>
-#include <sstream>
 #include <typeinfo>
 
 using namespace std;
@@ -82,7 +82,7 @@ namespace gui {
 	void UIElement::debug() {
 #if defined(DEBUG_GUI)
 		static int pos = 0;
-		ostringstream ostr;
+		esc::OStringStream ostr;
 		ostr << _id;
 		_g->setColor(Color(0xFF,0,0));
 
@@ -103,11 +103,12 @@ namespace gui {
 
 		Window *win = _g->getBuffer()->getWindow();
 		if(win->hasTitleBar())
-			cout << "[" << win->getTitle();
+			esc::sout << "[" << win->getTitle();
 		else
-			cout << "[#" << win->getId();
-		cout << ":" << getId() << ":" << typeid(*this).name() << "]";
-		cout << " @" << getPos() << " size:" << getSize() << " pref:" << getPreferredSize() << endl;
+			esc::sout << "[#" << win->getId();
+		esc::sout << ":" << getId() << ":" << typeid(*this).name() << "]";
+		esc::sout << " @" << getPos() << " size:" << getSize()
+				  << " pref:" << getPreferredSize() << esc::endl;
 #endif
 	}
 

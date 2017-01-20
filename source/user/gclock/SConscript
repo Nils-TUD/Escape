@@ -1,0 +1,2 @@
+Import('env')
+env.EscapeCXXProg('bin', target = 'gclock', source = env.Glob('*.cc'), LIBS = ['gui'])

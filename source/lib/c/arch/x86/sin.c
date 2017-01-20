@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <math.h>
 
 double sin(double x) {
-	return __builtin_sin(x);
+    __asm__ ("fsin" : "+t"(x));
+    return x;
 }

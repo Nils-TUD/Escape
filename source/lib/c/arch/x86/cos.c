@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/common.h>
 #include <math.h>
 
 double cos(double x) {
-	return __builtin_cos(x);
+    __asm__ ("fcos" : "+t"(x));
+    return x;
 }

@@ -37,6 +37,9 @@ namespace esc {
  */
 class UI : public Screen {
 public:
+	/* we have 8 ui groups atm */
+	static const int MAX_UIS		= 8;
+
 	/**
 	 * Opens the given device
 	 *

@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/ipc/clientdevice.h>
+#include <esc/proto/ui.h>
 #include <esc/proto/screen.h>
 #include <keymap/keymap.h>
 #include <sys/common.h>
@@ -34,8 +35,7 @@
  */
 class UIClient : public esc::Client {
 public:
-	/* we have 8 ui groups atm */
-	static const size_t MAX_CLIENTS	= 8;
+	static const size_t MAX_CLIENTS	= esc::UI::MAX_UIS;
 
 	/**
 	 * @return true if the client with given index exists

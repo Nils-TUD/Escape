@@ -18,6 +18,7 @@
  */
 
 #include <common.h>
+#include <usergroup/usergroup.h>
 #include <vfs/irq.h>
 #include <interrupts.h>
 #include <log.h>
@@ -31,8 +32,11 @@ esc::ISList<Semaphore*> InterruptsBase::userIrqs[IRQ_SEM_COUNT];
 void InterruptsBase::initVFS() {
 	VFSNode *node = NULL;
 	sassert(VFSNode::request("/sys/irq",NULL,&node,NULL,VFS_READ,0) == 0);
-	for(int i = 0; i < IRQ_COUNT; ++i)
-		VFSNode::release(createObj<VFSIRQ>(KERNEL_PID,node,i,0500));
+	for(int i = 0; i < IRQ_COUNT; ++i) {
+		VFSNode *irq = createObj<VFSIRQ>(KERNEL_PID,node,i,0550);
+		irq->chown(KERNEL_PID,ROOT_UID,GROUP_DRIVER);
+		VFSNode::release(irq);
+	}
 }
 
 int InterruptsBase::attachSem(Semaphore *sem,size_t irq,const char *name,

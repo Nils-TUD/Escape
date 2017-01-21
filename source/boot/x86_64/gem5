@@ -9,9 +9,9 @@ source boot/$ESC_TGTTYPE/images.sh
 # only load the serial device here
 cp $1/dist/etc/drivers $1/dist/etc/drivers.old
 cat > $1/dist/etc/drivers <<EOF
-/sbin/serial com1
+ui /sbin/serial com1
 	/dev/com1 0777 output
-/bin/login TERM=/dev/com1
+root /bin/login TERM=/dev/com1
 EOF
 
 create_disk $1/dist $1/hd.img

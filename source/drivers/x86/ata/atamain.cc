@@ -272,8 +272,6 @@ static void initDrives(void) {
 
 					/* set group */
 					strcpy(path + SSTRLEN("/dev/"),name);
-					if(fchown(devs[drvCount]->id(),-1,GROUP_STORAGE) < 0)
-						ATA_LOG("Unable to set group for '%s'",path);
 					createVFSEntry(ataDev,ataDev->partTable + p,name);
 					drvCount++;
 				}

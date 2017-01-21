@@ -32,7 +32,12 @@ extern "C" {
 #define MAX_PW_LEN			31
 
 /* fixed because boot-modules can't use the fs and thus, can't read /etc/groups */
-#define GROUP_STORAGE		12
+#define USER_BUS			1
+#define USER_STORAGE		2
+
+#define GROUP_DRIVER		1
+#define GROUP_BUS			2
+#define GROUP_STORAGE		3
 
 typedef struct sNamedItem {
 	int id;
@@ -92,6 +97,22 @@ bool usergroup_groupInUse(gid_t gid);
  * @return the group-id-array or NULL if failed
  */
 gid_t *usergroup_collectGroupsFor(const char *user,size_t openSlots,size_t *count);
+
+/**
+ * Change the user and groups of the process to user with the id <uid>.
+ *
+ * @param uid the user id
+ * @return 0 on success
+ */
+int usergroup_changeToId(uid_t uid);
+
+/**
+ * Change the user and groups of the process to user with the name <name>.
+ *
+ * @param name the user name
+ * @return 0 on success
+ */
+int usergroup_changeToName(const char *name);
 
 /**
  * Free's the given list

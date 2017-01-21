@@ -23,6 +23,7 @@
 #include <sys/proc.h>
 #include <sys/sync.h>
 #include <sys/thread.h>
+#include <usergroup/usergroup.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -44,6 +45,8 @@ const char *Keystrokes::TUI_DEF_ROWS	= "37";
 const char *Keystrokes::GUI_DEF_RES_X	= "800";
 const char *Keystrokes::GUI_DEF_RES_Y	= "600";
 
+const char *Keystrokes::GROUP_NAME		= "ui";
+
 void Keystrokes::createConsole(const char *mng,const char *cols,const char *rows,const char *login,
 							   const char *termVar) {
 	char name[SSTRLEN("ui") + 11];
@@ -61,6 +64,25 @@ void Keystrokes::createConsole(const char *mng,const char *cols,const char *rows
 	snprintf(path,sizeof(path),"/dev/%s",name);
 
 	print("Starting %s %s %s %s",mng,cols,rows,name);
+
+	// determine groups, gid and uid in parent process (we can't use global stuff in the child)
+	size_t groupCount;
+	gid_t *groups = usergroup_collectGroupsFor(GROUP_NAME,1,&groupCount);
+	if(!groups) {
+		printe("Unable to collect groups of ui");
+		return;
+	}
+	int gid = usergroup_getGid(GROUP_NAME);
+	if(gid < 0) {
+		printe("Unable to get group of ui");
+		return;
+	}
+	int uid = usergroup_nameToId(USERS_PATH,GROUP_NAME);
+	if(uid < 0) {
+		printe("Unable to get user id of ui");
+		return;
+	}
+
 	int mngPid = fork();
 	if(mngPid < 0) {
 		printe("fork failed");
@@ -77,6 +99,13 @@ void Keystrokes::createConsole(const char *mng,const char *cols,const char *rows
 		/* close all but stdin, stdout, stderr, strace */
 		for(int i = 4; i < maxfds; ++i)
 			close(i);
+
+		if(setgid(gid) < 0)
+			error("Unable to set gid");
+		if(setuid(uid) < 0)
+			error("Unable to set uid");
+		if(setgroups(groupCount,groups) < 0)
+			error("Unable to set groups");
 
 		const char *args[] = {mng,cols,rows,name,NULL};
 		execv(mng,args);

@@ -268,24 +268,15 @@ int main(int argc,char *argv[]) {
 	/* connect to ui-manager */
 	ui = new UI("/dev/uimng");
 
-	/* we want to give only users that are in the ui-group access to this window manager */
-	int gid = usergroup_nameToId(GROUPS_PATH,argv[3]);
-	if(gid < 0)
-		printe("Unable to find ui-group '%s'",argv[3]);
-
 	/* create event-device */
 	snprintf(path,sizeof(path),"/dev/%s-events",argv[3]);
 	print("Creating window-manager-events at %s",path);
 	WinMngEventDevice evdev(path,0110);
-	if(fchown(evdev.id(),ROOT_UID,gid) < 0)
-		printe("Unable to add ui-group to group-list");
 
 	/* create device */
 	snprintf(path,sizeof(path),"/dev/%s",argv[3]);
 	print("Creating window-manager at %s",path);
 	WinMngDevice windev(path,0550);
-	if(fchown(windev.id(),ROOT_UID,gid) < 0)
-		printe("Unable to add ui-group to group-list");
 
 	/* open input device and attach */
 	UIEvents *uiev = new UIEvents(*ui);

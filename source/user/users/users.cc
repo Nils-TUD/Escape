@@ -92,6 +92,7 @@ static void listUsers(void) {
 	sNamedItem *u = userList;
 	while(u != NULL) {
 		char home[MAX_PATH_LEN];
+		home[0] = '\0';
 		usergroup_getHome(u->name,home,sizeof(home));
 		gid_t gid = usergroup_getGid(u->name);
 		printf("%-20s %-4d %-4d %s\n",u->name,u->id,gid,home);

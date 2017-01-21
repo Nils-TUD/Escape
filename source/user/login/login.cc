@@ -97,26 +97,9 @@ int main(void) {
 	}
 	fflush(stdout);
 
-	/* determine groups (while still being root) */
-	size_t groupCount;
-	gid_t *groups = usergroup_collectGroupsFor(un,1,&groupCount);
-	if(!groups)
-		exitmsg("Unable to collect group-ids");
-	int vtgid = usergroup_nameToId(GROUPS_PATH,termName);
-	/* add the process to the corresponding ui-group */
-	if(vtgid >= 0)
-		groups[groupCount++] = vtgid;
-
-	/* set user- and group-ids */
-	int gid = usergroup_getGid(un);
-	if(gid < 0)
-		error("Unable to get users gid");
-	if(setgid(gid) < 0)
-		exitmsg("Unable to set gid");
-	if(setuid(uid) < 0)
-		exitmsg("Unable to set uid");
-	if(setgroups(groupCount,groups) < 0)
-		exitmsg("Unable to set groups");
+	/* set user and groups */
+	if(usergroup_changeToName(un) < 0)
+		exitmsg("Unable to change to user " << un);
 
 	/* use a per-user mountspace */
 	char mspath[MAX_PATH_LEN];

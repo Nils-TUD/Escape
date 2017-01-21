@@ -18,6 +18,7 @@
  */
 
 #include <usergroup/usergroup.h>
+#include <sys/proc.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <string.h>
@@ -150,6 +151,45 @@ gid_t *usergroup_collectGroupsFor(const char *user,size_t openSlots,size_t *coun
 			break;
 		p = end + 1;
 	}
+	return res;
+}
+
+int usergroup_changeToId(uid_t uid) {
+	const char *name = usergroup_idToName(USERS_PATH,uid);
+	return usergroup_changeToName(name);
+}
+
+int usergroup_changeToName(const char *name) {
+	int res;
+
+	// determine groups (while still being root)
+	size_t groupCount;
+	gid_t *groups = usergroup_collectGroupsFor(name,1,&groupCount);
+	if(!groups)
+		return -EINVAL;
+
+	// set user- and group-ids
+	int gid = usergroup_getGid(name);
+	if(gid < 0) {
+		res = gid;
+		goto error;
+	}
+
+	int uid = usergroup_nameToId(USERS_PATH,name);
+	if(uid < 0) {
+		res = uid;
+		goto error;
+	}
+
+	if((res = setgid(gid)) < 0)
+		goto error;
+	if((res = setuid(uid)) < 0)
+		goto error;
+	if((res = setgroups(groupCount,groups)) < 0)
+		goto error;
+
+error:
+	free(groups);
 	return res;
 }
 

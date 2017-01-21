@@ -63,6 +63,21 @@ static char **parseArgs(const char *line,int *argc) {
 
 extern char __progname[];
 
+/* we have to hardcode the uids and gids for the boot modules here, because we have no root fs yet */
+static const struct {
+	const char *match;
+	uid_t uid;
+	size_t gcount;
+	gid_t gids[4];
+} bootModUsers[] = {
+	{"pci",		USER_BUS,		2, {GROUP_BUS,GROUP_DRIVER,0,0}},
+	{"ata",		USER_STORAGE,	3, {GROUP_STORAGE,GROUP_DRIVER,GROUP_BUS,0}},
+	{"disk",	USER_STORAGE,	2, {GROUP_STORAGE,GROUP_DRIVER,0,0}},
+	{"iso9660",	USER_STORAGE,	2, {GROUP_STORAGE,GROUP_DRIVER,0,0}},
+	{"ext2",	USER_STORAGE,	2, {GROUP_STORAGE,GROUP_DRIVER,0,0}},
+	{"ramdisk",	USER_STORAGE,	2, {GROUP_STORAGE,GROUP_DRIVER,0,0}},
+};
+
 int main(void) {
 	/* give ourself a name */
 	strcpy(__progname,"initloader");
@@ -123,6 +138,19 @@ int main(void) {
 
 		int pid;
 		if((pid = fork()) == 0) {
+			/* set uid, gid and groups */
+			for(size_t x = 0; x < ARRAY_SIZE(bootModUsers); ++x) {
+				if(strstr(argv[0],bootModUsers[x].match)) {
+					if(setgid(bootModUsers[x].gids[0]) < 0)
+						error("Unable to set group %d",bootModUsers[x].gids[0]);
+					if(setuid(bootModUsers[x].uid) < 0)
+						error("Unable to set user %d",bootModUsers[x].uid);
+					if(setgroups(bootModUsers[x].gcount,bootModUsers[x].gids) < 0)
+						error("Unable to set groups");
+					break;
+				}
+			}
+
 			execv(argv[0],(const char**)argv);
 			error("exec failed");
 		}
@@ -149,7 +177,8 @@ int main(void) {
 	/* no fch{own,mod} here, because we want to change the device, not the channel */
 	if(chown(line,ROOT_UID,GROUP_STORAGE) < 0)
 		printe("Warning: unable to set owner of %s",line);
-	if(chmod(line,0770) < 0)
+	/* all have read-exec access to the root filesystem, because it contains binaries, libs, ... */
+	if(chmod(line,0775) < 0)
 		printe("Warning: unable to set permissions of %s",line);
 
 	int ms = open("/sys/proc/self/ms",O_WRITE);

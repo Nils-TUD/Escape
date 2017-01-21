@@ -122,9 +122,7 @@ int main(int argc,char **argv) {
 		close(fd);
 
 	/* handle device */
-	RamDiskDevice ramdisk(device,0600,size,diskaddr);
-	if(fchown(ramdisk.id(),-1,GROUP_STORAGE) < 0)
-		error("chown for '%s' failed",device);
+	RamDiskDevice ramdisk(device,0660,size,diskaddr);
 	ramdisk.loop();
 
 	/* clean up */

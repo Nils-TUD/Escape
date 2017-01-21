@@ -22,6 +22,7 @@
 #include <mem/virtmem.h>
 #include <task/proc.h>
 #include <task/thread.h>
+#include <usergroup/usergroup.h>
 #include <vfs/openfile.h>
 #include <vfs/vfs.h>
 #include <boot.h>
@@ -145,8 +146,12 @@ void Boot::createModFiles() {
 	for(auto mod = modsBegin(); mod != modsEnd(); ++mod) {
 		char *modname = filename(mod->name);
 		VFSNode *n = createObj<VFSFile>(KERNEL_PID,node,modname,(void*)mod->virt,mod->size);
-		if(!n || n->chmod(KERNEL_PID,S_IRUSR | S_IXUSR | S_IRGRP | S_IROTH) != 0)
-			Util::panic("Unable to create/chmod mbmod-file for '%s'",modname);
+		if(!n)
+			Util::panic("Unable to create mbmod-file for '%s'",modname);
+		if(n->chown(KERNEL_PID,ROOT_UID,GROUP_DRIVER) != 0)
+			Util::panic("Unable to chown mbmod-file for '%s'",modname);
+		if(n->chmod(KERNEL_PID,S_IRUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH) != 0)
+			Util::panic("Unable to chmod mbmod-file for '%s'",modname);
 		VFSNode::release(n);
 
 		if(file->write(KERNEL_PID,mod->name,strlen(mod->name)) < 0)

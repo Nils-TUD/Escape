@@ -65,7 +65,7 @@ private:
 	static sNamedItem *groupList;
 
 public:
-	DriverProcess() : Process(), _devices() {
+	DriverProcess() : Process(), _user(), _devices() {
 	}
 	virtual ~DriverProcess() {
 	}
@@ -73,12 +73,16 @@ public:
 	virtual bool isKillable() const {
 		return name() != "video";
 	}
+	const std::string &user() const {
+		return _user;
+	}
 	const std::vector<Device>& devices() const {
 		return _devices;
 	}
 	virtual void load();
 
 private:
+	std::string _user;
 	std::vector<Device> _devices;
 };
 

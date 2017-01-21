@@ -26,6 +26,7 @@
 #include <task/groups.h>
 #include <task/proc.h>
 #include <task/timer.h>
+#include <usergroup/usergroup.h>
 #include <vfs/channel.h>
 #include <vfs/device.h>
 #include <vfs/dir.h>
@@ -66,11 +67,14 @@ void VFS::init() {
 	 *   \- tmp
 	 */
 	root = createObj<VFSDir>(KERNEL_PID,nullptr,(char*)"",DIR_DEF_MODE);
-	sys = createObj<VFSDir>(KERNEL_PID,root,(char*)"sys",DIR_DEF_MODE);
+	sys = createObj<VFSDir>(KERNEL_PID,root,(char*)"sys",S_IFDIR | 0775);
+	sys->chown(KERNEL_PID,ROOT_UID,GROUP_DRIVER);
 	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"boot",DIR_DEF_MODE));
 	procsNode = createObj<VFSDir>(KERNEL_PID,sys,(char*)"proc",DIR_DEF_MODE);
 	VFSNode::release(createObj<VFSSelfLink>(KERNEL_PID,procsNode,(char*)"self"));
-	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"dev",DIR_DEF_MODE));
+	VFSNode *dev = createObj<VFSDir>(KERNEL_PID,sys,(char*)"dev",S_IFDIR | 0775);
+	dev->chown(KERNEL_PID,ROOT_UID,GROUP_DRIVER);
+	VFSNode::release(dev);
 	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"irq",DIR_DEF_MODE));
 	msNode = createObj<VFSDir>(KERNEL_PID,sys,(char*)"ms",DIR_DEF_MODE);
 	VFSNode::release(msNode);

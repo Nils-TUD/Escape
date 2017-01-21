@@ -1,23 +1,23 @@
-/sbin/video
+output /sbin/video
 	/dev/vga 0110 output
 	/dev/vesa 0110 output
-/sbin/zero
-	/dev/zero 0666 root
-/sbin/random
-	/dev/random 0666 root
-/sbin/null
-	/dev/null 0666 root
-/sbin/pipe
-	/dev/pipe 0666 root
-/sbin/speaker
+util /sbin/zero
+	/dev/zero 0660 util
+util /sbin/random
+	/dev/random 0660 util
+util /sbin/null
+	/dev/null 0660 util
+util /sbin/pipe
+	/dev/pipe 0660 util
+audio /sbin/speaker
 	/dev/speaker 0110 audio
-/sbin/ps2
+input /sbin/ps2
 	/dev/keyb 0110 input
 	/dev/mouse 0110 input
-/sbin/tcpip
+root /sbin/tcpip
 	/dev/socket 0770 network
 	/dev/tcpip 0110 network
-/sbin/http
+network /sbin/http
 	/dev/http 0440 network
-/sbin/uimng /dev/vga /dev/vesa
+root /sbin/uimng /dev/vga /dev/vesa
 	/dev/uimng 0110 input

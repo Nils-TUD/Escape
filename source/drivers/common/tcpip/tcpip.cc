@@ -493,7 +493,7 @@ static int receiveThread(void *arg) {
 static gid_t networkGid;
 
 static void setGroup(int fd) {
-	if(fchown(fd,0,networkGid) < 0)
+	if(fchown(fd,-1,networkGid) < 0)
 		printe("chown failed");
 }
 

@@ -74,7 +74,9 @@ public:
 		_cbuser->changed().subscribe(mem_recv(this,&LoginPanel::onUserChanged));
 		sNamedItem *u = _users;
 		while(u != NULL) {
-			_cbuser->addItem(u->name);
+			// skip the users without PW
+			if(usergroup_getPW(u->name))
+				_cbuser->addItem(u->name);
 			u = u->next;
 		}
 		namepnl->add(_cbuser,GridPos(1,0));
@@ -173,8 +175,6 @@ private:
 };
 
 int main(void) {
-	char *winMngPath = getenv("WINMNG");
-	char *termName = winMngPath + SSTRLEN("/dev/");
 	const char *logfile = "/sys/log";
 
 	int fd;
@@ -202,26 +202,9 @@ int main(void) {
 	const sNamedItem *u = win->getUser();
 	Application::destroy();
 
-	/* determine groups (while still being root) */
-	size_t groupCount;
-	gid_t *groups = usergroup_collectGroupsFor(u->name,1,&groupCount);
-	if(!groups)
-		error("Unable to collect group-ids");
-	int vtgid = usergroup_nameToId(GROUPS_PATH,termName);
-	/* add the process to the corresponding ui-group */
-	if(vtgid >= 0)
-		groups[groupCount++] = vtgid;
-
-	// set user- and group-ids
-	int gid = usergroup_getGid(u->name);
-	if(gid < 0)
-		error("Unable to get users gid");
-	if(setgid(gid) < 0)
-		error("Unable to set gid");
-	if(setuid(u->id) < 0)
-		error("Unable to set uid");
-	if(setgroups(groupCount,groups) < 0)
-		error("Unable to set groups");
+	/* set user and groups */
+	if(usergroup_changeToName(u->name) < 0)
+		error("Unable to change to user %s",u->name);
 
 	// use a per-user mountspace
 	char mspath[MAX_PATH_LEN];

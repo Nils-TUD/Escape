@@ -46,6 +46,8 @@ class Keystrokes {
 	static const char *GUI_DEF_RES_X;
 	static const char *GUI_DEF_RES_Y;
 
+	static const char *GROUP_NAME;
+
 public:
 	/**
 	 * Enters the kernel-debugger

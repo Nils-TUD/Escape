@@ -51,6 +51,10 @@ void DriverProcess::load() {
 		for(int i = 4; i < maxfds; ++i)
 			close(i);
 
+		// change to specified user
+		if(usergroup_changeToName(_user.c_str()) < 0)
+			throw init_error(string("Changing to user '") + _user + "' failed");
+
 		// build args and exec
 		const char **argv = new const char*[_args.size() + 2];
 		size_t idx = 0;
@@ -114,7 +118,7 @@ esc::IStream& operator >>(esc::IStream& is,DriverProcess& drv) {
 	std::string line;
 	is.getline(line);
 	esc::IStringStream tmp(line);
-	tmp >> drv._name;
+	tmp >> drv._user >> drv._name;
 	while(!tmp.eof()) {
 		string arg;
 		tmp >> arg;
@@ -135,7 +139,7 @@ esc::IStream& operator >>(esc::IStream& is,DriverProcess& drv) {
 }
 
 esc::OStream& operator <<(esc::OStream& os,const DriverProcess& drv) {
-	os << drv.name() << '\n';
+	os << drv.name() << " [with user " << drv.user() << "]\n";
 	const vector<Device>& devs = drv.devices();
 	for(auto it = devs.begin(); it != devs.end(); ++it) {
 		os << '\t' << it->name() << ' ';

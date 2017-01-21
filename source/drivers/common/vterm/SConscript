@@ -1,4 +1,4 @@
 Import('env')
 env.EscapeCXXProg(
-	'sbin', target = 'vterm', source = env.Glob('*.cc'), LIBS = ['vterm', 'usergroup']
+	'sbin', target = 'vterm', source = env.Glob('*.cc'), LIBS = ['vterm']
 )

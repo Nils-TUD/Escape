@@ -1,9 +1,11 @@
 #!/bin/sh
 dir="$1"
 root=0
-hrniels=1
-jondoe=2
-shared=3
+uhrniels=12
+ghrniels=11
+ujon=11
+gjon=12
+gshared=10
 
 # /boot
 chown -R $root:$root $dir/boot
@@ -44,9 +46,9 @@ chown -R $root:$root $dir/etc/users
 find $dir/etc/users -type d | xargs chmod 0755
 find $dir/etc/users -type f | xargs chmod 0644
 # users can change their own password
-chown $hrniels:$hrniels $dir/etc/users/hrniels/passwd
+chown $uhrniels:$ghrniels $dir/etc/users/hrniels/passwd
 chmod 0600 $dir/etc/users/hrniels/passwd
-chown $jondoe:$jondoe $dir/etc/users/jon/passwd
+chown $ujon:$gjon $dir/etc/users/jon/passwd
 chmod 0600 $dir/etc/users/jon/passwd
 chmod 0600 $dir/etc/users/root/passwd
 
@@ -60,13 +62,13 @@ chown $root:$root $dir/home
 chmod 0755 $dir/home
 
 # /home/hrniels
-chown -R $hrniels:$hrniels $dir/home/hrniels
+chown -R $uhrniels:$ghrniels $dir/home/hrniels
 chmod -R 0600 $dir/home/hrniels
 find $dir/home/hrniels -type d | xargs chmod +rx
-chown -R $hrniels:$shared $dir/home/hrniels/scripts
+chown -R $uhrniels:$gshared $dir/home/hrniels/scripts
 chmod -R 0750 $dir/home/hrniels/scripts
 
 # /home/jon
-chown -R $jondoe:$jondoe $dir/home/jon
+chown -R $ujon:$gjon $dir/home/jon
 chmod -R 0600 $dir/home/jon
 find $dir/home/jon -type d | xargs chmod +rx

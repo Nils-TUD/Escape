@@ -181,6 +181,7 @@ static void join(const char *user,const char *group) {
 	gids[count++] = gid;
 
 	writeGroupIds(user,gids,count);
+	free(gids);
 }
 
 static void leave(const char *user,const char *group) {
@@ -202,6 +203,7 @@ static void leave(const char *user,const char *group) {
 	}
 
 	writeGroupIds(user,gids,count);
+	free(gids);
 }
 
 static void writeGroupIds(const char *user,gid_t *gids,size_t count) {

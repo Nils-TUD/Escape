@@ -7,15 +7,15 @@ fi
 source boot/$ESC_TGTTYPE/images.sh
 
 # only load the serial device here
-cp $1/dist/etc/drivers $1/dist/etc/drivers.old
-cat > $1/dist/etc/drivers <<EOF
+cp $1/dist/etc/init/drivers $1/dist/etc/init/drivers.old
+cat > $1/dist/etc/init/drivers <<EOF
 ui /sbin/serial com1
 	/dev/com1 0777 output
 root /bin/login TERM=/dev/com1
 EOF
 
 create_disk $1/dist $1/hd.img
-mv $1/dist/etc/drivers.old $1/dist/etc/drivers
+mv $1/dist/etc/init/drivers.old $1/dist/etc/init/drivers
 
 # --debug-flags=Exec,Faults,IdeCtrl,IdeDisk,PCIDEV,I8259,I82094AA
 gem5args=" --outdir=run --debug-file=gem5.log --remote-gdb-port=1234"

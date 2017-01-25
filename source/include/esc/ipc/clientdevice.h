@@ -119,6 +119,13 @@ public:
 	}
 
 	/**
+	 * @return the number of clients
+	 */
+	size_t client_count() const {
+		return _clients.size();
+	}
+
+	/**
 	 * @return the client with given file-descriptor
 	 */
 	C *operator[](int fd) {

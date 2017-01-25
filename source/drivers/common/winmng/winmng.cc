@@ -261,7 +261,7 @@ int main(int argc,char *argv[]) {
 	char path[MAX_PATH_LEN];
 
 	if(argc != 4) {
-		fprintf(stderr,"Usage: %s <width> <height> <name>\n",argv[0]);
+		fprintf(stderr,"Usage: %s <width> <height> <path>\n",argv[0]);
 		return 1;
 	}
 
@@ -269,14 +269,13 @@ int main(int argc,char *argv[]) {
 	ui = new UI("/dev/uimng");
 
 	/* create event-device */
-	snprintf(path,sizeof(path),"/dev/%s-events",argv[3]);
+	snprintf(path,sizeof(path),"%s-events",argv[3]);
 	print("Creating window-manager-events at %s",path);
 	WinMngEventDevice evdev(path,0110);
 
 	/* create device */
-	snprintf(path,sizeof(path),"/dev/%s",argv[3]);
-	print("Creating window-manager at %s",path);
-	WinMngDevice windev(path,0550);
+	print("Creating window-manager at %s",argv[3]);
+	WinMngDevice windev(argv[3],0550);
 
 	/* open input device and attach */
 	UIEvents *uiev = new UIEvents(*ui);

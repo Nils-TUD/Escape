@@ -16,5 +16,5 @@ root /sbin/tcpip
 ui /sbin/term 0
 	/dev/term0 0770 output
 root /bin/login TERM=/dev/term0
-root /sbin/uimng /dev/vga
+ui /sbin/uimng /dev/vga
 	/dev/uimng 0110 input

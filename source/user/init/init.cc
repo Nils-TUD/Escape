@@ -18,17 +18,21 @@
  */
 
 #include <esc/ipc/device.h>
+#include <esc/proto/initui.h>
 #include <esc/stream/std.h>
 #include <sys/common.h>
 #include <sys/driver.h>
 #include <sys/messages.h>
 #include <sys/proc.h>
+#include <sys/stat.h>
 #include <sys/thread.h>
 #include <sys/wait.h>
 #include <signal.h>
 #include <stdlib.h>
 
+#include "process/driverprocess.h"
 #include "process/processmanager.h"
+#include "process/uimanager.h"
 #include "initerror.h"
 
 class InitDevice;
@@ -41,12 +45,20 @@ enum {
 
 static void sigAlarm(int sig);
 static int driverThread(void *arg);
+static int uiThread(void *arg);
 
 static const int SHUTDOWN_TIMEOUT = 3; /* seconds */
 
+static std::mutex mutex;
 static ProcessManager pm;
+static UIManager uim;
 static int state = STATE_RUN;
 static InitDevice *dev;
+
+static const char *uitypes[] = {
+	"/etc/init/tui",
+	"/etc/init/gui",
+};
 
 class InitDevice : public esc::Device {
 public:
@@ -57,6 +69,7 @@ public:
 	}
 
 	void reboot(esc::IPCStream &) {
+		std::lock_guard<std::mutex> guard(mutex);
 		if(state == STATE_RUN) {
 			state = STATE_REBOOT;
 			if(alarm(SHUTDOWN_TIMEOUT) < 0)
@@ -66,6 +79,7 @@ public:
 	}
 
 	void shutdown(esc::IPCStream &) {
+		std::lock_guard<std::mutex> guard(mutex);
 		if(state == STATE_RUN) {
 			state = STATE_SHUTDOWN;
 			if(alarm(SHUTDOWN_TIMEOUT) < 0)
@@ -78,8 +92,46 @@ public:
 		pid_t pid;
 		is >> pid;
 
+		std::lock_guard<std::mutex> guard(mutex);
 		if(state != STATE_RUN)
 			pm.setAlive(pid);
+	}
+};
+
+class InitUIDevice : public esc::Device {
+public:
+	explicit InitUIDevice(const char *path,mode_t mode) : esc::Device(path,mode,DEV_TYPE_SERVICE,0) {
+		set(MSG_INITUI_START,std::make_memfun(this,&InitUIDevice::start));
+	}
+
+	void start(esc::IPCStream &is) {
+		esc::InitUI::Type type;
+		esc::CStringBuf<16> name;
+		is >> type >> name;
+
+		if((size_t)type >= ARRAY_SIZE(uitypes) || !isalnumstr(name.str()) || state != STATE_RUN) {
+			is << -EINVAL << esc::Reply();
+			return;
+		}
+
+		std::string uipath(std::string("/dev/") + name.str());
+
+		esc::FStream ifs(uitypes[type],"r");
+		if(!ifs)
+			throw init_error(std::string("Unable to open ") + uitypes[type]);
+
+		std::lock_guard<std::mutex> guard(mutex);
+		std::vector<Process*> ui;
+		while(ifs.good()) {
+			DriverProcess *drv = new DriverProcess();
+			ifs >> *drv;
+			drv->replace("$ui",uipath);
+			drv->load();
+			ui.push_back(drv);
+		}
+		uim.add(ui);
+
+		is << 0 << esc::Reply();
 	}
 };
 
@@ -89,8 +141,11 @@ int main(void) {
 
 	if(startthread(driverThread,nullptr) < 0)
 		exitmsg("Unable to start driver-thread");
+	if(startthread(uiThread,nullptr) < 0)
+		exitmsg("Unable to start ui-thread");
 
 	try {
+		std::lock_guard<std::mutex> guard(mutex);
 		pm.start();
 	}
 	catch(const init_error& e) {
@@ -101,11 +156,14 @@ int main(void) {
 	while(1) {
 		sExitState st;
 		if(waitchild(&st,-1) == 0) {
+			std::lock_guard<std::mutex> guard(mutex);
 			try {
 				if(state != STATE_RUN)
 					pm.died(st.pid);
-				else
+				else {
 					pm.restart(st.pid);
+					uim.died(st.pid);
+				}
 			}
 			catch(const init_error& e) {
 				errmsg("Unable to react on child-death: " << e.what());
@@ -131,9 +189,19 @@ static int driverThread(A_UNUSED void *arg) {
 		errmsg("Handling init device failed: " << e.what());
 	}
 
+	std::lock_guard<std::mutex> guard(mutex);
 	if(state == STATE_REBOOT)
 		pm.finalize(ProcessManager::TASK_REBOOT);
 	else
 		pm.finalize(ProcessManager::TASK_SHUTDOWN);
+	return 0;
+}
+
+static int uiThread(A_UNUSED void *arg) {
+	InitUIDevice dev("/dev/initui",0110);
+	int gid = usergroup_nameToId(GROUPS_PATH,"ui");
+	if(fchown(dev.id(),-1,gid) < 0)
+		error("Unable to chown initui device");
+	dev.loop();
 	return 0;
 }

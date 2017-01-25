@@ -48,6 +48,10 @@ public:
 		return _group;
 	}
 
+	void replace(const std::string &var,const std::string &value) {
+		replace_var(_name,var,value);
+	}
+
 private:
 	std::string _name;
 	perm_type _perms;
@@ -79,6 +83,13 @@ public:
 	const std::vector<Device>& devices() const {
 		return _devices;
 	}
+
+	virtual void replace(const std::string &var,const std::string &value) {
+		Process::replace(var,value);
+		for(auto &d : _devices)
+			d.replace(var,value);
+	}
+
 	virtual void load();
 
 private:

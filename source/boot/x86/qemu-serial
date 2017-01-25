@@ -2,8 +2,8 @@
 . boot/$ESC_TGTTYPE/images.sh
 
 # only load the serial device here
-cp $1/dist/etc/drivers $1/dist/etc/drivers.old
-cat > $1/dist/etc/drivers <<EOF
+cp $1/dist/etc/init/drivers $1/dist/etc/init/drivers.old
+cat > $1/dist/etc/init/drivers <<EOF
 util /sbin/zero
 	/dev/zero 0666 root
 util /sbin/random
@@ -23,7 +23,7 @@ root /bin/login TERM=/dev/com1
 EOF
 
 create_fsimg $1/dist $1/fs.img
-mv $1/dist/etc/drivers.old $1/dist/etc/drivers
+mv $1/dist/etc/init/drivers.old $1/dist/etc/init/drivers
 
 suffix=""
 if [ "$ESC_TARGET" = "x86_64" ]; then

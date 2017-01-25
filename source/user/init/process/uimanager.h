@@ -20,45 +20,44 @@
 #pragma once
 
 #include <sys/common.h>
-#include <mutex>
+#include <signal.h>
 #include <vector>
 
-#include "../initerror.h"
-#include "../progress.h"
 #include "process.h"
 
-class ProcessManager {
+class UIManager {
 public:
-	static const int TASK_REBOOT		= 1;
-	static const int TASK_SHUTDOWN		= 2;
-
-private:
-	static const size_t KERNEL_PERCENT	= 40;
-
-public:
-	ProcessManager() : _downProg(nullptr), _procs() {
-	}
-	~ProcessManager() {
+	explicit UIManager() : _uis() {
 	}
 
-	void start();
-	void restart(pid_t pid);
-	void shutdown();
-	void setAlive(pid_t pid);
-	void died(pid_t pid);
-	void finalize(int task);
+	void add(const std::vector<Process*> &ui) {
+		_uis.push_back(ui);
+	}
+
+	void died(pid_t pid) {
+		for(auto ui = _uis.begin(); ui != _uis.end(); ++ui) {
+			bool found = false;
+			for(auto p = ui->begin(); p != ui->end(); ++p) {
+				if((*p)->pid() == pid) {
+					found = true;
+					ui->erase(p);
+					delete *p;
+					break;
+				}
+			}
+
+			if(found) {
+				if(ui->size() == 0)
+					_uis.erase(ui);
+				else {
+					for(auto p = ui->begin(); p != ui->end(); ++p)
+						kill((*p)->pid(),SIGTERM);
+				}
+				break;
+			}
+		}
+	}
 
 private:
-	// no cloning
-	ProcessManager(const ProcessManager& p);
-	ProcessManager &operator=(const ProcessManager& p);
-
-	Process *getByPid(pid_t pid);
-	void addRunning();
-	void waitForFS();
-	size_t getBootModCount() const;
-
-private:
-	Progress *_downProg;
-	std::vector<Process*> _procs;
+	std::vector<std::vector<Process*>> _uis;
 };

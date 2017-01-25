@@ -23,6 +23,13 @@
 #include <string>
 #include <vector>
 
+static inline void replace_var(std::string &s,const std::string &var,const std::string &value) {
+	std::string::size_type pos = s.find(var);
+	if(pos == std::string::npos)
+		return;
+	s.replace(pos,var.length(),value);
+}
+
 class Process {
 public:
 	Process(int id = 0,bool killable = true)
@@ -58,6 +65,12 @@ public:
 	}
 	const std::vector<std::string>& args() const {
 		return _args;
+	}
+
+	virtual void replace(const std::string &var,const std::string &value) {
+		replace_var(_name,var,value);
+		for(auto &s : _args)
+			replace_var(s,var,value);
 	}
 
 	virtual void load() {

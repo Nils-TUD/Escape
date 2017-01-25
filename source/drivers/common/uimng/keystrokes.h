@@ -19,10 +19,9 @@
 
 #pragma once
 
+#include <esc/proto/initui.h>
 #include <sys/common.h>
 #include <sys/debug.h>
-#include <sys/messages.h>
-#include <mutex>
 
 #include "clients.h"
 
@@ -33,20 +32,6 @@ class Keystrokes {
 	Keystrokes() = delete;
 
 	static const int VGA_MODE;
-
-	static const char *VTERM_PROG;
-	static const char *LOGIN_PROG;
-
-	static const char *WINMNG_PROG;
-	static const char *GLOGIN_PROG;
-
-	static const char *TUI_DEF_COLS;
-	static const char *TUI_DEF_ROWS;
-
-	static const char *GUI_DEF_RES_X;
-	static const char *GUI_DEF_RES_Y;
-
-	static const char *GROUP_NAME;
 
 public:
 	/**
@@ -62,18 +47,17 @@ public:
 	 * Creates a new text-console
 	 */
 	static void createTextConsole() {
-		createConsole(VTERM_PROG,TUI_DEF_COLS,TUI_DEF_ROWS,LOGIN_PROG,"TERM");
+		createConsole(esc::InitUI::TUI);
 	}
 
 	/**
 	 * Creates a new GUI-console
 	 */
 	static void createGUIConsole() {
-		createConsole(WINMNG_PROG,GUI_DEF_RES_X,GUI_DEF_RES_Y,GLOGIN_PROG,"WINMNG");
+		createConsole(esc::InitUI::GUI);
 	}
 
 private:
-	static void createConsole(const char *mng,const char *cols,const char *rows,const char *login,
-		const char *termVar);
+	static void createConsole(esc::InitUI::Type type);
 	static void switchToVGA(void);
 };

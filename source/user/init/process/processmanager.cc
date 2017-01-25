@@ -44,7 +44,6 @@
 using namespace std;
 
 void ProcessManager::start() {
-	std::lock_guard<std::mutex> guard(_mutex);
 	waitForFS();
 
 	// set basic env-vars
@@ -54,9 +53,9 @@ void ProcessManager::start() {
 		throw init_error("Unable to set PATH");
 
 	// read drivers from file
-	esc::FStream ifs("/etc/drivers","r");
+	esc::FStream ifs("/etc/init/drivers","r");
 	if(!ifs)
-		throw init_error("Unable to open /etc/drivers");
+		throw init_error("Unable to open /etc/init/drivers");
 	while(ifs.good()) {
 		DriverProcess *drv = new DriverProcess();
 		ifs >> *drv;
@@ -73,14 +72,12 @@ void ProcessManager::start() {
 }
 
 void ProcessManager::restart(pid_t pid) {
-	std::lock_guard<std::mutex> guard(_mutex);
 	Process *p = getByPid(pid);
 	if(p)
 		p->load();
 }
 
 void ProcessManager::setAlive(pid_t pid) {
-	std::lock_guard<std::mutex> guard(_mutex);
 	Process *p = getByPid(pid);
 	if(p) {
 		p->setAlive();
@@ -89,7 +86,6 @@ void ProcessManager::setAlive(pid_t pid) {
 }
 
 void ProcessManager::died(pid_t pid) {
-	std::lock_guard<std::mutex> guard(_mutex);
 	Process *p = getByPid(pid);
 	if(p) {
 		p->setDead();
@@ -98,7 +94,6 @@ void ProcessManager::died(pid_t pid) {
 }
 
 void ProcessManager::shutdown() {
-	std::lock_guard<std::mutex> guard(_mutex);
 	addRunning();
 	_downProg = new Progress(0,_procs.size(),_procs.size());
 	_downProg->paintBar();
@@ -114,7 +109,6 @@ void ProcessManager::shutdown() {
 }
 
 void ProcessManager::finalize(int task) {
-	std::lock_guard<std::mutex> guard(_mutex);
 	_downProg->itemStarting("Timout reached, killing remaining processes...");
 
 	// remove all except video (we don't get notified about all terminated processes; just about

@@ -27,6 +27,7 @@
 
 #include "clients.h"
 #include "header.h"
+#include "keystrokes.h"
 #include "screens.h"
 
 class UIMngDevice : public esc::ClientDevice<UIClient> {
@@ -57,6 +58,8 @@ public:
 		UIClient *c = get(is.fd());
 		c->remove();
 		esc::ClientDevice<UIClient>::close(is);
+		if(client_count() == 0)
+			Keystrokes::createTextConsole();
 	}
 
 	void obtain(esc::IPCStream &is) {

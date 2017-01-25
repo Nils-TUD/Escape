@@ -1,0 +1,3 @@
+ui /sbin/vterm 100 37 $ui
+	$ui 0770 ui
+root /bin/login TERM=$ui

@@ -19,5 +19,5 @@ root /sbin/tcpip
 	/dev/tcpip 0110 network
 network /sbin/http
 	/dev/http 0440 network
-root /sbin/uimng /dev/vga /dev/vesa
+ui /sbin/uimng /dev/vga /dev/vesa
 	/dev/uimng 0110 input

@@ -139,6 +139,9 @@ enum {
 	/* DNS */
 	MSG_DNS_RESOLVE					= 1400,	/* resolve a name to an address */
 	MSG_DNS_SET_SERVER				= 1401,	/* set the name server */
+
+	/* initui */
+	MSG_INITUI_START				= 1500,	/* starts a new UI */
 };
 
 static const size_t IPC_DEF_SIZE	= 256;

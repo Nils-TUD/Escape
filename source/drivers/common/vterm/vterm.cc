@@ -110,32 +110,29 @@ static void sigterm(int) {
 
 int main(int argc,char **argv) {
 	if(argc < 4) {
-		fprintf(stderr,"Usage: %s <cols> <rows> <name>\n",argv[0]);
+		fprintf(stderr,"Usage: %s <cols> <rows> <path>\n",argv[0]);
 		return EXIT_FAILURE;
 	}
 
 	if(signal(SIGTERM,sigterm) == SIG_ERR)
 		error("Unable to set SIGTERM handler");
 
-	char path[MAX_PATH_LEN];
-	snprintf(path,sizeof(path),"/dev/%s",argv[3]);
-
-	print("Creating vterm at %s",path);
+	print("Creating vterm at %s",argv[3]);
 
 	/* create device */
-	vtdev = new TUIVTermDevice(path,0770,&vterm);
+	vtdev = new TUIVTermDevice(argv[3],0770,&vterm);
 
 	print("Getting video mode for %s columns, %s rows",argv[1],argv[2]);
 
 	/* init vterms */
-	int modeid = vtInit(vtdev->id(),argv[3],atoi(argv[1]),atoi(argv[2]));
+	int modeid = vtInit(vtdev->id(),strchr(argv[3],'/') + 1,atoi(argv[1]),atoi(argv[2]));
 	if(modeid < 0)
 		error("Unable to init vterms");
 
 	/* start thread to read input-events from uimanager */
 	int tid;
 	if((tid = startthread(uimInputThread,&modeid)) < 0)
-		error("Unable to start thread for vterm %s",path);
+		error("Unable to start thread for vterm %s",argv[3]);
 
 	/* handle device here */
 	vtermThread(vtdev);

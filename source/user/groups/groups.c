@@ -27,8 +27,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void listGroups(void);
+static void listAllGroups(void);
 static void listCurGroups(void);
+static void listGroupsOf(const char *user);
+static void listGroups(gid_t *gids,size_t count);
 static void addGroup(const char *name);
 static void changeName(const char *old,const char *n);
 static void join(const char *user,const char *group);
@@ -39,6 +41,7 @@ static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s <cmd>\n",name);
 	fprintf(stderr,"    -l               : list all groups\n");
 	fprintf(stderr,"    -g               : list of groups of the current process\n");
+	fprintf(stderr,"    -u <name>        : list of groups of the given user\n");
 	fprintf(stderr,"    -a <name>        : add new group <name>\n");
 	fprintf(stderr,"    -n <old> <new>   : change name of group <old> to <new>\n");
 	fprintf(stderr,"    -j <user> <name> : user <user> joins group <name>\n");
@@ -68,9 +71,14 @@ int main(int argc,char *argv[]) {
 			if(argc != 2)
 				usage(argv[0]);
 			if(argv[1][1] == 'l')
-				listGroups();
+				listAllGroups();
 			else
 				listCurGroups();
+			break;
+		case 'u':
+			if(argc != 3)
+				usage(argv[0]);
+			listGroupsOf(argv[2]);
 			break;
 		case 'a':
 		case 'd':
@@ -99,7 +107,7 @@ int main(int argc,char *argv[]) {
 	return EXIT_SUCCESS;
 }
 
-static void listGroups(void) {
+static void listAllGroups(void) {
 	sNamedItem *g = groupList;
 	printf("%-20s %-4s %s\n","Name","GID","Members");
 	while(g != NULL) {
@@ -126,26 +134,36 @@ static void listGroups(void) {
 	}
 }
 
+static void listGroupsOf(const char *user) {
+	size_t count;
+	gid_t *gids = usergroup_collectGroupsFor(user,0,&count);
+	listGroups(gids,count);
+	free(gids);
+}
+
 static void listCurGroups(void) {
 	int count = getgroups(0,NULL);
 	if(count < 0)
 		error("Unable to get groups of current process");
 
-	gid_t *groupIds = (gid_t*)malloc(count * sizeof(gid_t));
-	if(!groupIds)
+	gid_t *gids = (gid_t*)malloc(count * sizeof(gid_t));
+	if(!gids)
 		error("malloc");
-	count = getgroups(count,groupIds);
+	count = getgroups(count,gids);
 	if(count < 0)
 		error("Unable to get groups of current process");
 
-	for(int i = 0; i < count; i++) {
-		const char *name = usergroup_idToName(GROUPS_PATH,groupIds[i]);
+	listGroups(gids,count);
+	free(gids);
+}
+
+static void listGroups(gid_t *gids,size_t count) {
+	for(size_t i = 0; i < count; i++) {
+		const char *name = usergroup_idToName(GROUPS_PATH,gids[i]);
 		if(name)
 			printf("%s ",name);
 	}
 	printf("\n");
-
-	free(groupIds);
 }
 
 static void addGroup(const char *name) {

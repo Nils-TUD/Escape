@@ -167,10 +167,10 @@ void ProcessManager::addRunning() {
 	for(auto  it = procs.begin(); it != procs.end(); ++it) {
 		int pid = atoi(it->d_name);
 		if(pid != 0 && getByPid(pid) == nullptr) {
-			/* the processes 1 .. <bootMods> are always the boot modules. we don't kill them
+			/* the processes 3 .. <bootMods> are always the boot modules. we don't kill them
 			 * because they are essential for the system to be functional (think of demand loading,
 			 * swapping, ...) */
-			_procs.push_back(new Process(pid,pid > (int)bootMods));
+			_procs.push_back(new Process(pid,pid > 3 + (int)bootMods));
 		}
 	}
 	sort(_procs.begin(),_procs.end());

@@ -122,7 +122,8 @@ ino_t Ext2FileSystem::open(fs::User *u,const char *path,uint flags,mode_t mode,i
 		imode |= MODE_READ;
 	if(flags & O_WRITE)
 		imode |= MODE_WRITE;
-	/* TODO exec? */
+	if(flags & O_EXEC)
+		imode |= MODE_EXEC;
 	if((err = hasPermission(cnode,u,imode)) < 0) {
 		inodeCache.release(cnode);
 		return err;

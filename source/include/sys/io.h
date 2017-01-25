@@ -29,6 +29,7 @@ enum {
 	O_MSGS					= 1 << 0,	/* exchange messages with a device */
 	O_WRITE					= 1 << 1,
 	O_READ					= 1 << 2,
+	O_EXEC					= O_MSGS,
 	O_RDONLY				= O_READ,
 	O_WRONLY				= O_WRITE,
 	O_RDWR					= O_READ | O_WRITE,

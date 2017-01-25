@@ -19,7 +19,7 @@ chmod -R 0755 $dir/bin
 
 # /sbin
 chmod 0755 $dir/sbin
-chmod 0744 $dir/sbin/*
+chmod 0755 $dir/sbin/*
 
 # /lib
 if [ -d $dir/lib ]; then

@@ -32,5 +32,5 @@ fi
 
 $ESC_QEMU -nographic -m 512 -net nic,model=ne2k_pci -net nic -net user \
 	-kernel $1/dist/boot/escape$suffix -append 'root=/dev/ext2-ramdisk-fs.img' \
-	-initrd "$1/dist/bin/initloader,$1/dist/sbin/ramdisk /dev/ramdisk-fs.img -f /sys/boot/fs.img,$1/dist/sbin/pci /dev/pci,$1/dist/sbin/ext2 /dev/ext2-ramdisk-fs.img /dev/ramdisk-fs.img,$1/fs.img" \
+	-initrd "$1/dist/sbin/initloader,$1/dist/sbin/ramdisk /dev/ramdisk-fs.img -f /sys/boot/fs.img,$1/dist/sbin/pci /dev/pci,$1/dist/sbin/ext2 /dev/ext2-ramdisk-fs.img /dev/ramdisk-fs.img,$1/fs.img" \
 	$2 | tee run/log.txt

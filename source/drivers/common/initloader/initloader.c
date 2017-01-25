@@ -190,7 +190,7 @@ int main(void) {
 	close(fd);
 
 	/* exec init */
-	const char *argv[] = {"/bin/init",NULL};
+	const char *argv[] = {"/sbin/init",NULL};
 	execv(argv[0],argv);
 	return 0;
 }

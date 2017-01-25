@@ -77,7 +77,7 @@ struct Module {
 };
 
 __attribute__((section(".mb"))) static Module mods[] = {
-	{"/bin/initloader",									dump_initloader,	sizeof(dump_initloader)},
+	{"/sbin/initloader",								dump_initloader,	sizeof(dump_initloader)},
 	{"/sbin/pci /dev/pci",								dump_pci, 			sizeof(dump_pci)},
 	{"/sbin/ata /sys/dev/ata nodma noirq",				dump_ata, 			sizeof(dump_ata)},
 	{"/sbin/ext2 /dev/ext2-hda1 /dev/hda1",				dump_ext2, 			sizeof(dump_ext2)},

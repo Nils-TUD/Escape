@@ -22,14 +22,14 @@ timeout 3
 
 title Escape
 kernel /boot/escape$suffix root=/dev/iso9660-cdrom
-module /bin/initloader
+module /sbin/initloader
 module /sbin/pci /dev/pci
 module /sbin/ata /sys/dev/ata nodma
 module /sbin/iso9660 /dev/iso9660-cdrom cdrom
 
 title Escape - Test
 kernel /boot/escape_test$suffix
-module /bin/initloader
+module /sbin/initloader
 EOF
 
 	genisoimage -U -iso-level 3 -input-charset ascii -R -b boot/grub/stage2_eltorito -no-emul-boot \
@@ -66,14 +66,14 @@ timeout 3
 
 title Escape
 kernel /boot/escape$suffix root=/dev/ext2-hda1 swapdev=/dev/hda3
-module /bin/initloader
+module /sbin/initloader
 module /sbin/pci /dev/pci
 module /sbin/ata /sys/dev/ata
 module /sbin/ext2 /dev/ext2-hda1 /dev/hda1
 
 title Escape - Test
 kernel /boot/escape_test$suffix
-module /bin/initloader
+module /sbin/initloader
 EOF
 
 	sudo ./boot/perms.sh $dir
@@ -115,7 +115,7 @@ create_usbimg() {
 	for d in ramdisk ext2 pci; do
 		cp $1/dist/sbin/$d $tmp/sbin
 	done
-	cp $1/dist/bin/initloader $tmp/bin
+	cp $1/dist/sbin/initloader $tmp/bin
 	cp $1/fs.img.gz $tmp/boot
 
 	# create menu.lst
@@ -125,7 +125,7 @@ timeout 3
 
 title Escape
 kernel /boot/escape$suffix root=/dev/ext2-ramdisk-fs nolog
-module /bin/initloader
+module /sbin/initloader
 module /sbin/ramdisk /dev/ramdisk-fs -f /sys/boot/fs.img.gz
 module /sbin/pci /dev/pci
 module /sbin/ext2 /dev/ext2-ramdisk-fs /dev/ramdisk-fs
@@ -133,7 +133,7 @@ module /boot/fs.img.gz
 
 title Escape - Test
 kernel /boot/escape_test$suffix
-module /bin/initloader
+module /sbin/initloader
 EOF
 
 	# determine size and add a bit of space

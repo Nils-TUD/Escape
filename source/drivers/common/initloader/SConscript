@@ -2,7 +2,7 @@ Import('env')
 myenv = env.Clone()
 myenv.Append(LINKFLAGS = ' -nostartfiles')
 myenv.EscapeCProg(
-	'bin',
+	'sbin',
 	target = 'initloader',
 	source = [myenv.Glob('$TGT/*.S'), myenv.Glob('$TGTTYPE/*.S'), myenv.Glob('*.c')],
 	force_static = True

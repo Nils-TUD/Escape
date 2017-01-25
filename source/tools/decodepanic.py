@@ -36,7 +36,7 @@ def find_symbol(coderegs, addr):
 def get_symbols(binary):
 	symbols = []
 	if binary == '/sys/boot/initloader':
-		binary = '/bin/initloader'
+		binary = '/sbin/initloader'
 	elif binary[0:10] == '/sys/boot/':
 		binary = '/sbin/' + binary[10:]
 	res = subprocess.check_output(

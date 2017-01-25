@@ -49,7 +49,7 @@ typedef struct {
 /* the tasks we should load */
 static LoadProg progs[] = {
 	{"/boot/escape","/boot/escape root=/dev/ext2-hda1",0,0},
-	{"/bin/initloader","/bin/initloader",0,0},
+	{"/sbin/initloader","/sbin/initloader",0,0},
 	{"/sbin/disk","/sbin/disk /sys/dev/disk",0,0},
 	{"/sbin/ext2","/sbin/ext2 /dev/ext2-hda1 /dev/hda1",0,0},
 };

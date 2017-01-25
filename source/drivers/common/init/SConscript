@@ -3,4 +3,4 @@ Import('env')
 src = [
 	env.Glob('*.cc'), env.Glob('*/*.cc'), env.Glob('arch/$TGT/*.cc'), env.Glob('arch/$TGTTYPE/*.cc')
 ]
-env.EscapeCXXProg('bin', target = 'init', source = src, LIBS = ['usergroup'])
+env.EscapeCXXProg('sbin', target = 'init', source = src, LIBS = ['usergroup'])

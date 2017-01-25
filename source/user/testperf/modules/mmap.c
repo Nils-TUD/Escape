@@ -110,7 +110,7 @@ int mod_mmap(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	}
 
 	{
-		const char *path = "/bin/init";
+		const char *path = "/sbin/init";
 		printf("mmap of %s...\n",path);
 		int fd = open(path,O_RDONLY);
 		if(fd < 0)

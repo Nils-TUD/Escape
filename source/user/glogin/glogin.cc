@@ -177,6 +177,11 @@ private:
 int main(void) {
 	const char *logfile = "/sys/log";
 
+	/* we want to overwrite them */
+	close(STDIN_FILENO);
+	close(STDOUT_FILENO);
+	close(STDERR_FILENO);
+
 	int fd;
 
 	/* open stdin */

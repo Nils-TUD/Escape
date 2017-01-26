@@ -161,7 +161,8 @@ int main(void) {
 				if(state != STATE_RUN)
 					pm.died(st.pid);
 				else {
-					pm.restart(st.pid);
+					if(st.exitCode != 0 || st.signal != SIG_COUNT)
+						pm.restart(st.pid);
 					uim.died(st.pid);
 				}
 			}

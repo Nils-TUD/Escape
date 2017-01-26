@@ -17,6 +17,7 @@ root /sbin/tcpip
 	/dev/tcpip 0110 network
 network /sbin/http
 	/dev/http 0440 network
+network /sbin/network
 ui /sbin/serial com1
 	/dev/com1 0770 output
 root /bin/login TERM=/dev/com1

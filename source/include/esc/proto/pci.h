@@ -115,11 +115,29 @@ public:
 	 * @throws if the operation failed
 	 */
 	Device getByClass(uchar cls,uchar subcls,int no = 0) {
+		Device dev;
+		int res = tryByClass(dev,cls,subcls,no);
+		if(res < 0)
+			VTHROWE("getByClass(" << cls << "," << subcls << ")",res);
+		return dev;
+	}
+
+	/**
+	 * Tries to find the device with given class and subclass.
+	 *
+	 * @param dev will be set to the properties if successfull
+	 * @param cls the class
+	 * @param subcls the subclass
+	 * @param no the number (if there are multiple devices with this class/subclass)
+	 * @return 0 on success
+	 */
+	int tryByClass(Device &dev,uchar cls,uchar subcls,int no = 0) {
 		ValueResponse<Device> r;
 		_is << cls << subcls << no << SendReceive(MSG_PCI_GET_BY_CLASS) >> r;
 		if(r.err < 0)
-			VTHROWE("getByClass(" << cls << "," << subcls << ")",r.err);
-		return r.res;
+			return r.err;
+		dev = r.res;
+		return 0;
 	}
 
 	/**

@@ -23,6 +23,8 @@
 
 #include "eeprom.h"
 
+/* parts of the code are inspired by the iPXE intel driver */
+
 int EEPROM::shift = 0;
 uint32_t EEPROM::doneBit = 0;
 

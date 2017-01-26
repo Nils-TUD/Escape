@@ -47,11 +47,11 @@ public:
 };
 
 int main(int argc,char **argv) {
-	if(argc != 2)
-		error("Usage: %s <device>\n",argv[0]);
+	if(argc != 3)
+		error("Usage: %s <bdf> <device>\n",argv[0]);
 
 	LoDriver *lo = new LoDriver();
-	esc::NICDevice dev(argv[1],0700,lo);
+	esc::NICDevice dev(argv[2],0700,lo);
 	lo->handler = std::make_memfun(&dev,&esc::NICDevice::checkPending);
 	dev.loop();
 	return EXIT_SUCCESS;

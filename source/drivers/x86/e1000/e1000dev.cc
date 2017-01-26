@@ -28,6 +28,8 @@
 #include "e1000dev.h"
 #include "eeprom.h"
 
+/* parts of the code are inspired by the iPXE intel driver */
+
 E1000::E1000(esc::PCI &pci,const esc::PCI::Device &nic)
 		: NICDriver(), _irq(nic.irq), _irqsem(), _curRxBuf(), _curTxBuf(), _bufs(),
 		  _bufsPhys(), _mmio(), _handler() {

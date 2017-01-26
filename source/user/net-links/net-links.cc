@@ -22,25 +22,15 @@
 #include <esc/stream/std.h>
 #include <esc/cmdargs.h>
 #include <info/link.h>
-#include <info/process.h>
 #include <sys/common.h>
-#include <sys/proc.h>
 #include <sys/stat.h>
-#include <sys/thread.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 using namespace esc;
 
-static const int TIMEOUT = 2000; /* ms */
-
-static void linkRem(Net &net,int argc,char **argv);
-
 static void usage(const char *name) {
-	serr << "Usage: " << name << " (add|rem|set|up|down|show) args...\n";
-	serr << "\tadd <link> <driver>           : adds link <link> offered by <driver>\n";
-	serr << "\trem <link>                    : removes link <link>\n";
+	serr << "Usage: " << name << " (set|up|down|show) args...\n";
 	serr << "\tset <link> (ip|subnet) <val>  : configures <link>\n";
 	serr << "\tup <link>                     : enables <link>\n";
 	serr << "\tdown <link>                   : disables <link>\n";
@@ -55,64 +45,6 @@ static info::link *getByName(const char *name) {
 			return *it;
 	}
 	return NULL;
-}
-
-static void linkAdd(Net &net,int argc,char **argv) {
-	char path[MAX_PATH_LEN];
-	if(argc < 4)
-		usage(argv[0]);
-
-	snprintf(path,sizeof(path),"/dev/%s",argv[2]);
-	int pid = fork();
-	if(pid == 0) {
-		const char *args[] = {argv[3],path,NULL};
-		execv(argv[3],args);
-	}
-	else if(pid < 0)
-		error("fork");
-	else {
-		int res;
-		uint duration = 0;
-		/* wait a bit for the NIC driver to register the device */
-		while(duration < TIMEOUT && (res = open(path,O_RDONLY)) == -ENOENT) {
-			usleep(20 * 1000);
-			duration += 20;
-			// we want to show the error from open, not sleep
-			errno = res;
-		}
-		if(res < 0)
-			error("open");
-
-		try {
-			net.linkAdd(argv[2],path);
-		}
-		catch(const std::exception &e) {
-			try {
-				linkRem(net,argc,argv);
-			}
-			catch(...) {
-			}
-			throw;
-		}
-	}
-}
-
-static void linkRem(Net &net,int argc,char **argv) {
-	if(argc < 3)
-		usage(argv[0]);
-
-	net.linkRem(argv[2]);
-	std::vector<info::process*> procs = info::process::get_list();
-	for(auto it = procs.begin(); it != procs.end(); ++it) {
-		// TODO actually, we should validate if it's really a network-driver and not some random
-		// process that happens to have that string in its command line ;)
-		if((*it)->pid() != getpid() && (*it)->command().find(argv[2])) {
-			kill((*it)->pid(),SIGTERM);
-			return;
-		}
-	}
-
-	printe("Unable to find driver-process for '%s'",argv[2]);
 }
 
 static void linkSet(Net &net,int argc,char **argv) {
@@ -177,10 +109,6 @@ int main(int argc,char **argv) {
 			}
 		}
 	}
-	else if(strcmp(argv[1],"add") == 0)
-		linkAdd(net,argc,argv);
-	else if(strcmp(argv[1],"rem") == 0)
-		linkRem(net,argc,argv);
 	else if(strcmp(argv[1],"set") == 0)
 		linkSet(net,argc,argv);
 	else if(strcmp(argv[1],"up") == 0 || strcmp(argv[1],"down") == 0)

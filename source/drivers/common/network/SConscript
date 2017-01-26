@@ -1,0 +1,2 @@
+Import('env')
+env.EscapeCXXProg('sbin', target = 'network', source = env.Glob('*.cc'))

@@ -123,9 +123,6 @@ class Ne2k : public esc::NICDriver {
 	static const size_t MIN_PKT_SIZE	= 60;
 
 public:
-	static const unsigned VENDOR_ID		= 0x10ec;
-	static const unsigned DEVICE_ID		= 0x8029;
-
 	explicit Ne2k(esc::PCI &pci,const esc::PCI::Device &nic);
 
 	void start(std::Functor<void> *handler) {

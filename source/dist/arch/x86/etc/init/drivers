@@ -14,10 +14,11 @@ audio /sbin/speaker
 input /sbin/ps2
 	/dev/keyb 0110 input
 	/dev/mouse 0110 input
-root /sbin/tcpip
+network /sbin/tcpip
 	/dev/socket 0770 network
 	/dev/tcpip 0110 network
 network /sbin/http
 	/dev/http 0440 network
+network /sbin/network
 ui /sbin/uimng /dev/vga /dev/vesa
 	/dev/uimng 0110 input

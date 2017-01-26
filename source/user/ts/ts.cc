@@ -198,7 +198,7 @@ int main(int argc,char **argv) {
 		thread::time_type time = t->runtime() / 1000;
 		sout << fmt(time / (1000 * 60),maxRuntime) << ":";
 		time %= 1000 * 60;
-		sout << fmt(time / 1000,"-0",2) << ".";
+		sout << fmt(time / 1000,"0",2) << ".";
 		time %= 1000;
 		sout << fmt(time,"0",3) << " ";
 		sout << fmt(cyclePercent,5, 1) << "% ";

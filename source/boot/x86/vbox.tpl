@@ -19,6 +19,11 @@
         <ACPI enabled="true"/>
         <IOAPIC enabled="true"/>
       </BIOS>
+      <Network>
+        <Adapter slot="0" enabled="true" MACAddress="0800276A040A" cable="true" type="82540EM">
+          <NAT/>
+        </Adapter>
+      </Network>
     </Hardware>
   </Machine>
 </VirtualBox>

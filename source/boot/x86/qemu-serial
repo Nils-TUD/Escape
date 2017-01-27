@@ -19,7 +19,7 @@ network /sbin/http
 	/dev/http 0440 network
 network /sbin/network
 ui /sbin/serial com1
-	/dev/com1 0770 output
+	/dev/com1 0770 ui
 root /bin/login TERM=/dev/com1
 EOF
 

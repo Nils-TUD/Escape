@@ -15,7 +15,7 @@ netstack /sbin/tcpip
 	/dev/tcpip 0110 netstack
 netdrv /sbin/network
 ui /sbin/term 0
-	/dev/term0 0770 output
+	/dev/term0 0770 ui
 root /bin/login TERM=/dev/term0
 ui /sbin/uimng /dev/vga
 	/dev/uimng 0110 ui

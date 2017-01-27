@@ -18,4 +18,4 @@ ui /sbin/term 0
 	/dev/term0 0770 output
 root /bin/login TERM=/dev/term0
 ui /sbin/uimng /dev/vga
-	/dev/uimng 0110 input
+	/dev/uimng 0110 ui

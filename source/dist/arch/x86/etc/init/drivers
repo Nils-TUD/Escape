@@ -21,4 +21,4 @@ network /sbin/http
 	/dev/http 0440 network
 network /sbin/network
 ui /sbin/uimng /dev/vga /dev/vesa
-	/dev/uimng 0110 input
+	/dev/uimng 0110 ui

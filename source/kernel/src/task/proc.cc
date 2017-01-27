@@ -97,7 +97,7 @@ void ProcBase::relRef(const Proc *p) {
 }
 
 ProcBase::ProcBase()
-	: flags(), pid(), parentPid(), ruid(), euid(), suid(), rgid(), egid(), sgid(),
+	: flags(), pid(), parentPid(), uid(), gid(),
 	  priority(MAX_PRIO), refs(1), entryPoint(), virtmem(static_cast<Proc*>(this)), groups(),
 	  fileDescs(), fileDescsSize(), sems(), semsSize(), msnode(), threadsDir(), stats(),
 	  sigRetAddr(), command(), threads(), locks(), mutexes() {
@@ -110,12 +110,8 @@ void ProcBase::init() {
 	/* init the pagetable for the first process again (the constructor overwrites it) */
 	p->virtmem.pagedir.makeFirst();
 
-	p->ruid = ROOT_UID;
-	p->euid = ROOT_UID;
-	p->suid = ROOT_UID;
-	p->rgid = ROOT_GID;
-	p->egid = ROOT_GID;
-	p->sgid = ROOT_GID;
+	p->uid = ROOT_UID;
+	p->gid = ROOT_GID;
 
 	/* create root mountspace */
 	p->msnode = createObj<VFSMS>(p->getPid(),VFS::getMSDir(),(char*)"root",0644);
@@ -260,12 +256,8 @@ int ProcBase::clone(uint8_t flags) {
 
 	/* set basic attributes */
 	p->parentPid = cur->pid;
-	p->ruid = cur->ruid;
-	p->euid = cur->euid;
-	p->suid = cur->suid;
-	p->rgid = cur->rgid;
-	p->egid = cur->egid;
-	p->sgid = cur->sgid;
+	p->uid = cur->uid;
+	p->gid = cur->gid;
 	p->sigRetAddr = cur->sigRetAddr;
 	p->priority = cur->priority;
 	p->entryPoint = cur->entryPoint;
@@ -841,8 +833,8 @@ void ProcBase::print(OStream &os) const {
 	os.writef("Proc %d:\n",pid);
 	os.writef("\tppid=%d, cmd=%s, entry=%#Px, priority=%d, refs=%d\n",
 		parentPid,command,entryPoint,priority,refs);
-	os.writef("\tOwner: ruid=%u, euid=%u, suid=%u\n",ruid,euid,suid);
-	os.writef("\tGroup: rgid=%u, egid=%u, sgid=%u\n",rgid,egid,sgid);
+	os.writef("\tUser: %u\n",uid);
+	os.writef("\tGroup: %u\n",gid);
 	os.writef("\tGroups: ");
 	Groups::print(os,pid);
 	os.writef("\n");

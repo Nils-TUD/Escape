@@ -129,12 +129,8 @@ private:
 	static int getppid(Thread *t,IntrptStackFrame *stack);
 	static int getuid(Thread *t,IntrptStackFrame *stack);
 	static int setuid(Thread *t,IntrptStackFrame *stack);
-	static int geteuid(Thread *t,IntrptStackFrame *stack);
-	static int seteuid(Thread *t,IntrptStackFrame *stack);
 	static int getgid(Thread *t,IntrptStackFrame *stack);
 	static int setgid(Thread *t,IntrptStackFrame *stack);
-	static int getegid(Thread *t,IntrptStackFrame *stack);
-	static int setegid(Thread *t,IntrptStackFrame *stack);
 	static int getgroups(Thread *t,IntrptStackFrame *stack);
 	static int setgroups(Thread *t,IntrptStackFrame *stack);
 	static int isingroup(Thread *t,IntrptStackFrame *stack);

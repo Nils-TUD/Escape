@@ -61,8 +61,8 @@ int main(int argc,const char *argv[]) {
 			error("Unable to get group ids for user '%s'",user);
 	}
 	else {
-		uid = geteuid();
-		gid = getegid();
+		uid = getuid();
+		gid = getgid();
 		gcount = getgroups(0,NULL);
 		gids = (gid_t*)malloc(sizeof(gid_t) * gcount);
 		if(getgroups(gcount,gids) < 0)

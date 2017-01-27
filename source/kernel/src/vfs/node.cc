@@ -76,8 +76,8 @@ VFSNode::VFSNode(pid_t pid,char *n,uint m,bool &success)
 	nameLen = strlen(name);
 	const Proc *p = pid != INVALID_PID ? Proc::getRef(pid) : NULL;
 	if(p) {
-		uid = p->getEUid();
-		gid = p->getEGid();
+		uid = p->getUid();
+		gid = p->getGid();
 		Proc::relRef(p);
 	}
 	else {
@@ -171,7 +171,7 @@ int VFSNode::chmod(pid_t pid,mode_t m) {
 	int res = 0;
 	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getRef(pid);
 	if(p) {
-		fs::User u(p->getEUid(),p->getEGid(),p->getPid());
+		fs::User u(p->getUid(),p->getGid(),p->getPid());
 		if(!fs::Permissions::canChmod(&u,uid))
 			res = -EPERM;
 		Proc::relRef(p);
@@ -185,7 +185,7 @@ int VFSNode::chown(pid_t pid,uid_t nuid,gid_t ngid) {
 	int res = 0;
 	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getRef(pid);
 	if(p) {
-		fs::User u(p->getEUid(),p->getEGid(),p->getPid());
+		fs::User u(p->getUid(),p->getGid(),p->getPid());
 		if(!fs::Permissions::canChown<Groups::contains>(&u,uid,gid,nuid,ngid))
 			res = -EPERM;
 		Proc::relRef(p);
@@ -204,7 +204,7 @@ int VFSNode::utime(pid_t pid,const struct utimbuf *utimes) {
 	int res = 0;
 	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getRef(pid);
 	if(p) {
-		fs::User u(p->getEUid(),p->getEGid(),p->getPid());
+		fs::User u(p->getUid(),p->getGid(),p->getPid());
 		if(!fs::Permissions::canUtime(&u,uid))
 			res = -EPERM;
 		Proc::relRef(p);
@@ -252,7 +252,7 @@ bool VFSNode::canRemove(pid_t pid,const VFSNode *node) const {
 		return false;
 
 	Proc *p = Proc::getByPid(pid);
-	fs::User u(p->getEUid(),p->getEGid(),p->getPid());
+	fs::User u(p->getUid(),p->getGid(),p->getPid());
 	return fs::Permissions::canRemove(&u,mode,uid,node->uid) == 0;
 }
 

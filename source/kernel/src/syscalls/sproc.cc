@@ -45,66 +45,32 @@ int Syscalls::getppid(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 }
 
 int Syscalls::getuid(Thread *t,IntrptStackFrame *stack) {
-	SYSC_RET1(stack,t->getProc()->getRUid());
+	SYSC_RET1(stack,t->getProc()->getUid());
 }
 
 int Syscalls::setuid(Thread *t,IntrptStackFrame *stack) {
 	uid_t uid = (uid_t)SYSC_ARG1(stack);
 	Proc *p = t->getProc();
-	if(EXPECT_FALSE(p->getEUid() != ROOT_UID))
+	if(EXPECT_FALSE(p->getUid() != ROOT_UID))
 		SYSC_ERROR(stack,-EPERM);
 
 	p->setUid(uid);
-	VFS::chownProcess(p->getPid(),p->getEUid(),p->getEGid());
+	VFS::chownProcess(p->getPid(),p->getUid(),p->getGid());
 	SYSC_RET1(stack,0);
 }
 
 int Syscalls::getgid(Thread *t,IntrptStackFrame *stack) {
-	SYSC_RET1(stack,t->getProc()->getRGid());
+	SYSC_RET1(stack,t->getProc()->getGid());
 }
 
 int Syscalls::setgid(Thread *t,IntrptStackFrame *stack) {
 	gid_t gid = (gid_t)SYSC_ARG1(stack);
 	Proc *p = t->getProc();
-	if(EXPECT_FALSE(p->getEUid() != ROOT_UID))
+	if(EXPECT_FALSE(p->getUid() != ROOT_UID))
 		SYSC_ERROR(stack,-EPERM);
 
 	p->setGid(gid);
-	VFS::chownProcess(p->getPid(),p->getEUid(),p->getEGid());
-	SYSC_RET1(stack,0);
-}
-
-int Syscalls::geteuid(Thread *t,IntrptStackFrame *stack) {
-	SYSC_RET1(stack,t->getProc()->getEUid());
-}
-
-int Syscalls::seteuid(Thread *t,IntrptStackFrame *stack) {
-	uid_t uid = (uid_t)SYSC_ARG1(stack);
-	Proc *p = t->getProc();
-	/* if not root, it has to be either ruid, euid or suid */
-	if(EXPECT_FALSE(p->getEUid() != ROOT_UID && uid != p->getRUid() && uid != p->getEUid() &&
-			uid != p->getSUid()))
-		SYSC_ERROR(stack,-EPERM);
-
-	p->setEUid(uid);
-	VFS::chownProcess(p->getPid(),p->getEUid(),p->getEGid());
-	SYSC_RET1(stack,0);
-}
-
-int Syscalls::getegid(Thread *t,IntrptStackFrame *stack) {
-	SYSC_RET1(stack,t->getProc()->getEGid());
-}
-
-int Syscalls::setegid(Thread *t,IntrptStackFrame *stack) {
-	gid_t gid = (gid_t)SYSC_ARG1(stack);
-	Proc *p = t->getProc();
-	/* if not root, it has to be either rgid, egid or sgid */
-	if(EXPECT_FALSE(p->getEUid() != ROOT_UID && gid != p->getRGid() && gid != p->getEGid() &&
-			gid != p->getSGid()))
-		SYSC_ERROR(stack,-EPERM);
-
-	p->setEGid(gid);
-	VFS::chownProcess(p->getPid(),p->getEUid(),p->getEGid());
+	VFS::chownProcess(p->getPid(),p->getUid(),p->getGid());
 	SYSC_RET1(stack,0);
 }
 

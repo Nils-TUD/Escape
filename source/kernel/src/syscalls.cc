@@ -88,48 +88,42 @@ const Syscalls::handler_func Syscalls::syscalls[] = {
 	mattr,
 	getuid,
 	setuid,
-	geteuid,
-	seteuid,
 	getgid,
+	setgid,
+	chmod,
 
 	/* 50 */
-	setgid,
-	getegid,
-	setegid,
-	chmod,
 	chown,
 	getgroups,
 	setgroups,
 	isingroup,
 	alarm,
 	tsctotime,
-
-	/* 60 */
 	semcrt,
 	semop,
 	semdestr,
 	sendrecv,
+
+	/* 60 */
 	cancel,
 	createchan,
 	delegate,
 	obtain,
 	sysconfstr,
 	clonems,
-
-	/* 70 */
 	joinms,
 	mlock,
 	mlockall,
 	semcrtirq,
+
+	/* 70 */
 	bindto,
 	rename,
 	gettimeofday,
 	utime,
 	truncate,
-
 #if defined(__x86__)
 	reqports,
-	/* 80 */
 	relports,
 #else
 	debug,

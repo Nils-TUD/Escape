@@ -409,46 +409,22 @@ public:
 		return priority;
 	}
 	/**
-	 * @return real, effective or saved user-id
+	 * @return current user-id
 	 */
-	uid_t getRUid() const {
-		return ruid;
+	uid_t getUid() const {
+		return uid;
 	}
-	uid_t getEUid() const {
-		return euid;
-	}
-	uid_t getSUid() const {
-		return suid;
-	}
-	void setUid(uid_t uid) {
-		ruid = euid = suid = uid;
-	}
-	void setEUid(uid_t uid) {
-		euid = uid;
-	}
-	void setSUid(uid_t uid) {
-		suid = uid;
+	void setUid(uid_t _uid) {
+		uid = _uid;
 	}
 	/**
-	 * @return real, effective or saved group-id
+	 * @return current group-id
 	 */
-	gid_t getRGid() const {
-		return rgid;
+	gid_t getGid() const {
+		return gid;
 	}
-	gid_t getEGid() const {
-		return egid;
-	}
-	gid_t getSGid() const {
-		return sgid;
-	}
-	void setGid(gid_t gid) {
-		rgid = egid = sgid = gid;
-	}
-	void setEGid(gid_t gid) {
-		egid = gid;
-	}
-	void setSGid(gid_t gid) {
-		sgid = gid;
+	void setGid(gid_t _gid) {
+		gid = _gid;
 	}
 	/**
 	 * @return the command line of the process
@@ -595,14 +571,9 @@ private:
 	/*const*/ pid_t pid;
 	/* parent process id */
 	pid_t parentPid;
-	/* real, effective and saved user-id */
-	uid_t ruid;
-	uid_t euid;
-	uid_t suid;
-	/* real, effective and saved group-id */
-	gid_t rgid;
-	gid_t egid;
-	gid_t sgid;
+	/* user and group id */
+	uid_t uid;
+	gid_t gid;
 	/* the minimum priority of all threads; is used for new childs and threads */
 	uint8_t priority;
 	/* the number of references to this process */
@@ -610,7 +581,7 @@ private:
 	/* the entrypoint of the binary */
 	uintptr_t entryPoint;
 	VirtMem virtmem;
-	/* all groups (may include egid or not) of this process */
+	/* all groups (may include gid or not) of this process */
 	Groups::Entries *groups;
 	/* file descriptors: point into the global file table */
 	OpenFile **fileDescs;

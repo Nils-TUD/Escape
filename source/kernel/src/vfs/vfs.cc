@@ -132,7 +132,7 @@ int VFS::hasAccess(pid_t pid,mode_t mode,uid_t uid,gid_t gid,ushort flags) {
 	if(p == NULL)
 		return -ESRCH;
 
-	fs::User u(p->getEUid(),p->getEGid(),p->getPid());
+	fs::User u(p->getUid(),p->getGid(),p->getPid());
 	uint perms = 0;
 	if(flags & VFS_READ)
 		perms |= MODE_READ;
@@ -301,7 +301,7 @@ ino_t VFS::createProcess(pid_t pid,VFSNode *ms) {
 	if(dir == NULL)
 		goto errorName;
 	/* change owner to user+group of process */
-	if(dir->chown(KERNEL_PID,p->getEUid(),p->getEGid()) < 0)
+	if(dir->chown(KERNEL_PID,p->getUid(),p->getGid()) < 0)
 		goto errorDir;
 
 	/* create process-info-node */

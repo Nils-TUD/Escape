@@ -93,48 +93,42 @@ const struct Syscall syscalls[] = {
 	{"mattr",			"%p,%x,%x"					},
 	{"getuid",    		""							},
 	{"setuid",    		"%d"						},
-	{"geteuid",    		""							},
-	{"seteuid",    		"%d"						},
 	{"getgid",    		""							},
+	{"setgid",    		"%d"						},
+	{"chmod",    		"%d,%o"						},
 
 	/* 50 */
-	{"setgid",    		"%d"						},
-	{"getegid",    		""							},
-	{"setegid",   		"%d"						},
-	{"chmod",    		"%d,%o"						},
 	{"chown",    		"%d,%d,%d"					},
 	{"getgroups",    	"%x,%p"						},
 	{"setgroups",    	"%x,%p"						},
 	{"isingroup",    	"%d,%d"						},
 	{"alarm",    		"%u",						},
 	{"tsctotime",    	"%u"						},
-
-	/* 60 */
 	{"semcrt",			"%u"						},
 	{"semop",			"%d,%d"						},
 	{"semdestr",		"%d"						},
 	{"sendrecv",		"%d,%p,%p,%x"				},
+
+	/* 60 */
 	{"cancel",			"%d,%u"						},
 	{"createchan",		"%d,%O"						},
 	{"delegate",        "%d,%d,%O,%d",				},
 	{"obtain",          "%d,%d",					},
 	{"sysconfstr",		"%d,%p,%x"					},
 	{"clonems",			""							},
-
-	/* 70 */
 	{"joinms",			"%d"						},
 	{"mlock",			"%p,%x"						},
 	{"mlockall",		""							},
 	{"semcrtirq",		"%d,%s,%p,%p"				},
+
+	/* 70 */
 	{"bindto",			"%d,%d"						},
 	{"rename",			"%d,%s,%d,%s"				},
 	{"gettimeofday",	"%p"						},
 	{"utime",			"%d,%p"						},
 	{"truncate",		"%d,%u"						},
-
 #if defined(__x86__)
 	{"reqports",   		"%d,%d"						},
-	/* 80 */
 	{"relports",    	"%d,%d"						},
 #else
 	{"debug",    		""							},

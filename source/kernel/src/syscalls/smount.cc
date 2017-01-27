@@ -64,7 +64,7 @@ int Syscalls::mount(Thread *t,IntrptStackFrame *stack) {
 
 	/* root can mount everywhere, though. this is necessary because it needs to mount e.g. '/',
 	 * which doesn't exist initially. */
-	uid_t uid = t->getProc()->getEUid();
+	uid_t uid = t->getProc()->getUid();
 	if(uid != ROOT_UID) {
 		res = VFS::openPath(pid,VFS_NOCHAN,0,abspath,&pfile);
 		if(res < 0)

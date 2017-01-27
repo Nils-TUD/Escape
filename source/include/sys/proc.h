@@ -50,15 +50,18 @@ static inline pid_t getppid(void) {
 }
 
 /**
- * @return the real user-id of the current process
+ * @return the user-id of the current process
  */
 static inline uid_t getuid(void) {
 	return syscall0(SYSCALL_GETUID);
 }
+static inline uid_t geteuid(void) {
+	return getuid();
+}
 
 /**
- * Sets the real, effective and saved user-id of the current process. This is allowed only if the
- * effective user-id of the current process is ROOT_UID.
+ * Sets the user-id of the current process. This is allowed only if the
+ * user-id of the current process is ROOT_UID.
  *
  * @param uid the new uid
  * @return 0 on success
@@ -66,35 +69,23 @@ static inline uid_t getuid(void) {
 static inline int setuid(uid_t uid) {
 	return syscall1(SYSCALL_SETUID,uid);
 }
-
-/**
- * @return the effective user-id of the current process
- */
-static inline uid_t geteuid(void) {
-	return syscall0(SYSCALL_GETEUID);
-}
-
-/**
- * Sets the effective user-id of the current process to <uid>. This can be either the current real,
- * effective or saved uid of the process or anything if the effective user-id is ROOT_UID.
- *
- * @param uid the new user-id
- * @return 0 on success
- */
 static inline int seteuid(uid_t uid) {
-	return syscall1(SYSCALL_SETEUID,uid);
+	return setuid(uid);
 }
 
 /**
- * @return the real group-id of the current process
+ * @return the group-id of the current process
  */
 static inline gid_t getgid(void) {
 	return syscall0(SYSCALL_GETGID);
 }
+static inline gid_t getegid(void) {
+	return getgid();
+}
 
 /**
- * Sets the real, effective and saved group-id of the current process. This is allowed only if the
- * effective user-id of the current process is ROOT_UID.
+ * Sets the group-id of the current process. This is allowed only if the
+ * user-id of the current process is ROOT_UID.
  *
  * @param gid the new gid
  * @return 0 on success
@@ -102,23 +93,8 @@ static inline gid_t getgid(void) {
 static inline int setgid(gid_t gid) {
 	return syscall1(SYSCALL_SETGID,gid);
 }
-
-/**
- * @return the effective group-id of the current process
- */
-static inline gid_t getegid(void) {
-	return syscall0(SYSCALL_GETEGID);
-}
-
-/**
- * Sets the effective group-id of the current process to <gid>. This can be either the current real,
- * effective or saved gid of the process or anything if the effective user-id is ROOT_UID.
- *
- * @param gid the new group-id
- * @return 0 on success
- */
 static inline int setegid(gid_t gid) {
-	return syscall1(SYSCALL_SETEGID,gid);
+	return setgid(gid);
 }
 
 /**

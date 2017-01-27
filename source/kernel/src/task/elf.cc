@@ -50,19 +50,6 @@ int ELF::doLoad(const char *path,int type,StartupInfo *info) {
 		return -ENOEXEC;
 	}
 
-	/* TODO do we want to allow setuid anyway? if we do, we need to disable it for user mounts...
-	 * fill bindesc */
-	struct stat finfo;
-	if((res = file->fstat(p->getPid(),&finfo)) < 0) {
-		Log::get().writef("[LOADER] Unable to stat '%s': %s\n",path,strerror(res));
-		goto failed;
-	}
-	/* set suid and sgid */
-	if(finfo.st_mode & S_ISUID)
-		p->setSUid(finfo.st_uid);
-	if(finfo.st_mode & S_ISGID)
-		p->setSGid(finfo.st_gid);
-
 	/* first read the header */
 	sElfEHeader eheader;
 	if((readRes = file->read(p->getPid(),&eheader,sizeof(sElfEHeader))) != sizeof(sElfEHeader)) {

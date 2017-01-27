@@ -63,6 +63,7 @@
 Ne2k::Ne2k(esc::PCI &pci,const esc::PCI::Device &nic)
 		: _irq(nic.irq), _irqsem(semcrtirq(_irq,"NE2000",NULL,NULL)), _basePort(), _mac(),
 		  _nextPacket(), _handler() {
+	print("Listening to IRQ %d",_irq);
 	// create the IRQ sem here to ensure that we've registered it if the first interrupt arrives
 	if(_irqsem < 0)
 		error("Unable to create irq-semaphore");

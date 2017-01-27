@@ -1,13 +1,13 @@
 output /sbin/video
 	/dev/vga 0770 output
 util /sbin/zero
-	/dev/zero 0666 root
+	/dev/zero 0666 util
 util /sbin/random
-	/dev/random 0666 root
+	/dev/random 0666 util
 util /sbin/null
-	/dev/null 0666 root
+	/dev/null 0666 util
 util /sbin/pipe
-	/dev/pipe 0666 root
+	/dev/pipe 0666 util
 input /sbin/keyb
 	/dev/keyb 0110 input
 netstack /sbin/tcpip

@@ -21,6 +21,7 @@
 
 #include <esc/stream/ostringstream.h>
 #include <exception>
+#include <stdlib.h>
 
 /**
  * This macro throws an exception and passes a formatted string as its message. That is, you can
@@ -50,6 +51,9 @@ public:
 		: _error(err), _msg(s) {
 		if(err != 0)
 			_msg = _msg + ": " + strerror(err);
+#if defined(__eco32__)
+		::error(_msg.c_str());
+#endif
 	}
 	virtual ~default_error() throw() {
 	}

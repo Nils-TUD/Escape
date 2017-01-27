@@ -90,8 +90,6 @@ static const char *statusNames[] = {
 };
 
 int main(int argc,char **argv) {
-	Net net("/dev/tcpip");
-
 	if(argc < 2 || strcmp(argv[1],"show") == 0) {
 		std::vector<info::link*> links = info::link::get_list();
 		for(auto it = links.begin(); it != links.end(); ++it) {
@@ -109,10 +107,14 @@ int main(int argc,char **argv) {
 			}
 		}
 	}
-	else if(strcmp(argv[1],"set") == 0)
+	else if(strcmp(argv[1],"set") == 0) {
+		Net net("/dev/tcpip");
 		linkSet(net,argc,argv);
-	else if(strcmp(argv[1],"up") == 0 || strcmp(argv[1],"down") == 0)
+	}
+	else if(strcmp(argv[1],"up") == 0 || strcmp(argv[1],"down") == 0) {
+		Net net("/dev/tcpip");
 		linkUpDown(net,argc,argv);
+	}
 	else
 		usage(argv[0]);
 	return 0;

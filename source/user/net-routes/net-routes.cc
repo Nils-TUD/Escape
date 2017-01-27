@@ -79,8 +79,6 @@ static void routeUpDown(Net &net,int argc,char **argv) {
 }
 
 int main(int argc,char **argv) {
-	Net net("/dev/tcpip");
-
 	if(argc < 2 || strcmp(argv[1],"show") == 0) {
 		std::vector<info::route*> routes = info::route::get_list();
 		sout << fmt("Destination","-",15) << fmt("Gateway","-",15);
@@ -108,12 +106,18 @@ int main(int argc,char **argv) {
 			sout << (*it)->link() << "\n";
 		}
 	}
-	else if(strcmp(argv[1],"add") == 0)
+	else if(strcmp(argv[1],"add") == 0) {
+		Net net("/dev/tcpip");
 		routeAdd(net,argc,argv);
-	else if(strcmp(argv[1],"rem") == 0)
+	}
+	else if(strcmp(argv[1],"rem") == 0) {
+		Net net("/dev/tcpip");
 		routeRem(net,argc,argv);
-	else if(strcmp(argv[1],"up") == 0 || strcmp(argv[1],"down") == 0)
+	}
+	else if(strcmp(argv[1],"up") == 0 || strcmp(argv[1],"down") == 0) {
+		Net net("/dev/tcpip");
 		routeUpDown(net,argc,argv);
+	}
 	else
 		usage(argv[0]);
 	return 0;

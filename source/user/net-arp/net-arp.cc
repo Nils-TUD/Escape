@@ -65,8 +65,6 @@ static void arpRem(Net &net,int argc,char **argv) {
 }
 
 int main(int argc,char **argv) {
-	Net net("/dev/tcpip");
-
 	if(argc < 2 || strcmp(argv[1],"show") == 0) {
 		std::vector<info::arp*> arplist = info::arp::get_list();
 		sout << fmt("IP address","-",15) << "MAC address\n";
@@ -75,10 +73,14 @@ int main(int argc,char **argv) {
 			sout << (*it)->mac() << "\n";
 		}
 	}
-	else if(strcmp(argv[1],"add") == 0)
+	else if(strcmp(argv[1],"add") == 0) {
+		Net net("/dev/tcpip");
 		arpAdd(net,argc,argv);
-	else if(strcmp(argv[1],"rem") == 0)
+	}
+	else if(strcmp(argv[1],"rem") == 0) {
+		Net net("/dev/tcpip");
 		arpRem(net,argc,argv);
+	}
 	else
 		usage(argv[0]);
 	return 0;

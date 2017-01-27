@@ -44,7 +44,7 @@ int main(int argc,char **argv) {
 		e1000 = new E1000(pci,nic);
 	}
 
-	esc::NICDevice nicdev(argv[2],0700,e1000);
+	esc::NICDevice nicdev(argv[2],0770,e1000);
 	e1000->start(std::make_memfun(&nicdev,&esc::NICDevice::checkPending));
 
 	esc::NIC::MAC mac = nicdev.mac();

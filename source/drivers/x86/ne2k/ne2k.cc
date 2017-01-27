@@ -44,7 +44,7 @@ int main(int argc,char **argv) {
 		ne2k = new Ne2k(pci,nic);
 	}
 
-	esc::NICDevice nicdev(argv[2],0700,ne2k);
+	esc::NICDevice nicdev(argv[2],0770,ne2k);
 	ne2k->start(std::make_memfun(&nicdev,&esc::NICDevice::checkPending));
 
 	esc::NIC::MAC mac = nicdev.mac();

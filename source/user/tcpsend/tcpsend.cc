@@ -42,7 +42,7 @@ int main(int argc,char **argv) {
 
 	esc::Socket::Addr addr;
 	addr.family = esc::Socket::AF_INET;
-	Socket sock("/dev/socket",Socket::SOCK_STREAM,Socket::PROTO_TCP);
+	Socket sock(Socket::SOCK_STREAM,Socket::PROTO_TCP);
 
 	esc::Net::IPv4Addr ip;
 	esc::IStringStream is(argv[1]);

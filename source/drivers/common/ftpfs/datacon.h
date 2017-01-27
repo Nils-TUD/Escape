@@ -62,7 +62,7 @@ private:
 			is.get();
 		}
 
-		esc::Socket sock("/dev/socket",esc::Socket::SOCK_STREAM,esc::Socket::PROTO_TCP);
+		esc::Socket sock(esc::Socket::SOCK_STREAM,esc::Socket::PROTO_TCP);
 		esc::Socket::Addr addr;
 		addr.family = esc::Socket::AF_INET;
 		addr.d.ipv4.addr = esc::Net::IPv4Addr(parts[0],parts[1],parts[2],parts[3]).value();

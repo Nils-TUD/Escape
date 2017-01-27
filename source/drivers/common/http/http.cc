@@ -44,7 +44,7 @@ public:
 	// default-value because the ClientDevice-template calls HTTPClient(f); but that code isn't used
 	explicit HTTPClient(int f,const char *url = "",bool _redirected = false)
 		: Client(f), redirected(_redirected), domain(), path("/"), state(STATE_OPEN), contentlen(),
-		  remaining(), header(), sock("/dev/socket",Socket::SOCK_STREAM,Socket::PROTO_TCP) {
+		  remaining(), header(), sock(Socket::SOCK_STREAM,Socket::PROTO_TCP) {
 		esc::IStringStream isurl(url);
 		isurl.getline(domain,'/');
 		isurl.getline(path,'#');

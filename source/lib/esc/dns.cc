@@ -142,7 +142,7 @@ esc::Net::IPv4Addr DNS::resolve(const char *name,uint timeout) {
 	qend->cls = cputobe16(CLASS_IN);
 
 	// create socket
-	esc::Socket sock("/dev/socket",esc::Socket::SOCK_DGRAM,esc::Socket::PROTO_UDP);
+	esc::Socket sock(esc::Socket::SOCK_DGRAM,esc::Socket::PROTO_UDP);
 
 	// send over socket
 	esc::Socket::Addr addr;

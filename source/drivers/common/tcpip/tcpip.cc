@@ -25,7 +25,6 @@
 #include <sys/sync.h>
 #include <sys/thread.h>
 #include <sys/time.h>
-#include <usergroup/usergroup.h>
 #include <mutex>
 #include <stdio.h>
 #include <vector>
@@ -50,9 +49,10 @@ static int receiveThread(void *arg);
 
 class SocketDevice : public esc::ClientDevice<Socket> {
 public:
-	explicit SocketDevice(const char *path,mode_t mode)
+	explicit SocketDevice(const char *path,mode_t mode,int type)
 		: esc::ClientDevice<Socket>(path,mode,DEV_TYPE_BLOCK,
-			DEV_OPEN | DEV_CANCEL | DEV_DELEGATE | DEV_OBTAIN | DEV_READ | DEV_WRITE | DEV_CLOSE) {
+			DEV_OPEN | DEV_CANCEL | DEV_DELEGATE | DEV_OBTAIN | DEV_READ | DEV_WRITE | DEV_CLOSE),
+		  _type(type) {
 		set(MSG_FILE_OPEN,std::make_memfun(this,&SocketDevice::open));
 		set(MSG_FILE_READ,std::make_memfun(this,&SocketDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&SocketDevice::write));
@@ -72,14 +72,14 @@ public:
 		esc::FileOpen::Request r(buffer,sizeof(buffer));
 		is >> r;
 
-		int type = 0, proto = 0;
+		int proto = 0;
 		esc::IStringStream sip(r.path.str());
-		sip >> type >> proto;
+		sip >> proto;
 
 		int res = 0;
 		{
 			std::lock_guard<std::mutex> guard(mutex);
-			switch(type) {
+			switch(_type) {
 				case esc::Socket::SOCK_DGRAM:
 					add(is.fd(),new DGramSocket(is.fd(),proto));
 					break;
@@ -246,6 +246,8 @@ private:
 		if(res != 0)
 			is << esc::FileWrite::Response::result(res) << esc::Reply();
 	}
+
+	int _type;
 };
 
 class NetDevice : public esc::Device {
@@ -490,43 +492,52 @@ static int receiveThread(void *arg) {
 	return 0;
 }
 
-static gid_t networkGid;
-
-static void setGroup(int fd) {
-	if(fchown(fd,-1,networkGid) < 0)
-		printe("chown failed");
-}
-
 static int linksFileThread(void*) {
 	LinksFileDevice dev("/sys/net/links",0440);
-	setGroup(dev.id());
 	dev.loop();
 	return 0;
 }
 
 static int routesFileThread(void*) {
 	RoutesFileDevice dev("/sys/net/routes",0440);
-	setGroup(dev.id());
 	dev.loop();
 	return 0;
 }
 
 static int arpFileThread(void*) {
 	ARPFileDevice dev("/sys/net/arp",0440);
-	setGroup(dev.id());
 	dev.loop();
 	return 0;
 }
 
 static int socketsFileThread(void*) {
 	SocketsFileDevice dev("/sys/net/sockets",0440);
-	setGroup(dev.id());
 	dev.loop();
 	return 0;
 }
 
-static int socketThread(void*) {
-	SocketDevice dev("/dev/socket",0770);
+static int socketThread(void *arg) {
+	int type = *static_cast<int*>(arg);
+
+	const char *path;
+	switch(type) {
+		case esc::Socket::SOCK_DGRAM:
+			path = "/dev/sock-dgram";
+			break;
+		case esc::Socket::SOCK_STREAM:
+			path = "/dev/sock-stream";
+			break;
+		case esc::Socket::SOCK_RAW_ETHER:
+			path = "/dev/sock-raweth";
+			break;
+		case esc::Socket::SOCK_RAW_IP:
+			path = "/dev/sock-rawip";
+			break;
+		default:
+			A_UNREACHED;
+	}
+
+	SocketDevice dev(path,0770,type);
 	dev.loop();
 	return 0;
 }
@@ -540,27 +551,25 @@ static void createResolvConf() {
 		printe("Unable to create %s",resolvconf);
 		return;
 	}
-	setGroup(fd);
 	close(fd);
 }
 
 int main() {
 	srand(rdtsc());
 
-	// get the id of the network-group
-	size_t groupCount;
-	sNamedItem *groups = usergroup_parse(GROUPS_PATH,&groupCount);
-	sNamedItem *network = usergroup_getByName(groups,"network");
-	networkGid = network ? network->id : 0;
-	usergroup_free(groups);
-
 	print("Creating /sys/net");
 	if(mkdir("/sys/net",DIR_DEF_MODE) < 0)
 		printe("Unable to create /sys/net");
 	createResolvConf();
 
-	if(startthread(socketThread,NULL) < 0)
-		error("Unable to start socket thread");
+	if(startthread(socketThread,new int(esc::Socket::SOCK_DGRAM)) < 0)
+		error("Unable to start sock-dgram thread");
+	if(startthread(socketThread,new int(esc::Socket::SOCK_STREAM)) < 0)
+		error("Unable to start sock-stream thread");
+	if(startthread(socketThread,new int(esc::Socket::SOCK_RAW_IP)) < 0)
+		error("Unable to start sock-rawip thread");
+	if(startthread(socketThread,new int(esc::Socket::SOCK_RAW_ETHER)) < 0)
+		error("Unable to start sock-raweth thread");
 	if(startthread(linksFileThread,NULL) < 0)
 		error("Unable to start links-file thread");
 	if(startthread(routesFileThread,NULL) < 0)

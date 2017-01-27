@@ -39,7 +39,7 @@ int main(int argc,char **argv) {
 	if(isHelpCmd(argc,argv) || argc != 2)
 		usage(argv[0]);
 
-	Socket sock("/dev/socket",Socket::SOCK_STREAM,Socket::PROTO_TCP);
+	Socket sock(Socket::SOCK_STREAM,Socket::PROTO_TCP);
 
 	esc::Socket::Addr addr;
 	addr.family = esc::Socket::AF_INET;

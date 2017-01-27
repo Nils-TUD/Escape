@@ -216,7 +216,7 @@ int main(int argc,char **argv) {
 		return EXIT_FAILURE;
 	}
 
-	Socket sock("/dev/socket",Socket::SOCK_RAW_IP,Socket::PROTO_ICMP);
+	Socket sock(Socket::SOCK_RAW_IP,Socket::PROTO_ICMP);
 	uint sent = 0;
 	uint received = 0;
 

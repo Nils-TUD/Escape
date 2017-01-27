@@ -71,14 +71,13 @@ public:
 	/**
 	 * Creates a socket of given type.
 	 *
-	 * @param path the path to the device
 	 * @param type the socket type
 	 * @param proto the protocol
 	 * @throws if the operation failed
 	 */
-	explicit Socket(const char *path,Type type,Protocol proto)
+	explicit Socket(Type type,Protocol proto)
 		// no close by default because the IPCStream will do that already
-		: _close(false), _is(buildPath(path,type,proto).c_str(),O_RDWRMSG),
+		: _close(false), _is(buildPath(type,proto).c_str(),O_RDWRMSG),
 		  _shm(), _shmfd(-1), _shmsize() {
 	}
 
@@ -300,9 +299,24 @@ private:
 		return -1;
 	}
 
-	static std::string buildPath(const char *path,Type type,Protocol proto) {
+	static std::string buildPath(Type type,Protocol proto) {
 		OStringStream os;
-		os << path << "/" << type << " " << proto;
+		os << "/dev/sock-";
+		switch(type) {
+			case SOCK_DGRAM:
+				os << "dgram";
+				break;
+			case SOCK_STREAM:
+				os << "stream";
+				break;
+			case SOCK_RAW_IP:
+				os << "rawip";
+				break;
+			case SOCK_RAW_ETHER:
+				os << "raweth";
+				break;
+		}
+		os << "/" << proto;
 		return os.str();
 	}
 

@@ -15,10 +15,18 @@ input /sbin/ps2
 	/dev/keyb 0110 input
 	/dev/mouse 0110 input
 netstack /sbin/tcpip
-	/dev/socket 0770 netstack
-	/dev/tcpip 0110 netstack
+	/dev/sock-dgram 0770 netuser
+	/dev/sock-stream 0770 netuser
+	/dev/sock-rawip 0770 netadmin
+	/dev/sock-raweth 0770 netadmin
+	/dev/tcpip 0110 netadmin
+	/sys/net/links 0440 netuser
+	/sys/net/routes 0440 netuser
+	/sys/net/arp 0440 netuser
+	/sys/net/sockets 0440 netuser
+	/sys/net/nameserver 0664 netadmin
 netstack /sbin/http
-	/dev/http 0440 netstack
+	/dev/http 0440 netuser
 netdrv /sbin/network
 ui /sbin/uimng /dev/vga /dev/vesa
 	/dev/uimng 0110 ui

@@ -31,7 +31,7 @@ struct EthernetHeader {
 
 int main() {
 	ulong buffer[1024];
-	Socket sock("/dev/socket",Socket::SOCK_RAW_ETHER,Socket::PROTO_ANY);
+	Socket sock(Socket::SOCK_RAW_ETHER,Socket::PROTO_ANY);
 	while(1) {
 		esc::Socket::Addr addr;
 		size_t res = sock.recvfrom(addr,buffer,sizeof(buffer));

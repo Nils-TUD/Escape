@@ -12,12 +12,20 @@ util /sbin/null
 	/dev/null 0666 root
 util /sbin/pipe
 	/dev/pipe 0666 root
-root /sbin/tcpip
-	/dev/socket 0770 network
-	/dev/tcpip 0110 network
-network /sbin/http
-	/dev/http 0440 network
-network /sbin/network
+netstack /sbin/tcpip
+	/dev/sock-dgram 0770 netuser
+	/dev/sock-stream 0770 netuser
+	/dev/sock-rawip 0770 netadmin
+	/dev/sock-raweth 0770 netadmin
+	/dev/tcpip 0110 netadmin
+	/sys/net/links 0440 netuser
+	/sys/net/routes 0440 netuser
+	/sys/net/arp 0440 netuser
+	/sys/net/sockets 0440 netuser
+	/sys/net/nameserver 0664 netadmin
+netstack /sbin/http
+	/dev/http 0440 netuser
+netdrv /sbin/network
 ui /sbin/serial com1
 	/dev/com1 0770 ui
 root /bin/login TERM=/dev/com1

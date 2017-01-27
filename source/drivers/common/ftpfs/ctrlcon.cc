@@ -62,7 +62,7 @@ const CtrlCon::Command CtrlCon::cmds[] = {
 };
 
 void CtrlCon::connect() {
-	_sock = new esc::Socket("/dev/socket",esc::Socket::SOCK_STREAM,esc::Socket::PROTO_TCP);
+	_sock = new esc::Socket(esc::Socket::SOCK_STREAM,esc::Socket::PROTO_TCP);
 	esc::Socket::Addr addr;
 	addr.family = esc::Socket::AF_INET;
 	addr.d.ipv4.addr = _dest.value();

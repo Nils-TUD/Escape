@@ -35,7 +35,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../initerror.h"
 #include "../machine.h"
 #include "../progress.h"
 #include "driverprocess.h"
@@ -48,14 +47,14 @@ void ProcessManager::start() {
 
 	// set basic env-vars
 	if(setenv("CWD","/") < 0)
-		throw init_error("Unable to set CWD");
+		throw esc::default_error("Unable to set CWD");
 	if(setenv("PATH","/bin/") < 0)
-		throw init_error("Unable to set PATH");
+		throw esc::default_error("Unable to set PATH");
 
 	// read drivers from file
 	esc::FStream ifs("/etc/init/drivers","r");
 	if(!ifs)
-		throw init_error("Unable to open /etc/init/drivers");
+		throw esc::default_error("Unable to open /etc/init/drivers");
 	while(ifs.good()) {
 		DriverProcess *drv = new DriverProcess();
 		ifs >> *drv;
@@ -208,7 +207,7 @@ size_t ProcessManager::getBootModCount() const {
 void ProcessManager::waitForFS() {
 	char rootDev[MAX_PATH_LEN];
 	if(sysconfstr(CONF_ROOT_DEVICE,rootDev,sizeof(rootDev)) < 0)
-		throw init_error("Unable to get root-device");
+		throw esc::default_error("Unable to get root-device");
 
 	// wait for fs; we need it for exec
 	int fd;
@@ -221,6 +220,6 @@ void ProcessManager::waitForFS() {
 	}
 	while(fd < 0 && retries < DriverProcess::MAX_WAIT_RETRIES);
 	if(fd < 0)
-		throw init_error("Timeout reached: unable to open /dev/fs");
+		throw esc::default_error("Timeout reached: unable to open /dev/fs");
 	close(fd);
 }

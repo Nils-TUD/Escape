@@ -19,25 +19,14 @@
 
 #pragma once
 
+#include <esc/vthrow.h>
 #include <sys/common.h>
 #include <exception>
 #include <memory>
 
 namespace img {
 
-class img_load_error : public std::exception {
-public:
-	img_load_error(const std::string& str) throw ()
-		: exception(), _str(str) {
-	}
-	~img_load_error() throw () {
-	}
-	virtual const char *what() const throw () {
-		return _str.c_str();
-	}
-private:
-	std::string _str;
-};
+typedef esc::default_error img_load_error;
 
 class Painter {
 public:

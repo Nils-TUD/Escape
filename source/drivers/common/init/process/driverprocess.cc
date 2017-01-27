@@ -19,6 +19,7 @@
 
 #include <esc/stream/istringstream.h>
 #include <esc/stream/std.h>
+#include <esc/vthrow.h>
 #include <sys/common.h>
 #include <sys/conf.h>
 #include <sys/debug.h>
@@ -27,7 +28,7 @@
 #include <sys/stat.h>
 #include <sys/thread.h>
 #include <usergroup/usergroup.h>
-#include "../initerror.h"
+
 #include "driverprocess.h"
 
 using namespace std;
@@ -40,7 +41,7 @@ void DriverProcess::load() {
 		size_t count;
 		groupList = usergroup_parse(GROUPS_PATH,&count);
 		if(!groupList)
-			throw init_error("Unable to get group list");
+			throw esc::default_error("Unable to get group list");
 	}
 
 	// now load the driver
@@ -53,7 +54,7 @@ void DriverProcess::load() {
 
 		// change to specified user
 		if(usergroup_changeToName(_user.c_str()) < 0)
-			throw init_error(string("Changing to user '") + _user + "' failed");
+			throw esc::default_error(string("Changing to user '") + _user + "' failed");
 
 		// build args and exec
 		const char **argv = new const char*[_args.size() + 2];
@@ -77,7 +78,7 @@ void DriverProcess::load() {
 		exit(EXIT_FAILURE);
 	}
 	else if(_pid < 0)
-		throw init_error("fork failed");
+		throw esc::default_error("fork failed");
 
 	// wait for all specified devices
 	for(auto it = _devices.begin(); it != _devices.end(); ++it) {
@@ -91,17 +92,17 @@ void DriverProcess::load() {
 		}
 		while(j++ < MAX_WAIT_RETRIES && fd < 0);
 		if(fd < 0)
-			throw init_error(string("Max retries reached while waiting for '") + it->name() + "'");
+			throw esc::default_error(string("Max retries reached while waiting for '") + it->name() + "'");
 
 		// set permissions
 		if(fchmod(fd,it->permissions()) < 0)
-			throw init_error(string("Unable to set permissions for '") + it->name() + "'");
+			throw esc::default_error(string("Unable to set permissions for '") + it->name() + "'");
 		// set group
 		g = usergroup_getByName(groupList,it->group().c_str());
 		if(!g)
-			throw init_error(string("Unable to find group '") + it->group() + "'");
+			throw esc::default_error(string("Unable to find group '") + it->group() + "'");
 		if(fchown(fd,-1,g->id) < 0)
-			throw init_error(string("Unable to set group for '") + it->name() + "'");
+			throw esc::default_error(string("Unable to set group for '") + it->name() + "'");
 		close(fd);
 	}
 }

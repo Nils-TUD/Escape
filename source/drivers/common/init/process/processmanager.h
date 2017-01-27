@@ -23,7 +23,6 @@
 #include <mutex>
 #include <vector>
 
-#include "../initerror.h"
 #include "../progress.h"
 #include "process.h"
 

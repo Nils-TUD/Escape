@@ -33,7 +33,6 @@
 #include "process/driverprocess.h"
 #include "process/processmanager.h"
 #include "process/uimanager.h"
-#include "initerror.h"
 
 class InitDevice;
 
@@ -118,7 +117,7 @@ public:
 
 		esc::FStream ifs(uitypes[type],"r");
 		if(!ifs)
-			throw init_error(std::string("Unable to open ") + uitypes[type]);
+			throw esc::default_error(std::string("Unable to open ") + uitypes[type]);
 
 		std::lock_guard<std::mutex> guard(mutex);
 		std::vector<Process*> ui;
@@ -148,7 +147,7 @@ int main(void) {
 		std::lock_guard<std::mutex> guard(mutex);
 		pm.start();
 	}
-	catch(const init_error& e) {
+	catch(const std::exception& e) {
 		exitmsg("Unable to init system: " << e.what());
 	}
 
@@ -166,7 +165,7 @@ int main(void) {
 					uim.died(st.pid);
 				}
 			}
-			catch(const init_error& e) {
+			catch(const std::exception& e) {
 				errmsg("Unable to react on child-death: " << e.what());
 			}
 		}

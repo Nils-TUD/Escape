@@ -25,7 +25,6 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include "../../initerror.h"
 #include "x86machine.h"
 
 // source: NUL/NRE
@@ -123,9 +122,9 @@ void x86Machine::rebootACPI() {
 
 void x86Machine::rebootPulseResetLine() {
 	if(reqport(PORT_KB_DATA) < 0)
-		throw init_error("Unable to request keyboard data-port");
+		throw esc::default_error("Unable to request keyboard data-port");
 	if(reqport(PORT_KB_CTRL) < 0)
-		throw init_error("Unable to request keyboard-control-port");
+		throw esc::default_error("Unable to request keyboard-control-port");
 
 	// wait until in-buffer empty
 	while((inbyte(PORT_KB_CTRL) & 0x2) != 0)

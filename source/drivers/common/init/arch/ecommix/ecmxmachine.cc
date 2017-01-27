@@ -19,7 +19,6 @@
 
 #include <sys/common.h>
 
-#include "../../initerror.h"
 #include "ecmxmachine.h"
 
 void ECMXMachine::reboot(Progress &pg) {

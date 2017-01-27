@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <esc/vthrow.h>
 #include <exception>
 #include <stdarg.h>
 #include <stddef.h>
@@ -46,14 +47,7 @@ namespace esc {
 	/**
 	 * The exception that is thrown if an error occurred (= invalid arguments)
 	 */
-	class cmdargs_error : public std::exception {
-	public:
-		explicit cmdargs_error(const std::string& arg);
-		virtual ~cmdargs_error() throw ();
-		virtual const char* what() const throw ();
-	private:
-		std::string _msg;
-	};
+	typedef esc::default_error cmdargs_error;
 
 	/**
 	 * The argument-parser

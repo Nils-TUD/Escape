@@ -21,15 +21,6 @@
 #include <ctype.h>
 
 namespace esc {
-	cmdargs_error::cmdargs_error(const std::string& arg)
-		: _msg(arg) {
-	}
-	cmdargs_error::~cmdargs_error() throw () {
-	}
-	const char* cmdargs_error::what() const throw () {
-		return _msg.c_str();
-	}
-
 	cmdargs::~cmdargs() {
 		for(auto it = _args.begin(); it != _args.end(); ++it)
 			delete *it;

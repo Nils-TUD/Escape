@@ -44,19 +44,7 @@ namespace gui {
 	 * The exception that will be thrown if something goes wrong in Application. For example,
 	 * if receiving a message from the window-manager failed.
 	 */
-	class app_error : public std::exception {
-	public:
-		app_error(const std::string& str) throw ()
-			: exception(), _str(str) {
-		}
-		~app_error() throw () {
-		}
-		virtual const char *what() const throw () {
-			return _str.c_str();
-		}
-	private:
-		std::string _str;
-	};
+	typedef esc::default_error app_error;
 
 	/**
 	 * The class Application is a singleton, because there is only one instance per application. It

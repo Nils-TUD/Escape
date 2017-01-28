@@ -41,18 +41,16 @@ static int waitingPid = 0;
 
 int main(int argc,char **argv) {
 	uint64_t start,end;
-	char path[MAX_PATH_LEN + 1] = "/bin/";
 	if(argc < 2 || isHelpCmd(argc,argv))
 		usage(argv[0]);
 
-	strcat(path,argv[1]);
 	if(signal(SIGINT,sigHdlr) == SIG_ERR)
 		error("Unable to set sig-handler for signal %d",SIGINT);
 
 	start = rdtsc();
 	if((waitingPid = fork()) == 0) {
 		size_t i;
-		const char **args = (const char**)malloc(sizeof(char*) * (argc - 1));
+		const char **args = (const char**)malloc(sizeof(char*) * argc);
 		if(!args)
 			error("Not enough mem");
 		for(i = 1; i < (size_t)argc; i++)
@@ -75,7 +73,13 @@ int main(int argc,char **argv) {
 		if(res < 0)
 			error("Wait failed");
 		fprintf(stderr,"\n");
-		fprintf(stderr,"Process %d (%s) terminated with exit-code %d\n",state.pid,path,state.exitCode);
+		fprintf(stderr,"Process %d ('",state.pid);
+		for(int i = 1; i < argc; ++i) {
+			fputs(argv[i],stderr);
+			if(i + 1 < argc)
+				fputc(' ',stderr);
+		}
+		fprintf(stderr,"') terminated with exit-code %d\n",state.exitCode);
 		if(state.signal != SIG_COUNT)
 			fprintf(stderr,"It was terminated by signal %d\n",state.signal);
 		fprintf(stderr,"Runtime:		%Lu us\n",state.runtime);

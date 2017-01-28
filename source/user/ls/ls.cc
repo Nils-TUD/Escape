@@ -39,6 +39,7 @@ enum {
 	F_DIRSIZE_SHIFT,
 	F_DIRNUM_SHIFT,
 	F_NUMERIC_SHIFT,
+	F_HUMAN_SHIFT,
 };
 
 enum {
@@ -48,6 +49,7 @@ enum {
 	F_DIRSIZE			= 1 << F_DIRSIZE_SHIFT,
 	F_DIRNUM			= 1 << F_DIRNUM_SHIFT,
 	F_NUMERIC			= 1 << F_NUMERIC_SHIFT,
+	F_HUMAN				= 1 << F_HUMAN_SHIFT,
 };
 
 /* for calculating the widths of the fields */
@@ -105,12 +107,14 @@ static bool compareEntries(const lsfile* a,const lsfile* b);
 static vector<lsfile*> getEntries(const string& path);
 static lsfile* buildFile(const file& f);
 static file::size_type getDirSize(const file& d);
+static void printSize(size_t size,size_t width);
 static void printMode(file::mode_type mode);
 static void printPerm(file::mode_type mode,file::mode_type fl,char c);
 
 static void usage(const char *name) {
 	serr << "Usage: " << name << " [-liasNn] [<path>...]\n";
 	serr << "    -l: long listing\n";
+	serr << "    -h: print human readable sizes\n";
 	serr << "    -i: print inode-numbers\n";
 	serr << "    -a: print also '.' and '..'\n";
 	serr << "    -s: print size of dir-content instead of directory-entries (implies -l)\n";
@@ -127,12 +131,13 @@ int main(int argc,char *argv[]) {
 	// parse params
 	cmdargs args(argc,argv,0);
 	try {
-		int flong = 0,finode = 0,fall = 0,fdirsize = 0,fnumeric = 0,fdirnum = 0;
-		args.parse("l i a s n N",&flong,&finode,&fall,&fdirsize,&fnumeric,&fdirnum);
+		int flong = 0,fhuman = 0, finode = 0,fall = 0,fdirsize = 0,fnumeric = 0,fdirnum = 0;
+		args.parse("l h i a s n N",&flong,&fhuman,&finode,&fall,&fdirsize,&fnumeric,&fdirnum);
 		if(args.is_help())
 			usage(argv[0]);
-		flags = (flong << F_LONG_SHIFT) | (finode << F_INODE_SHIFT) | (fall << F_ALL_SHIFT) |
-			(fdirsize << F_DIRSIZE_SHIFT) | (fdirnum << F_DIRNUM_SHIFT) | (fnumeric << F_NUMERIC_SHIFT);
+		flags = (flong << F_LONG_SHIFT) | (fhuman << F_HUMAN_SHIFT) |
+			(finode << F_INODE_SHIFT) | (fall << F_ALL_SHIFT) | (fdirsize << F_DIRSIZE_SHIFT) |
+			(fdirnum << F_DIRNUM_SHIFT) | (fnumeric << F_NUMERIC_SHIFT);
 		// dirsize and dirnum imply long
 		if(flags & (F_DIRSIZE | F_DIRNUM))
 			flags |= F_LONG;
@@ -238,7 +243,10 @@ static DirList collectEntries(const char *path,size_t *widths,bool showPath) {
 			}
 			else if((x = strlen(g->name)) > widths[W_GID])
 				widths[W_GID] = x;
-			if((x = count_digits(f->rsize(),10)) > widths[W_SIZE])
+			// human readable is at most 3 digits plus binary prefix
+			if(flags & F_HUMAN)
+				widths[W_SIZE] = 4;
+			else if((x = count_digits(f->rsize(),10)) > widths[W_SIZE])
 				widths[W_SIZE] = x;
 		}
 		else {
@@ -272,7 +280,8 @@ static void printDir(const std::string &path,const std::vector<lsfile*> &entries
 			else
 				sout << fmt((g ? g->name : "?"),widths[W_GID]) << ' ';
 
-			sout << fmt(f->rsize(),widths[W_SIZE]) << ' ';
+			printSize(f->rsize(),widths[W_SIZE]);
+			sout << ' ';
 			{
 				char dateStr[SSTRLEN("2009-09-09 14:12") + 1];
 				file::time_type ts = f->modified();
@@ -377,6 +386,22 @@ static file::size_type getDirSize(const file& d) {
 			res += f.size();
 	}
 	return res;
+}
+
+static void printSize(size_t size,size_t width) {
+	if(flags & F_HUMAN) {
+		static const char sizes[] = {'B','K','M','G','T','P'};
+		size_t sz = 1;
+		for(size_t i = 0; i < ARRAY_SIZE(sizes); ++i) {
+			if(size < sz * 1024) {
+				sout << fmt(size / sz,width) << sizes[i];
+				break;
+			}
+			sz *= 1024;
+		}
+	}
+	else
+		sout << fmt(size,width);
 }
 
 static void printMode(file::mode_type mode) {

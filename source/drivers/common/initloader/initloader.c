@@ -141,12 +141,12 @@ int main(void) {
 			/* set uid, gid and groups */
 			for(size_t x = 0; x < ARRAY_SIZE(bootModUsers); ++x) {
 				if(strstr(argv[0],bootModUsers[x].match)) {
+					if(setgroups(bootModUsers[x].gcount,bootModUsers[x].gids) < 0)
+						error("Unable to set groups");
 					if(setgid(bootModUsers[x].gids[0]) < 0)
 						error("Unable to set group %d",bootModUsers[x].gids[0]);
 					if(setuid(bootModUsers[x].uid) < 0)
 						error("Unable to set user %d",bootModUsers[x].uid);
-					if(setgroups(bootModUsers[x].gcount,bootModUsers[x].gids) < 0)
-						error("Unable to set groups");
 					break;
 				}
 			}

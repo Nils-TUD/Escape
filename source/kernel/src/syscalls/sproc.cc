@@ -88,11 +88,24 @@ int Syscalls::getgroups(Thread *t,IntrptStackFrame *stack) {
 int Syscalls::setgroups(Thread *t,IntrptStackFrame *stack) {
 	size_t size = (size_t)SYSC_ARG1(stack);
 	const gid_t *list = (const gid_t*)SYSC_ARG2(stack);
-	pid_t pid = t->getProc()->getPid();
+	Proc *p = t->getProc();
+
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)list,sizeof(gid_t) * size)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	if(EXPECT_FALSE(!Groups::set(pid,size,list)))
+	// root can set arbitrary groups
+	if(p->getUid() != ROOT_UID) {
+		// non-root users can only downgrade their groups
+		for(size_t i = 0; i < size; ++i) {
+			gid_t gid;
+			if(UserAccess::readVar(&gid,list + i) < 0)
+				SYSC_ERROR(stack,-EINVAL);
+			if(!Groups::contains(p->getPid(),gid))
+				SYSC_ERROR(stack,-EPERM);
+		}
+	}
+
+	if(EXPECT_FALSE(!Groups::set(p->getPid(),size,list)))
 		SYSC_ERROR(stack,-ENOMEM);
 	SYSC_RET1(stack,0);
 }

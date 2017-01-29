@@ -181,11 +181,11 @@ int usergroup_changeToName(const char *name) {
 		goto error;
 	}
 
+	if((res = setgroups(groupCount,groups)) < 0)
+		goto error;
 	if((res = setgid(gid)) < 0)
 		goto error;
 	if((res = setuid(uid)) < 0)
-		goto error;
-	if((res = setgroups(groupCount,groups)) < 0)
 		goto error;
 
 error:

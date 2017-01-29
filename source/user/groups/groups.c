@@ -146,12 +146,15 @@ static void listCurGroups(void) {
 	if(count < 0)
 		error("Unable to get groups of current process");
 
-	gid_t *gids = (gid_t*)malloc(count * sizeof(gid_t));
-	if(!gids)
-		error("malloc");
-	count = getgroups(count,gids);
-	if(count < 0)
-		error("Unable to get groups of current process");
+	gid_t *gids = NULL;
+	if(count > 0) {
+		gids = (gid_t*)malloc(count * sizeof(gid_t));
+		if(!gids)
+			error("malloc");
+		count = getgroups(count,gids);
+		if(count < 0)
+			error("Unable to get groups of current process");
+	}
 
 	listGroups(gids,count);
 	free(gids);

@@ -46,7 +46,7 @@ static volatile bool run = true;
 static ssize_t yoffset;
 static sNamedItem *users;
 static std::mutex displayMutex;
-static esc::VTerm vterm(esc::env::get("TERM").c_str());
+static esc::VTerm vterm(STDIN_FILENO);
 
 template<typename T>
 static void printBar(size_t barwidth,double ratio,const T& name) {
@@ -216,8 +216,7 @@ int main(void) {
 	if(tid < 0)
 		exitmsg("startthread");
 
-	/* open the "real" stdin, because stdin maybe redirected to something else */
-	FStream vt(esc::env::get("TERM").c_str(),"r");
+	FStream vt(STDIN_FILENO,"r");
 
 	// read from vterm
 	char c;

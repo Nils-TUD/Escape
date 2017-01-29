@@ -63,15 +63,19 @@ int main(int argc,char **argv) {
 	/* allow the UI group to send signals to us (for ^C) */
 	int gid = usergroup_nameToId(GROUPS_PATH,"ui");
 	if(gid < 0)
-		error("Unable to get id of ui group");
-	int fd = open("/sys/proc/self",O_NOCHAN);
-	if(fd < 0)
-		error("Unable to open own proc directory");
-	if(fchmod(fd,0775) < 0)
-		error("Unable to chmod own proc directory");
-	if(fchown(fd,-1,gid) < 0)
-		error("Unable to chown our proc directory");
-	close(fd);
+		printe("Unable to get id of ui group");
+	else {
+		int fd = open("/sys/proc/self",O_NOCHAN);
+		if(fd < 0)
+			printe("Unable to open own proc directory");
+		else {
+			if(fchmod(fd,0775) < 0)
+				printe("Unable to chmod own proc directory");
+			if(fchown(fd,-1,gid) < 0)
+				printe("Unable to chown our proc directory");
+			close(fd);
+		}
+	}
 
 	/* give vterm our pid */
 	esc::VTerm vterm(STDOUT_FILENO);

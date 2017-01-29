@@ -25,10 +25,8 @@
 #include "../cmds.h"
 
 int shell_cmdClear(int,char **) {
-	esc::VTerm vterm(getenv("TERM"));
-	esc::VTerm::Mode mode = vterm.getMode();
-
-	for(uint i = 0; i < mode.rows - 1; ++i)
+	uint rows = esc::VTerm::getSize(getenv("TERM")).second;
+	for(uint i = 0; i < rows - 1; ++i)
 		printf("\n");
 	fflush(stdout);
 	return EXIT_SUCCESS;

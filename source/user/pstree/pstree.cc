@@ -45,7 +45,7 @@ struct ProcNode {
 
 typedef map<pid_t,ProcNode*> map_type;
 
-static esc::Screen::Mode mode;
+static uint cols;
 static char *prefix;
 
 static void usage(const char *name) {
@@ -63,7 +63,7 @@ static void printRec(ProcNode *n,uint depth) {
 			prefix[depth - 1] = n->next ? PIPE : ' ';
 
 		// print name
-		size_t max = esc::Util::min(n->proc->command().length(),(size_t)(mode.cols - depth - 3));
+		size_t max = esc::Util::min(n->proc->command().length(),(size_t)(cols - depth - 3));
 		if(max < n->proc->command().length()) {
 			sout.write(n->proc->command().c_str(),max);
 			sout << "...";
@@ -73,7 +73,7 @@ static void printRec(ProcNode *n,uint depth) {
 		sout << '\n';
 
 		// leave room for '...'
-		if(depth + 5 < mode.cols) {
+		if(depth + 5 < cols) {
 			// print childs
 			ProcNode *c = n->child;
 			prefix[depth + 1] = PIPE;
@@ -97,10 +97,9 @@ int main(int argc,char **argv) {
 	int pid = argc > 1 ? atoi(argv[1]) : 0;
 
 	// get console-size
-	esc::VTerm vterm(esc::env::get("TERM").c_str());
-	mode = vterm.getMode();
-	prefix = new char[mode.cols];
-	memset(prefix,' ',mode.cols);
+	cols = VTerm::getSize(env::get("TERM").c_str()).first;
+	prefix = new char[cols];
+	memset(prefix,' ',cols);
 
 	map_type pmap;
 	vector<process*> procs = process::get_list(false,0,true);

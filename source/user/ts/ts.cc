@@ -155,8 +155,7 @@ int main(int argc,char **argv) {
 	std::sort(threads.begin(),threads.end(),compareThreads);
 
 	// get console-size
-	VTerm vterm(env::get("TERM").c_str());
-	Screen::Mode mode = vterm.getMode();
+	uint cols = VTerm::getSize(env::get("TERM").c_str()).first;
 
 	// print header
 	sout << fmt("ID",maxTid);
@@ -180,7 +179,7 @@ int main(int argc,char **argv) {
 		float cyclePercent = 0;
 		if(t->cycles() != 0)
 			cyclePercent = (float)(100. / (totalCycles / (double)t->cycles()));
-		size_t cmdwidth = min(mode.cols - (width2cmd + 1 + count_digits(t->pid(),10)),
+		size_t cmdwidth = min(cols - (width2cmd + 1 + count_digits(t->pid(),10)),
 				t->procName().length());
 		string procName = t->procName().substr(0,cmdwidth);
 

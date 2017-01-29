@@ -37,10 +37,8 @@ FileCopy::FileCopy(size_t bufsize,uint fl)
 		throw esc::default_error("createbuf");
 
 	/* get vterm-size, if we should show a progress bar */
-	if(_flags & FL_PROGRESS) {
-		esc::VTerm vterm(esc::env::get("TERM").c_str());
-		_cols = vterm.getMode().cols;
-	}
+	if(_flags & FL_PROGRESS)
+		_cols = esc::VTerm::getSize(esc::env::get("TERM").c_str()).first;
 }
 
 FileCopy::~FileCopy() {

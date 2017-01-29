@@ -25,6 +25,7 @@
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace esc {
@@ -40,6 +41,25 @@ public:
 		FL_READLINE,
 		FL_NAVI
 	};
+
+	/**
+	 * Determines the console size for given vterm device. If not available, it defaults to 80x30.
+	 *
+	 * @param path the vterm device
+	 * @return the size (cols,rows)
+	 */
+	static std::pair<uint,uint> getSize(const char *path) {
+		std::pair<uint,uint> size;
+		try {
+			esc::VTerm vterm(path);
+			esc::Screen::Mode mode = vterm.getMode();
+			size = std::make_pair(mode.cols,mode.rows);
+		}
+		catch(...) {
+			size = std::make_pair(80,30);
+		}
+		return size;
+	}
 
 	/**
 	 * Opens the given device

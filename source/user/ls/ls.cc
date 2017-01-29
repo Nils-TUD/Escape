@@ -148,8 +148,7 @@ int main(int argc,char *argv[]) {
 	}
 
 	// get console-size
-	esc::VTerm vterm(esc::env::get("TERM").c_str());
-	esc::Screen::Mode mode = vterm.getMode();
+	uint cols = esc::VTerm::getSize(esc::env::get("TERM").c_str()).first;
 
 	// read users and groups
 	if(flags & F_LONG) {
@@ -187,7 +186,7 @@ int main(int argc,char *argv[]) {
 		if(count > 1 && l.dir)
 			sout << l.path << ":\n";
 
-		printDir(l.path,l.entries,widths,mode.cols,count > 1);
+		printDir(l.path,l.entries,widths,cols,count > 1);
 		lastDir = l.dir;
 		i++;
 	}

@@ -200,8 +200,7 @@ int main(int argc,char **argv) {
 	std::sort(procs.begin(),procs.end(),compareProcs);
 
 	// get console-size
-	esc::VTerm vterm(esc::env::get("TERM").c_str());
-	esc::Screen::Mode mode = vterm.getMode();
+	uint cols = VTerm::getSize(env::get("TERM").c_str()).first;
 
 	// print header
 	sout << fmt("ID", maxPid);
@@ -228,7 +227,7 @@ int main(int argc,char **argv) {
 			float cyclePercent = 0;
 			if(p->cycles() != 0)
 				cyclePercent = (float)(100. / (totalCycles / (double)p->cycles()));
-			size_t cmdwidth = min(mode.cols - width2cmd,p->command().length());
+			size_t cmdwidth = min(cols - width2cmd,p->command().length());
 			string cmd = p->command().substr(0,cmdwidth);
 
 			sout << fmt(p->pid(),maxPid) << " ";

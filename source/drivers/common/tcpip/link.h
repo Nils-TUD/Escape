@@ -31,7 +31,7 @@ public:
 	static const size_t NAME_LEN	= 16;
 
 	explicit Link(const std::string &n,const char *path)
-		: esc::NIC(path,O_RDWRMSG), _rxpkts(), _txpkts(), _rxbytes(), _txbytes(),
+		: esc::NIC(path,O_RDWRMSG), _rtid(), _rxpkts(), _txpkts(), _rxbytes(), _txbytes(),
 		  _mtu(getMTU()), _name(n), _status(esc::Net::DOWN), _mac(getMAC()), _ip(), _subnetmask() {
 		_buffd = sharebuf(fd(),mtu(),&_buffer,0);
 		if(_buffer == NULL)
@@ -87,10 +87,18 @@ public:
 		_subnetmask = nm;
 	}
 
+	tid_t tid() const {
+		return _rtid;
+	}
+	void tid(tid_t tid) {
+		_rtid = tid;
+	}
+
 	ssize_t read(void *buffer,size_t size);
 	ssize_t write(const void *buffer,size_t size);
 
 private:
+	tid_t _rtid;
 	ulong _rxpkts;
 	ulong _txpkts;
 	ulong _rxbytes;

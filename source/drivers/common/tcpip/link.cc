@@ -35,7 +35,6 @@
 
 Link::~Link() {
 	destroybuf(_buffer,_buffd);
-	Route::removeAll(this);
 }
 
 ssize_t Link::read(void *buffer,size_t size) {

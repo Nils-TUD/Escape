@@ -20,11 +20,15 @@
 #pragma once
 
 #include <sys/common.h>
+#include <sys/thread.h>
+#include <sys/proc.h>
 #include <errno.h>
+#include <signal.h>
 #include <memory>
 #include <vector>
 
 #include "link.h"
+#include "route.h"
 
 class LinkMng {
 	LinkMng() = delete;
@@ -57,6 +61,8 @@ public:
 		for(auto it = _links.begin(); it != _links.end(); ++it) {
 			if(name == (*it)->name()) {
 				(*it)->status(esc::Net::KILLED);
+				kill(getpid(),SIGUSR1);
+				Route::removeAll(*it);
 				_links.erase(it);
 				return 0;
 			}

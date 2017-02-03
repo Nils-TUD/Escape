@@ -280,6 +280,8 @@ public:
 				LinkMng::rem(name.str());
 				delete linkcpy;
 			}
+			link->tid(res);
+			res = 0;
 		}
 		is << res << esc::Reply();
 	}
@@ -466,15 +468,24 @@ public:
 	}
 };
 
+static void sigusr1(int) {
+}
+
 static int receiveThread(void *arg) {
+	if(signal(SIGUSR1,sigusr1) == SIG_ERR)
+		error("Unable to set signal handler");
+
 	std::shared_ptr<Link> *linkptr = reinterpret_cast<std::shared_ptr<Link>*>(arg);
 	const std::shared_ptr<Link> link = *linkptr;
 	uint8_t *buffer = reinterpret_cast<uint8_t*>(link->sharedmem());
 	while(link->status() != esc::Net::KILLED) {
 		ssize_t res = link->read(buffer,link->mtu());
 		if(res < 0) {
-			printe("Reading packet failed");
-			break;
+			if(res != -EINTR) {
+				printe("Reading packet failed");
+				break;
+			}
+			continue;
 		}
 
 		if((size_t)res >= sizeof(Ethernet<>)) {

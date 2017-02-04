@@ -25,7 +25,7 @@
 #include <util.h>
 
 VFSMS::MSTreeItem::MSTreeItem(const VFSMS::MSTreeItem &i) : esc::PathTreeItem<OpenFile>(i) {
-	if(!IS_NODE(getData()))
+	if(getData() && !IS_NODE(getData()))
 		getData()->incRefs();
 }
 

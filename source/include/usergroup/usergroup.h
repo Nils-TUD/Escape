@@ -34,10 +34,12 @@ extern "C" {
 /* fixed because boot-modules can't use the fs and thus, can't read /etc/groups */
 #define USER_BUS			1
 #define USER_STORAGE		2
+#define USER_FS				3
 
 #define GROUP_DRIVER		1
 #define GROUP_BUS			2
 #define GROUP_STORAGE		3
+#define GROUP_FS			4
 
 typedef struct sNamedItem {
 	int id;

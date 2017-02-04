@@ -175,7 +175,7 @@ int main(int argc,char **argv) {
 
 	/* detect and init all devices */
 	createVFSEntry("hda",false);
-	DiskDevice dev("/dev/hda1",0700);
+	DiskDevice dev("/dev/hda1",0770);
 	print("Registered device 'hda1' (device 1, partition 1)");
 	createVFSEntry("hda1",true);
 	/* flush prints */

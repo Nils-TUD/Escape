@@ -266,7 +266,7 @@ static void initDrives(void) {
 				strcpy(path + SSTRLEN("/dev/"),name);
 
 				try {
-					devs[drvCount] = new ATAPartitionDevice(ataDev->id,p,path,0700);
+					devs[drvCount] = new ATAPartitionDevice(ataDev->id,p,path,0770);
 					ATA_LOG("Registered device '%s' (device %d, partition %zu)",
 							name,ataDev->id,p + 1);
 

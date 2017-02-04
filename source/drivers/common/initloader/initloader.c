@@ -73,9 +73,9 @@ static const struct {
 	{"pci",		USER_BUS,		2, {GROUP_BUS,GROUP_DRIVER,0,0}},
 	{"ata",		USER_STORAGE,	3, {GROUP_STORAGE,GROUP_DRIVER,GROUP_BUS,0}},
 	{"disk",	USER_STORAGE,	2, {GROUP_STORAGE,GROUP_DRIVER,0,0}},
-	{"iso9660",	USER_STORAGE,	2, {GROUP_STORAGE,GROUP_DRIVER,0,0}},
-	{"ext2",	USER_STORAGE,	2, {GROUP_STORAGE,GROUP_DRIVER,0,0}},
 	{"ramdisk",	USER_STORAGE,	2, {GROUP_STORAGE,GROUP_DRIVER,0,0}},
+	{"iso9660",	USER_FS,		3, {GROUP_FS,GROUP_STORAGE,GROUP_DRIVER,0}},
+	{"ext2",	USER_FS,		3, {GROUP_FS,GROUP_STORAGE,GROUP_DRIVER,0}},
 };
 
 int main(void) {
@@ -175,7 +175,7 @@ int main(void) {
 	if(fd < 0)
 		error("Unable to open '%s'",line);
 	/* no fch{own,mod} here, because we want to change the device, not the channel */
-	if(chown(line,ROOT_UID,GROUP_STORAGE) < 0)
+	if(chown(line,ROOT_UID,GROUP_FS) < 0)
 		printe("Warning: unable to set owner of %s",line);
 	/* all have read-exec access to the root filesystem, because it contains binaries, libs, ... */
 	if(chmod(line,0775) < 0)

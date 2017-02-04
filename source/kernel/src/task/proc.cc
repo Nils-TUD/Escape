@@ -113,8 +113,8 @@ void ProcBase::init() {
 	p->uid = ROOT_UID;
 	p->gid = ROOT_GID;
 
-	/* create root mountspace */
-	p->msnode = createObj<VFSMS>(p->getPid(),VFS::getMSDir(),(char*)"root",0644);
+	/* create boot mountspace */
+	p->msnode = createObj<VFSMS>(p->getPid(),VFS::getMSDir(),(char*)"boot",0644);
 	if(p->msnode == NULL)
 		Util::panic("Unable to create initial mountspace");
 

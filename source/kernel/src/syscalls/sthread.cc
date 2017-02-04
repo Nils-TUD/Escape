@@ -35,7 +35,7 @@
 #include <util.h>
 
 int Syscalls::gettid(Thread *t,IntrptStackFrame *stack) {
-	SYSC_RET1(stack,t->getTid());
+	SYSC_RESULT(stack,t->getTid());
 }
 
 int Syscalls::startthread(A_UNUSED Thread *t,IntrptStackFrame *stack) {
@@ -47,7 +47,7 @@ int Syscalls::startthread(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int res = Proc::startThread(entryPoint,0,arg);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::exit(A_UNUSED Thread *t,IntrptStackFrame *stack) {
@@ -61,7 +61,7 @@ int Syscalls::getcycles(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)res,sizeof(uint64_t))))
 		SYSC_ERROR(stack,-EFAULT);
 	*res = t->getStats().curCycleCount;
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::alarm(Thread *t,IntrptStackFrame *stack) {
@@ -72,7 +72,7 @@ int Syscalls::alarm(Thread *t,IntrptStackFrame *stack) {
 	/* TODO support microseconds */
 	if(EXPECT_FALSE((res = Timer::sleepFor(t->getTid(),usecs / 1000,false)) < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::sleep(Thread *t,IntrptStackFrame *stack) {
@@ -87,12 +87,12 @@ int Syscalls::sleep(Thread *t,IntrptStackFrame *stack) {
 	Timer::removeThread(t->getTid());
 	if(EXPECT_FALSE(t->hasSignal()))
 		SYSC_ERROR(stack,-EINTR);
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::yield(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	Thread::switchAway();
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::join(Thread *t,IntrptStackFrame *stack) {
@@ -108,7 +108,7 @@ int Syscalls::join(Thread *t,IntrptStackFrame *stack) {
 	int res = Proc::join(tid);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::semcrtirq(Thread *t,IntrptStackFrame *stack) {
@@ -156,7 +156,7 @@ int Syscalls::semcrtirq(Thread *t,IntrptStackFrame *stack) {
 		*msiaddr = kmsiaddr;
 		*msival = kmsival;
 	}
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 
 errFile:
 	FileDesc::release(irqFile);
@@ -168,7 +168,7 @@ int Syscalls::semcrt(Thread *t,IntrptStackFrame *stack) {
 	int res = Sems::create(t->getProc(),value);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::semop(Thread *t,IntrptStackFrame *stack) {
@@ -177,11 +177,11 @@ int Syscalls::semop(Thread *t,IntrptStackFrame *stack) {
 	int res = Sems::op(t->getProc(),sem,amount);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::semdestr(Thread *t,IntrptStackFrame *stack) {
 	int sem = (int)SYSC_ARG1(stack);
 	Sems::destroy(t->getProc(),sem);
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }

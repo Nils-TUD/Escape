@@ -54,7 +54,7 @@ int Syscalls::signal(Thread *t,IntrptStackFrame *stack) {
 	}
 	if(old == SIG_ERR)
 		SYSC_ERROR(stack,(long)old);
-	SYSC_RET1(stack,(long)old);
+	SYSC_RESULT(stack,(long)old);
 }
 
 int Syscalls::acksignal(A_UNUSED Thread *t,IntrptStackFrame *stack) {
@@ -96,5 +96,5 @@ int Syscalls::kill(Thread *t,IntrptStackFrame *stack) {
 	FileDesc::release(file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }

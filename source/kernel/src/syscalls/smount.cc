@@ -114,7 +114,7 @@ errStat:
 errPath:
 	if(res < 0)
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::unmount(Thread *t,IntrptStackFrame *stack) {
@@ -135,7 +135,7 @@ int Syscalls::unmount(Thread *t,IntrptStackFrame *stack) {
 	FileDesc::release(msfile);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::clonems(Thread *t,IntrptStackFrame *stack) {
@@ -157,7 +157,7 @@ int Syscalls::clonems(Thread *t,IntrptStackFrame *stack) {
 	FileDesc::release(msfile);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::joinms(Thread *t,IntrptStackFrame *stack) {
@@ -171,5 +171,5 @@ int Syscalls::joinms(Thread *t,IntrptStackFrame *stack) {
 
 	msobj->join(t->getProc());
 	FileDesc::release(msfile);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }

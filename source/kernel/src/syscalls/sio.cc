@@ -60,7 +60,7 @@ int Syscalls::open(Thread *t,IntrptStackFrame *stack) {
 		file->close(pid);
 		SYSC_ERROR(stack,fd);
 	}
-	SYSC_RET1(stack,fd);
+	SYSC_RESULT(stack,fd);
 }
 
 int Syscalls::fcntl(Thread *t,IntrptStackFrame *stack) {
@@ -78,7 +78,7 @@ int Syscalls::fcntl(Thread *t,IntrptStackFrame *stack) {
 	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::fstat(Thread *t,IntrptStackFrame *stack) {
@@ -100,7 +100,7 @@ int Syscalls::fstat(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	UserAccess::write(info,&kinfo,sizeof(kinfo));
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::chmod(Thread *t,IntrptStackFrame *stack) {
@@ -117,7 +117,7 @@ int Syscalls::chmod(Thread *t,IntrptStackFrame *stack) {
 	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::chown(Thread *t,IntrptStackFrame *stack) {
@@ -135,7 +135,7 @@ int Syscalls::chown(Thread *t,IntrptStackFrame *stack) {
 	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::utime(Thread *t,IntrptStackFrame *stack) {
@@ -162,7 +162,7 @@ int Syscalls::utime(Thread *t,IntrptStackFrame *stack) {
 	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::truncate(Thread *t,IntrptStackFrame *stack) {
@@ -178,7 +178,7 @@ int Syscalls::truncate(Thread *t,IntrptStackFrame *stack) {
 	int res = file->truncate(p->getPid(),length);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::tell(Thread *t,IntrptStackFrame *stack) {
@@ -197,7 +197,7 @@ int Syscalls::tell(Thread *t,IntrptStackFrame *stack) {
 	/* this may fail, but we're requested the file, so it will be released on our termination */
 	*pos = file->tell(p->getPid());
 	FileDesc::release(file);
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::seek(Thread *t,IntrptStackFrame *stack) {
@@ -218,7 +218,7 @@ int Syscalls::seek(Thread *t,IntrptStackFrame *stack) {
 	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::read(Thread *t,IntrptStackFrame *stack) {
@@ -243,7 +243,7 @@ int Syscalls::read(Thread *t,IntrptStackFrame *stack) {
 	FileDesc::release(file);
 	if(EXPECT_FALSE(readBytes < 0))
 		SYSC_ERROR(stack,readBytes);
-	SYSC_RET1(stack,readBytes);
+	SYSC_RESULT(stack,readBytes);
 }
 
 int Syscalls::write(Thread *t,IntrptStackFrame *stack) {
@@ -268,7 +268,7 @@ int Syscalls::write(Thread *t,IntrptStackFrame *stack) {
 	FileDesc::release(file);
 	if(EXPECT_FALSE(writtenBytes < 0))
 		SYSC_ERROR(stack,writtenBytes);
-	SYSC_RET1(stack,writtenBytes);
+	SYSC_RESULT(stack,writtenBytes);
 }
 
 int Syscalls::send(Thread *t,IntrptStackFrame *stack) {
@@ -297,7 +297,7 @@ int Syscalls::send(Thread *t,IntrptStackFrame *stack) {
 	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::receive(Thread *t,IntrptStackFrame *stack) {
@@ -324,7 +324,7 @@ int Syscalls::receive(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,res);
 	if(id)
 		*id = mid;
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::sendrecv(Thread *t,IntrptStackFrame *stack) {
@@ -365,7 +365,7 @@ int Syscalls::sendrecv(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	*id = mid;
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::cancel(Thread *t,IntrptStackFrame *stack) {
@@ -383,7 +383,7 @@ int Syscalls::cancel(Thread *t,IntrptStackFrame *stack) {
 	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::delegate(A_UNUSED Thread *t,IntrptStackFrame *stack) {
@@ -418,7 +418,7 @@ int Syscalls::delegate(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::obtain(A_UNUSED Thread *t,IntrptStackFrame *stack) {
@@ -436,7 +436,7 @@ int Syscalls::obtain(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	FileDesc::release(chanfile);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::dup(A_UNUSED Thread *t,IntrptStackFrame *stack) {
@@ -445,7 +445,7 @@ int Syscalls::dup(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int res = FileDesc::dup(fd);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::redirect(A_UNUSED Thread *t,IntrptStackFrame *stack) {
@@ -455,7 +455,7 @@ int Syscalls::redirect(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int err = FileDesc::redirect(src,dst);
 	if(EXPECT_FALSE(err < 0))
 		SYSC_ERROR(stack,err);
-	SYSC_RET1(stack,err);
+	SYSC_RESULT(stack,err);
 }
 
 int Syscalls::close(Thread *t,IntrptStackFrame *stack) {
@@ -470,7 +470,7 @@ int Syscalls::close(Thread *t,IntrptStackFrame *stack) {
 	FileDesc::unassoc(p,fd);
 	if(EXPECT_FALSE(!file->close(p->getPid())))
 		FileDesc::release(file);
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::syncfs(Thread *t,IntrptStackFrame *stack) {
@@ -486,7 +486,7 @@ int Syscalls::syncfs(Thread *t,IntrptStackFrame *stack) {
 
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::link(Thread *t,IntrptStackFrame *stack) {
@@ -515,7 +515,7 @@ int Syscalls::link(Thread *t,IntrptStackFrame *stack) {
 
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::unlink(Thread *t,IntrptStackFrame *stack) {
@@ -536,7 +536,7 @@ int Syscalls::unlink(Thread *t,IntrptStackFrame *stack) {
 
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::rename(Thread *t,IntrptStackFrame *stack) {
@@ -569,7 +569,7 @@ int Syscalls::rename(Thread *t,IntrptStackFrame *stack) {
 
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::mkdir(A_UNUSED Thread *t,IntrptStackFrame *stack) {
@@ -590,7 +590,7 @@ int Syscalls::mkdir(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	FileDesc::release(file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::rmdir(Thread *t,IntrptStackFrame *stack) {
@@ -609,5 +609,5 @@ int Syscalls::rmdir(Thread *t,IntrptStackFrame *stack) {
 	int res = file->rmdir(p->getPid(),filename);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }

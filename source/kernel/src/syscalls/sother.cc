@@ -33,13 +33,13 @@
 
 int Syscalls::init(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int res = Boot::init(stack);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::debugc(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	char c = (char)SYSC_ARG1(stack);
 	Log::get().writec(c);
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::sysconf(A_UNUSED Thread *t,IntrptStackFrame *stack) {
@@ -47,7 +47,7 @@ int Syscalls::sysconf(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	long res = Config::get(id);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::sysconfstr(A_UNUSED Thread *t,IntrptStackFrame *stack) {
@@ -62,7 +62,7 @@ int Syscalls::sysconfstr(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	if(!res)
 		SYSC_ERROR(stack,-EINVAL);
 	strnzcpy(buf,res,len);
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::gettimeofday(A_UNUSED Thread *t,IntrptStackFrame *stack) {
@@ -73,7 +73,7 @@ int Syscalls::gettimeofday(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 
 	Timer::getTimeval(&ktv);
 	UserAccess::write(tv,&ktv,sizeof(ktv));
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::tsctotime(A_UNUSED Thread *t,IntrptStackFrame *stack) {
@@ -81,5 +81,5 @@ int Syscalls::tsctotime(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)tsc,sizeof(uint64_t))))
 		SYSC_ERROR(stack,-EINVAL);
 	*tsc = Timer::cyclesToTime(*tsc);
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }

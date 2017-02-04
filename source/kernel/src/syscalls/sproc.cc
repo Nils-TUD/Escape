@@ -37,15 +37,15 @@
 #include <util.h>
 
 int Syscalls::getpid(Thread *t,IntrptStackFrame *stack) {
-	SYSC_RET1(stack,t->getProc()->getPid());
+	SYSC_RESULT(stack,t->getProc()->getPid());
 }
 
 int Syscalls::getppid(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	SYSC_RET1(stack,t->getProc()->getParentPid());
+	SYSC_RESULT(stack,t->getProc()->getParentPid());
 }
 
 int Syscalls::getuid(Thread *t,IntrptStackFrame *stack) {
-	SYSC_RET1(stack,t->getProc()->getUid());
+	SYSC_RESULT(stack,t->getProc()->getUid());
 }
 
 int Syscalls::setuid(Thread *t,IntrptStackFrame *stack) {
@@ -56,11 +56,11 @@ int Syscalls::setuid(Thread *t,IntrptStackFrame *stack) {
 
 	p->setUid(uid);
 	VFS::chownProcess(p->getPid(),p->getUid(),p->getGid());
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::getgid(Thread *t,IntrptStackFrame *stack) {
-	SYSC_RET1(stack,t->getProc()->getGid());
+	SYSC_RESULT(stack,t->getProc()->getGid());
 }
 
 int Syscalls::setgid(Thread *t,IntrptStackFrame *stack) {
@@ -71,7 +71,7 @@ int Syscalls::setgid(Thread *t,IntrptStackFrame *stack) {
 
 	p->setGid(gid);
 	VFS::chownProcess(p->getPid(),p->getUid(),p->getGid());
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::getgroups(Thread *t,IntrptStackFrame *stack) {
@@ -82,7 +82,7 @@ int Syscalls::getgroups(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	size = Groups::get(pid,list,size);
-	SYSC_RET1(stack,size);
+	SYSC_RESULT(stack,size);
 }
 
 int Syscalls::setgroups(Thread *t,IntrptStackFrame *stack) {
@@ -107,13 +107,13 @@ int Syscalls::setgroups(Thread *t,IntrptStackFrame *stack) {
 
 	if(EXPECT_FALSE(!Groups::set(p->getPid(),size,list)))
 		SYSC_ERROR(stack,-ENOMEM);
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::isingroup(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	pid_t pid = (pid_t)SYSC_ARG1(stack);
 	gid_t gid = (gid_t)SYSC_ARG2(stack);
-	SYSC_RET1(stack,Groups::contains(pid,gid));
+	SYSC_RESULT(stack,Groups::contains(pid,gid));
 }
 
 int Syscalls::fork(A_UNUSED Thread *t,IntrptStackFrame *stack) {
@@ -121,7 +121,7 @@ int Syscalls::fork(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	/* error? */
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::waitchild(A_UNUSED Thread *t,IntrptStackFrame *stack) {
@@ -137,7 +137,7 @@ int Syscalls::waitchild(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,res);
 	if(state)
 		UserAccess::write(state,&kstate,sizeof(kstate));
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::exec(A_UNUSED Thread *t,IntrptStackFrame *stack) {
@@ -151,5 +151,5 @@ int Syscalls::exec(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int res = Proc::exec(pathSave,args,env);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }

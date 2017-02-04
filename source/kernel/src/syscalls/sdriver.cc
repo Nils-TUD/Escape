@@ -71,7 +71,7 @@ int Syscalls::createdev(Thread *t,IntrptStackFrame *stack) {
 	int nfd = FileDesc::assoc(p,file);
 	if(EXPECT_FALSE(nfd < 0))
 		SYSC_ERROR(stack,nfd);
-	SYSC_RET1(stack,nfd);
+	SYSC_RESULT(stack,nfd);
 }
 
 int Syscalls::createchan(Thread *t,IntrptStackFrame *stack) {
@@ -101,7 +101,7 @@ int Syscalls::createchan(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,res);
 	}
 	static_cast<VFSChannel*>(chan->getNode())->setFd(nfd);
-	SYSC_RET1(stack,nfd);
+	SYSC_RESULT(stack,nfd);
 }
 
 int Syscalls::bindto(Thread *t,IntrptStackFrame *stack) {
@@ -120,7 +120,7 @@ int Syscalls::bindto(Thread *t,IntrptStackFrame *stack) {
 	FileDesc::release(file);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
@@ -164,5 +164,5 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	*id = mid;
-	SYSC_RET1(stack,clifd);
+	SYSC_RESULT(stack,clifd);
 }

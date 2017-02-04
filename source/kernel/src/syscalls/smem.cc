@@ -42,12 +42,12 @@ int Syscalls::chgsize(Thread *t,IntrptStackFrame *stack) {
 	ssize_t count = SYSC_ARG1(stack);
 	if(EXPECT_TRUE(count > 0)) {
 		if(EXPECT_FALSE(!t->reserveFrames(count)))
-			SYSC_RET1(stack,0);
+			SYSC_RESULT(stack,0);
 	}
 	size_t oldEnd = t->getProc()->getVM()->growData(count);
 	if(EXPECT_TRUE(count > 0))
 		t->discardFrames();
-	SYSC_RET1(stack,oldEnd);
+	SYSC_RESULT(stack,oldEnd);
 }
 
 int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
@@ -114,7 +114,7 @@ int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 
-	SYSC_RET1(stack,addr);
+	SYSC_RESULT(stack,addr);
 }
 
 int Syscalls::mprotect(Thread *t,IntrptStackFrame *stack) {
@@ -127,7 +127,7 @@ int Syscalls::mprotect(Thread *t,IntrptStackFrame *stack) {
 	int res = t->getProc()->getVM()->protect((uintptr_t)addr,prot);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::munmap(Thread *t,IntrptStackFrame *stack) {
@@ -135,7 +135,7 @@ int Syscalls::munmap(Thread *t,IntrptStackFrame *stack) {
 	int res = t->getProc()->getVM()->unmap((uintptr_t)virt);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,0);
+	SYSC_RESULT(stack,0);
 }
 
 int Syscalls::mlock(Thread *t,IntrptStackFrame *stack) {
@@ -160,14 +160,14 @@ int Syscalls::mlock(Thread *t,IntrptStackFrame *stack) {
 	t->discardFrames();
 	if(res < 0)
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::mlockall(Thread *t,IntrptStackFrame *stack) {
 	int res = t->getProc()->getVM()->lockall();
 	if(res < 0)
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::mattr(A_UNUSED Thread *t,IntrptStackFrame *stack) {
@@ -178,7 +178,7 @@ int Syscalls::mattr(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int res = PhysMem::setAttributes(phys,bytes,attr);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
-	SYSC_RET1(stack,res);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::mmapphys(Thread *t,IntrptStackFrame *stack) {
@@ -206,5 +206,5 @@ int Syscalls::mmapphys(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(addr == 0))
 		SYSC_ERROR(stack,-ENOMEM);
 	*phys = physCpy;
-	SYSC_RET1(stack,addr);
+	SYSC_RESULT(stack,addr);
 }

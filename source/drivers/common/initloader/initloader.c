@@ -171,14 +171,13 @@ int main(void) {
 	/* mount root device */
 	if(sysconfstr(CONF_ROOT_DEVICE,line,sizeof(line)) < 0)
 		error("Unable to get root device");
-	int fd = open(line,O_RDWRMSG);
+	int fd = open(line,O_RDWR | O_EXEC);
 	if(fd < 0)
 		error("Unable to open '%s'",line);
 	/* no fch{own,mod} here, because we want to change the device, not the channel */
 	if(chown(line,ROOT_UID,GROUP_FS) < 0)
 		printe("Warning: unable to set owner of %s",line);
-	/* all have read-exec access to the root filesystem, because it contains binaries, libs, ... */
-	if(chmod(line,0775) < 0)
+	if(chmod(line,0770) < 0)
 		printe("Warning: unable to set permissions of %s",line);
 
 	/* clone mountspace */

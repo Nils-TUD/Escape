@@ -172,23 +172,27 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 	if(IS_NODE(fsFile)) {
 		node = reinterpret_cast<VFSNode*>(fsFile);
 		openmsg = MSG_FILE_OPEN;
+		/* check if we can access the device */
+		if((err = hasAccess(pid,node,flags)) < 0)
+			goto error;
 	}
 	/* otherwise use the device-node of the fs */
 	else {
 		node = fsFile->getNode();
 		node = VFSNode::request(node->getParent()->getNo());
 		openmsg = MSG_FS_OPEN;
+		/* check if the file to the mounted filesystem has the permissions we are requesting */
+		const uint rwx = VFS_READ | VFS_WRITE | VFS_EXEC;
+		if(~(fsFile->getFlags() &  rwx) & (flags & rwx)) {
+			err = -EACCES;
+			goto error;
+		}
 	}
 
-	ino_t nodeNo = node->getNo();
 	/* if its a device, create the channel-node, by default. If VFS_NOCHAN is given, don't do that
 	 * unless it's a file in a userspace FS (openmsg == MSG_FS_OPEN). */
 	if(IS_DEVICE(node->getMode()) && (openmsg == MSG_FS_OPEN || !(flags & VFS_NOCHAN))) {
-		VFSNode *child;
-		/* check if we can access the device */
-		if((err = hasAccess(pid,node,flags)) < 0)
-			goto error;
-		child = createObj<VFSChannel>(pid,node);
+		VFSNode *child = createObj<VFSChannel>(pid,node);
 		VFSNode::release(node);
 		if(child == NULL) {
 			err = -ENOMEM;
@@ -204,7 +208,7 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 
 	/* open file */
 	if(IS_NODE(fsFile))
-		err = openFile(pid,flags,node,nodeNo,VFS_DEV_NO,file);
+		err = openFile(pid,flags,node,node->getNo(),VFS_DEV_NO,file);
 	else
 		err = openFile(pid,flags,node,err,fsFile->getNodeNo(),file);
 	if(err < 0)

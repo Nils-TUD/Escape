@@ -150,7 +150,7 @@ int VFS::request(pid_t pid,const char *path,ushort flags,mode_t mode,const char 
 		return err;
 
 	/* if it's in the virtual fs, it is a VFSNode, not an OpenFile */
-	if(IS_NODE(*res) && !(flags & VFS_NONODERES)) {
+	if(IS_NODE(*res)) {
 		VFSNode *node = reinterpret_cast<VFSNode*>(*res);
 		const char *vpath = *begin;
 		err = VFSNode::request(vpath,begin,&node,NULL,flags,mode);

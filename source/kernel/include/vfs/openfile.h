@@ -44,11 +44,9 @@ enum {
 	VFS_LONELY 		= 128,		/* disallow other accesses */
 	VFS_EXCL 		= 256,		/* fail if the file already exists */
 	VFS_NOCHAN 		= 512,		/* don't create a channel, but open the device itself */
-	VFS_NOLINKRES 	= 1024,		/* kernel-intern: don't resolve last link in path */
-	VFS_DEVICE 		= 2048,		/* kernel-intern: whether the file was created for a device */
-	VFS_NONODERES 	= 4096,		/* kernel-intern: whether to use VFSNode::resolve in VFS::request */
-	VFS_SIGNALS 	= 8192,		/* kernel-intern: allow signals during blocking */
-	VFS_BLOCK 		= 16384,	/* kernel-intern: force blocking */
+	VFS_DEVICE 		= 1024,		/* kernel-intern: whether the file was created for a device */
+	VFS_SIGNALS 	= 2048,		/* kernel-intern: allow signals during blocking */
+	VFS_BLOCK 		= 4096,		/* kernel-intern: force blocking */
 
 	/* all flags that the user can use */
 	VFS_USER_FLAGS	= VFS_MSGS | VFS_WRITE | VFS_READ | VFS_CREATE | VFS_TRUNCATE |

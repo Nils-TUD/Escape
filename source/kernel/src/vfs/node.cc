@@ -489,7 +489,7 @@ int VFSNode::request(const char *path,const char **end,VFSNode **node,bool *crea
 		}
 
 		/* resolve link */
-		if(!(flags & VFS_NOLINKRES) && S_ISLNK(n->mode))
+		if(S_ISLNK(n->mode))
 			n = const_cast<VFSNode*>(static_cast<const VFSLink*>(n)->resolve());
 
 		/* virtual node */

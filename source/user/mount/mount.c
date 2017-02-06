@@ -41,7 +41,7 @@ static void usage(const char *name) {
 	fprintf(stderr,"    as command line arguments. Afterwards, mount opens the\n");
 	fprintf(stderr,"    created fs-device and mounts it at <path>.\n");
 	fprintf(stderr,"\n");
-	fprintf(stderr,"    Example: %s /dev/hda1 /mnt /sbin/ext2.\n");
+	fprintf(stderr,"    Example: %s /dev/hda1 /mnt /sbin/ext2.\n",name);
 	fprintf(stderr,"\n");
 	fprintf(stderr,"    By default, the current mountspace (/sys/proc/self/ms) will\n");
 	fprintf(stderr,"    be used. This can be overwritten by specifying --ms <ms>.\n");

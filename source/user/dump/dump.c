@@ -17,20 +17,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/proc.h>
 #include <sys/width.h>
 #include <ctype.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #define BUF_SIZE		8192
 #define NPRINT_CHAR		'.'
-#define OUT_FORMAT_OCT	'o'
-#define OUT_FORMAT_DEC	'd'
-#define OUT_FORMAT_HEX	'h'
 #define MAX_BASE		16
 
 static char ascii[MAX_BASE];
@@ -61,44 +58,35 @@ static void printAscii(uint base,int pos) {
 	putchar('\n');
 }
 
-int main(int argc,const char *argv[]) {
-	FILE *in = stdin;
+int main(int argc,char *argv[]) {
 	uint base = 16;
-	char format = OUT_FORMAT_HEX;
-	int i,count = -1;
-	const char **args;
+	int count = -1;
 
-	int res = ca_parse(argc,argv,CA_MAX1_FREE,"n=d f=c",&count,&format);
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
-		usage(argv[0]);
-	}
-	if(ca_hasHelp())
-		usage(argv[0]);
-
-	/* TODO perhaps cmdargs should provide a possibility to restrict the values of an option */
-	/* like 'arg=[ohd]' */
-	if(format != OUT_FORMAT_DEC && format != OUT_FORMAT_HEX &&
-			format != OUT_FORMAT_OCT)
-		usage(argv[0]);
-
-	switch(format) {
-		case OUT_FORMAT_DEC:
-			base = 10;
-			break;
-		case OUT_FORMAT_HEX:
-			base = 16;
-			break;
-		case OUT_FORMAT_OCT:
-			base = 8;
-			break;
+	// parse params
+	int opt;
+	while((opt = getopt(argc,argv,"n:f:")) != -1) {
+		switch(opt) {
+			case 'n': count = atoi(optarg); break;
+			case 'f':
+				if(optarg[0] == 'd')
+					base = 10;
+				else if(optarg[0] == 'x')
+					base = 16;
+				else if(optarg[0] == 'o')
+					base = 8;
+				else
+					usage(argv[0]);
+				break;
+			default:
+				usage(argv[0]);
+		}
 	}
 
-	args = ca_getFree();
-	if(args[0]) {
-		in = fopen(args[0],"r");
+	FILE *in = stdin;
+	if(optind < argc) {
+		in = fopen(argv[optind],"r");
 		if(!in)
-			error("Unable to open '%s'",args[0]);
+			error("Unable to open '%s'",argv[optind]);
 	}
 
 	int shmfd;
@@ -108,7 +96,7 @@ int main(int argc,const char *argv[]) {
 			error("Unable to mmap buffer");
 	}
 
-	i = 0;
+	int i = 0;
 	while(!ferror(stdout) && (count < 0 || count > 0)) {
 		size_t x,c;
 		c = count >= 0 ? MIN(count,BUF_SIZE) : BUF_SIZE;
@@ -127,14 +115,14 @@ int main(int argc,const char *argv[]) {
 				ascii[i % base] = shmem[x];
 			else
 				ascii[i % base] = NPRINT_CHAR;
-			switch(format) {
-				case OUT_FORMAT_DEC:
+			switch(base) {
+				case 10:
 					printf("%03d ",shmem[x]);
 					break;
-				case OUT_FORMAT_HEX:
+				case 16:
 					printf("%02x ",shmem[x]);
 					break;
-				case OUT_FORMAT_OCT:
+				case 8:
 					printf("%03o ",shmem[x]);
 					break;
 			}
@@ -151,7 +139,7 @@ int main(int argc,const char *argv[]) {
 	printAscii(base,i);
 
 	destroybuf(shmem,shmfd);
-	if(args[0])
+	if(optind < argc)
 		fclose(in);
 	return EXIT_SUCCESS;
 }

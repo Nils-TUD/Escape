@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -30,7 +30,7 @@ int main(int argc,char **argv) {
 	time_t now;
 	struct tm *date;
 
-	if((argc != 1 && argc != 2) || isHelpCmd(argc,argv)) {
+	if((argc != 1 && argc != 2) || getopt_ishelp(argc,argv)) {
 		fprintf(stderr,"Usage: %s [<format>]\n",argv[0]);
 		fprintf(stderr,"	<format> may be anything that dateToString() accepts\n");
 		return EXIT_FAILURE;

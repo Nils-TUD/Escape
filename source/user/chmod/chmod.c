@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/proc.h>
 #include <sys/stat.h>
 #include <ctype.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -139,8 +139,8 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc,const char **argv) {
-	if(ca_hasHelp() || argc < 3)
+int main(int argc,char **argv) {
+	if(getopt_ishelp(argc,argv) || argc < 3)
 		usage(argv[0]);
 
 	const char *mode = argv[1];

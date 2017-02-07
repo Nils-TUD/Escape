@@ -20,13 +20,13 @@
 #include <esc/proto/net.h>
 #include <esc/proto/socket.h>
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <esc/dns.h>
 #include <info/link.h>
 #include <sys/common.h>
 #include <sys/endian.h>
 #include <sys/thread.h>
 #include <sys/time.h>
+#include <getopt.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <time.h>
@@ -158,7 +158,6 @@ int main(int argc,char **argv) {
 	uint times = 10;
 	uint interval = 1000;
 	uint timeout = 1000;
-	const char *address;
 
 	if(signal(SIGALRM,sigalarm) == SIG_ERR)
 		exitmsg("Unable to set SIGALRM");
@@ -166,20 +165,24 @@ int main(int argc,char **argv) {
 		exitmsg("Unable to set SIGINT");
 	srand(time(NULL));
 
-	// parse params
-	esc::cmdargs args(argc,argv,esc::cmdargs::MAX1_FREE);
-	try {
-		args.parse("c=u s=k t=u i=u W=u",&times,&nbytes,&ttl,&interval,&timeout);
-		if(args.is_help())
-			usage(argv[0]);
-		if(nbytes > 4 * 1024)
-			exitmsg("The maximum payload size is 4K");
-		address = args.get_free().at(0)->c_str();
+	int opt;
+	while((opt = getopt(argc,argv,"c:s:t:i:W:")) != -1) {
+		switch(opt) {
+			case 'c': times = atoi(optarg); break;
+			case 's': nbytes = getopt_tosize(optarg); break;
+			case 't': ttl = atoi(optarg); break;
+			case 'i': interval = atoi(optarg); break;
+			case 'W': timeout = atoi(optarg); break;
+			default:
+				usage(argv[0]);
+		}
 	}
-	catch(const esc::cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
+	if(nbytes > 4 * 1024)
+		exitmsg("The maximum payload size is 4K");
+	if(optind >= argc)
 		usage(argv[0]);
-	}
+
+	const char *address = argv[optind];
 
 	const size_t total = sizeof(IPv4Header) + sizeof(ICMPHeader) + nbytes;
 	IPv4Header *reply = static_cast<IPv4Header*>(malloc(total));

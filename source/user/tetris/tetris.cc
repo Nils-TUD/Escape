@@ -18,8 +18,8 @@
  */
 
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <sys/common.h>
+#include <getopt.h>
 #include <stdlib.h>
 
 #include "game.h"
@@ -47,15 +47,18 @@ int main(int argc,char **argv) {
 	int stonesize = 2;
 	int nosound = false;
 
-	esc::cmdargs args(argc,argv,esc::cmdargs::NO_FREE);
-	try {
-		args.parse("f=s s=d nosound",&fieldsize,&stonesize,&nosound);
-		if(args.is_help())
-			usage(argv[0]);
-	}
-	catch(const esc::cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
-		usage(argv[0]);
+	int opt;
+	const struct option longopts[] = {
+		{"nosound",		no_argument,	0,	'n'},
+		{0, 0, 0, 0},
+	};
+	while((opt = getopt_long(argc,argv,"f:s:",longopts,NULL)) != -1) {
+		switch(opt) {
+			case 'f': fieldsize = optarg; break;
+			case 's': stonesize = atoi(optarg); break;
+			default:
+				usage(argv[0]);
+		}
 	}
 
 	int cols = 100;

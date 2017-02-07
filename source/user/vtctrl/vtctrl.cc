@@ -19,10 +19,10 @@
 
 #include <esc/proto/vterm.h>
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <esc/env.h>
 #include <sys/common.h>
 #include <sys/messages.h>
+#include <getopt.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -36,22 +36,11 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char *argv[]) {
-	int list = 0;
-	int mode = -1;
-
-	cmdargs args(argc,argv,cmdargs::NO_FREE);
-	try {
-		args.parse("l s=d",&list,&mode);
-		if(args.is_help())
-			usage(argv[0]);
-	}
-	catch(const esc::cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
+	if(argc < 2 || getopt_ishelp(argc,argv))
 		usage(argv[0]);
-	}
 
 	esc::VTerm vterm(esc::env::get("TERM").c_str());
-	if(list) {
+	if(strcmp(argv[1],"-l") == 0) {
 		std::vector<esc::Screen::Mode> modes = vterm.getModes();
 		esc::Screen::Mode curMode = vterm.getMode();
 
@@ -68,7 +57,12 @@ int main(int argc,char *argv[]) {
 			sout << "\n";
 		}
 	}
-	else
+	else {
+		if(argc < 3)
+			usage(argv[0]);
+
+		int mode = atoi(argv[2]);
 		vterm.setMode(mode);
+	}
 	return EXIT_SUCCESS;
 }

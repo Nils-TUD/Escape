@@ -19,9 +19,9 @@
 
 #include <esc/proto/pci.h>
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <sys/common.h>
 #include <sys/messages.h>
+#include <getopt.h>
 #include <stdlib.h>
 
 #include "names.h"
@@ -142,15 +142,15 @@ static void usage(const char *name) {
 
 int main(int argc,char *argv[]) {
 	int verbose = 0;
-	cmdargs args(argc,argv,cmdargs::NO_FREE);
-	try {
-		args.parse("v",&verbose);
-		if(args.is_help())
-			usage(argv[0]);
-	}
-	catch(const cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
-		usage(argv[0]);
+
+	// parse params
+	int opt;
+	while((opt = getopt(argc,argv,"v")) != -1) {
+		switch(opt) {
+			case 'v': verbose = 1; break;
+			default:
+				usage(argv[0]);
+		}
 	}
 
 	PCINames::load("/etc/pci.ids");

@@ -17,7 +17,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/conf.h>
 #include <sys/proc.h>
@@ -26,6 +25,7 @@
 #include <sys/wait.h>
 #include <dirent.h>
 #include <errno.h>
+#include <getopt.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,7 +41,7 @@ static int waitingPid = 0;
 
 int main(int argc,char **argv) {
 	uint64_t start,end;
-	if(argc < 2 || isHelpCmd(argc,argv))
+	if(argc < 2 || getopt_ishelp(argc,argv))
 		usage(argv[0]);
 
 	if(signal(SIGINT,sigHdlr) == SIG_ERR)

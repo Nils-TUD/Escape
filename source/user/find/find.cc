@@ -18,11 +18,11 @@
  */
 
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <esc/util.h>
 #include <sys/common.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <stdlib.h>
 
 using namespace esc;
@@ -123,6 +123,7 @@ static void usage(const char *name) {
 int main(int argc,char **argv) {
 	const char *prog = argv[0];
 	const char *path = ".";
+
 	// if the first argument is no filter-option, assume it's the path
 	if(argc > 1 && argv[1][0] != '-') {
 		argc--;
@@ -130,22 +131,30 @@ int main(int argc,char **argv) {
 		path = argv[0];
 	}
 
-	// parse params
-	esc::cmdargs args(argc,argv,esc::cmdargs::NO_FREE);
-	try {
-		args.parse("path=s name=s type=c",&filterPath,&filterName,&filterType);
-		if(args.is_help())
-			usage(prog);
-		if(filterType && (filterType != 'b' && filterType != 'c' && filterType != 'd' &&
-			filterType != 'r' && filterType != 'f' && filterType != 's')) {
-			fprintf(stderr,"Invalid type: %c\n",filterType);
-			usage(prog);
+	int opt;
+	const struct option longopts[] = {
+		{"path",	required_argument,	0,	'p'},
+		{"name",	required_argument,	0,	'n'},
+		{"type",	required_argument,	0,	't'},
+		{0, 0, 0, 0},
+	};
+	while((opt = getopt_long(argc,argv,"h",longopts,NULL)) != -1) {
+		switch(opt) {
+			case 'p': filterPath = optarg; break;
+			case 'n': filterName = optarg; break;
+			case 't':
+				filterType = optarg[0];
+				if(!strchr("bcdrfs",filterType)) {
+					fprintf(stderr,"Invalid type: %c\n",filterType);
+					usage(prog);
+				}
+				break;
+			default:
+				usage(argv[0]);
 		}
 	}
-	catch(const esc::cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
-		usage(prog);
-	}
+	if(optind != argc)
+		usage(argv[0]);
 
 	char clean[MAX_PATH_LEN];
 	cleanpath(clean,sizeof(clean),path);

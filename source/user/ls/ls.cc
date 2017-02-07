@@ -19,12 +19,12 @@
 
 #include <esc/proto/vterm.h>
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <esc/env.h>
 #include <esc/file.h>
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <usergroup/usergroup.h>
+#include <getopt.h>
 #include <stdlib.h>
 #include <time.h>
 #include <vector>
@@ -33,23 +33,13 @@ using namespace std;
 using namespace esc;
 
 enum {
-	F_LONG_SHIFT,
-	F_INODE_SHIFT,
-	F_ALL_SHIFT,
-	F_DIRSIZE_SHIFT,
-	F_DIRNUM_SHIFT,
-	F_NUMERIC_SHIFT,
-	F_HUMAN_SHIFT,
-};
-
-enum {
-	F_LONG				= 1 << F_LONG_SHIFT,
-	F_INODE				= 1 << F_INODE_SHIFT,
-	F_ALL				= 1 << F_ALL_SHIFT,
-	F_DIRSIZE			= 1 << F_DIRSIZE_SHIFT,
-	F_DIRNUM			= 1 << F_DIRNUM_SHIFT,
-	F_NUMERIC			= 1 << F_NUMERIC_SHIFT,
-	F_HUMAN				= 1 << F_HUMAN_SHIFT,
+	F_LONG				= 1 << 0,
+	F_INODE				= 1 << 1,
+	F_ALL				= 1 << 2,
+	F_DIRSIZE			= 1 << 3,
+	F_DIRNUM			= 1 << 4,
+	F_NUMERIC			= 1 << 5,
+	F_HUMAN				= 1 << 6,
 };
 
 /* for calculating the widths of the fields */
@@ -129,23 +119,23 @@ static sNamedItem *groupList;
 
 int main(int argc,char *argv[]) {
 	// parse params
-	cmdargs args(argc,argv,0);
-	try {
-		int flong = 0,fhuman = 0, finode = 0,fall = 0,fdirsize = 0,fnumeric = 0,fdirnum = 0;
-		args.parse("l h i a s n N",&flong,&fhuman,&finode,&fall,&fdirsize,&fnumeric,&fdirnum);
-		if(args.is_help())
-			usage(argv[0]);
-		flags = (flong << F_LONG_SHIFT) | (fhuman << F_HUMAN_SHIFT) |
-			(finode << F_INODE_SHIFT) | (fall << F_ALL_SHIFT) | (fdirsize << F_DIRSIZE_SHIFT) |
-			(fdirnum << F_DIRNUM_SHIFT) | (fnumeric << F_NUMERIC_SHIFT);
-		// dirsize and dirnum imply long
-		if(flags & (F_DIRSIZE | F_DIRNUM))
-			flags |= F_LONG;
+	int opt;
+	while((opt = getopt(argc,argv,"lhiasNn")) != -1) {
+		switch(opt) {
+			case 'l': flags |= F_LONG; break;
+			case 'h': flags |= F_HUMAN; break;
+			case 'i': flags |= F_INODE; break;
+			case 'a': flags |= F_ALL; break;
+			case 's': flags |= F_DIRSIZE; break;
+			case 'N': flags |= F_DIRNUM; break;
+			case 'n': flags |= F_NUMERIC; break;
+			default:
+				usage(argv[0]);
+		}
 	}
-	catch(const cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
-		usage(argv[0]);
-	}
+	// dirsize and dirnum imply long
+	if(flags & (F_DIRSIZE | F_DIRNUM))
+		flags |= F_LONG;
 
 	// get console-size
 	uint cols = esc::VTerm::getSize(esc::env::get("TERM").c_str()).first;
@@ -167,10 +157,9 @@ int main(int argc,char *argv[]) {
 	// first, collect all files and count widths
 	size_t widths[WIDTHS_COUNT] = {0};
 	std::vector<DirList> lists;
-	if(!args.get_free().empty()) {
-		size_t count = args.get_free().size();
-		for(auto &p : args.get_free())
-			lists.push_back(collectEntries(p->c_str(),widths,count > 1));
+	if(optind < argc) {
+		for(int i = optind; i < argc; ++i)
+			lists.push_back(collectEntries(argv[i],widths,argc - optind > 1));
 	}
 	else {
 		std::string path = env::get("CWD");

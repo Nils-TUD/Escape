@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/proc.h>
 #include <usergroup/usergroup.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -37,28 +37,31 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc,const char *argv[]) {
+int main(int argc,char *argv[]) {
 	int g = 0,G = 0,u = 0,n = 0;
 
-	/* parse args */
-	int res = ca_parse(argc,argv,CA_MAX1_FREE,"g G u n",&g,&G,&u,&n);
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
-		usage(argv[0]);
+	// parse params
+	int opt;
+	while((opt = getopt(argc,argv,"guGn")) != -1) {
+		switch(opt) {
+			case 'g': g = 1; break;
+			case 'u': u = 1; break;
+			case 'G': G = 1; break;
+			case 'n': n = 1; break;
+			default:
+				usage(argv[0]);
+		}
 	}
-	if(ca_hasHelp())
-		usage(argv[0]);
 
 	int uid,gid;
 	gid_t *gids;
 	size_t gcount;
-	const char *user = ca_getFree()[0];
-	if(user) {
-		uid = usergroup_nameToId(USERS_PATH,user);
-		gid = usergroup_getGid(user);
-		gids = usergroup_collectGroupsFor(user,0,&gcount);
+	if(optind < argc) {
+		uid = usergroup_nameToId(USERS_PATH,argv[optind]);
+		gid = usergroup_getGid(argv[optind]);
+		gids = usergroup_collectGroupsFor(argv[optind],0,&gcount);
 		if(!gids)
-			error("Unable to get group ids for user '%s'",user);
+			error("Unable to get group ids for user '%s'",argv[optind]);
 	}
 	else {
 		uid = getuid();

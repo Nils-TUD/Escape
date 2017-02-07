@@ -22,7 +22,6 @@
 #include <stdlib.h>
 
 extern sTestModule tModRBuffer;
-extern sTestModule tModCmdArgs;
 extern sTestModule tModPathTree;
 extern sTestModule tModSList;
 extern sTestModule tModDList;
@@ -32,7 +31,6 @@ extern sTestModule tModRegex;
 
 int main() {
 	test_register(&tModRBuffer);
-	test_register(&tModCmdArgs);
 	test_register(&tModPathTree);
 	test_register(&tModSList);
 	test_register(&tModDList);

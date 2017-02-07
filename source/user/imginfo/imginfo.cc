@@ -18,9 +18,9 @@
  */
 
 #include <esc/stream/std.h>
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <exception>
+#include <getopt.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -33,7 +33,7 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char **argv) {
-	if(isHelpCmd(argc,argv) || argc < 2)
+	if(getopt_ishelp(argc,argv) || argc < 2)
 		usage(argv[0]);
 
 	ImageInfo *imgs[] = {

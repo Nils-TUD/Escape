@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/proc.h>
 #include <ctype.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,24 +45,21 @@ static sArg *last = NULL;
 static size_t argPos = 0;
 static char argBuf[MAX_ARG_LEN];
 
-int main(int argc,const char *argv[]) {
-	char c;
-	const char **args;
-	size_t i,argCount;
-	size_t freeArgs;
-	FILE *file = stdin;
+int main(int argc,char *argv[]) {
 	const char *filename = NULL;
 
 	/* parse args */
-	int res = ca_parse(argc,argv,0,"a=s",&filename);
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
-		usage(argv[0]);
+	int opt;
+	while((opt = getopt(argc,argv,"a:")) != -1) {
+		switch(opt) {
+			case 'a': filename = optarg; break;
+			default:
+				usage(argv[0]);
+		}
 	}
-	if(ca_hasHelp())
-		usage(argv[0]);
 
 	/* open file? */
+	FILE *file = stdin;
 	if(filename != NULL) {
 		file = fopen(filename,"r");
 		if(file == NULL)
@@ -70,7 +67,8 @@ int main(int argc,const char *argv[]) {
 	}
 
 	/* read arguments */
-	argCount = 0;
+	size_t argCount = 0;
+	char c;
 	while((c = fgetc(file)) != EOF) {
 		if(isspace(c)) {
 			appendArg();
@@ -95,24 +93,22 @@ int main(int argc,const char *argv[]) {
 	}
 
 	/* build args-array and copy arguments into it */
-	freeArgs = ca_getFreeCount();
-	if(freeArgs == 0)
-		freeArgs = 1;
-	args = (const char**)malloc(sizeof(char*) * (argCount + freeArgs + 1));
+	size_t freeArgs = optind >= argc ? 1 : argc - optind;
+	const char **args = (const char**)malloc(sizeof(char*) * (argCount + freeArgs + 1));
 	if(!args)
 		error("Not enough mem");
-	i = 0;
-	if(ca_getFreeCount() == 0)
-		args[i++] = "echo";
+	int j = 0;
+	if(optind >= argc)
+		args[j++] = "echo";
 	else {
-		for(i = 0; i < freeArgs; i++)
-			args[i] = ca_getFree()[i];
+		for(int i = optind; i < argc; ++i)
+			args[j++] = argv[i];
 	}
-	for(; first != NULL; i++) {
-		args[i] = first->arg;
+	for(; first != NULL; j++) {
+		args[j] = first->arg;
 		first = first->next;
 	}
-	args[i] = NULL;
+	args[j] = NULL;
 	/* exchange us with requested command */
 	execvp(args[0],args);
 	return EXIT_SUCCESS;

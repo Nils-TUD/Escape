@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/io.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <stdlib.h>
 
 static void usage(const char *name) {
@@ -34,29 +34,37 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc,const char *argv[]) {
-	char *mspath = (char*)"/sys/proc/self/ms";
-	char *fsdev = NULL;
-	char *path = NULL;
+int main(int argc,char *argv[]) {
+	const char *mspath = "/sys/proc/self/ms";
 
-	int res = ca_parse(argc,argv,CA_NO_FREE,"ms=s =s* =s*",&mspath,&fsdev,&path);
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
-		usage(argv[0]);
+	int opt;
+	const struct option longopts[] = {
+		{"ms",		required_argument,	0,	'm'},
+		{0, 0, 0, 0},
+	};
+	while((opt = getopt_long(argc,argv,"",longopts,NULL)) != -1) {
+		switch(opt) {
+			case 'm': mspath = optarg; break;
+			default:
+				usage(argv[0]);
+		}
 	}
-	if(ca_hasHelp())
+	if(optind + 2 > argc)
 		usage(argv[0]);
 
-	int fd = open(fsdev,O_MSGS);
+	const char *src = argv[optind];
+	const char *path = argv[optind + 1];
+
+	int fd = open(src,O_MSGS);
 	if(fd < 0)
-		error("Unable to open '%s'",fsdev);
+		error("Unable to open '%s'",src);
 
 	/* now mount it */
 	int ms = open(mspath,O_WRITE);
 	if(ms < 0)
 		error("Unable to open '%s' for writing",mspath);
 	if(mount(ms,fd,path) < 0)
-		error("Unable to mount '%s' @ '%s' in mountspace '%s'",fsdev,path,mspath);
+		error("Unable to mount '%s' @ '%s' in mountspace '%s'",src,path,mspath);
 
 	close(ms);
 	close(fd);

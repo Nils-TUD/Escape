@@ -20,13 +20,13 @@
 #include <esc/proto/vterm.h>
 #include <esc/stream/fstream.h>
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <esc/env.h>
 #include <sys/common.h>
 #include <sys/esccodes.h>
 #include <sys/keycodes.h>
 #include <sys/messages.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
@@ -47,7 +47,7 @@ static const int TAB_WIDTH = 4;
 
 static esc::FStream *vt;
 static FILE *in;
-static string filename;
+static const char *filename;
 static bool seenEOF;
 static LineContainer *lines;
 static size_t startLine = 0;
@@ -70,24 +70,15 @@ int main(int argc,char *argv[]) {
 	char c;
 	bool run = true;
 
-	// parse args
-	esc::cmdargs args(argc,argv,esc::cmdargs::MAX1_FREE);
-	try {
-		args.parse("");
-		if(args.is_help())
-			usage(argv[0]);
-	}
-	catch(const esc::cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
+	if(argc > 2 || getopt_ishelp(argc,argv))
 		usage(argv[0]);
-	}
 
 	// open file or use stdin
-	if(args.get_free().size() > 0) {
-		filename = *args.get_free().at(0);
-		in = fopen(filename.c_str(),"r");
+	if(argc > 1) {
+		filename = argv[1];
+		in = fopen(filename,"r");
 		if(in == nullptr)
-			error("Unable to open '%s'",filename.c_str());
+			error("Unable to open '%s'",filename);
 	}
 	else if(isatty(STDIN_FILENO))
 		error("Using a vterm as STDIN and have got no filename");

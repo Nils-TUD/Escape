@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/stat.h>
 #include <ctype.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,40 +45,38 @@ static ulong lines = 0;
 static ulong bytes = 0;
 static ulong words = 0;
 
-int main(int argc,const char *argv[]) {
+int main(int argc,char *argv[]) {
 	uint flags = 0;
-	int flines = 0,fwords = 0,fbytes = 0;
-	const char **args;
 
-	int res = ca_parse(argc,argv,0,"w c l",&fwords,&fbytes,&flines);
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
-		usage(argv[0]);
+	int opt;
+	while((opt = getopt(argc,argv,"clw")) != -1) {
+		switch(opt) {
+			case 'c': flags |= WC_BYTES; break;
+			case 'l': flags |= WC_LINES; break;
+			case 'w': flags |= WC_WORDS; break;
+			default:
+				usage(argv[0]);
+		}
 	}
-	if(ca_hasHelp())
-		usage(argv[0]);
-	if(flines == false && fwords == false && fbytes == false)
-		flags = WC_BYTES | WC_WORDS | WC_LINES;
-	else
-		flags = (flines ? WC_LINES : 0) | (fwords ? WC_WORDS : 0) | (fbytes ? WC_BYTES : 0);
 
-	args = ca_getFree();
-	if(!*args)
+	if(!flags)
+		flags = WC_BYTES | WC_WORDS | WC_LINES;
+
+	if(optind >= argc)
 		countFile(stdin);
 	else {
-		while(*args) {
-			if(isdir(*args))
-				printe("'%s' is a directory!",*args);
+		for(int i = optind; i < argc; ++i) {
+			if(isdir(argv[i]))
+				printe("'%s' is a directory!",argv[i]);
 			else {
-				FILE *f = fopen(*args,"r");
+				FILE *f = fopen(argv[i],"r");
 				if(!f)
-					printe("Unable to open '%s'",*args);
+					printe("Unable to open '%s'",argv[i]);
 				else {
 					countFile(f);
 					fclose(f);
 				}
 			}
-			args++;
 		}
 	}
 

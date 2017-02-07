@@ -19,11 +19,12 @@
 
 #include <esc/stream/fstream.h>
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <sys/common.h>
 #include <sys/endian.h>
+#include <exception>
 #include <z/gzip.h>
 #include <z/inflate.h>
+#include <getopt.h>
 #include <stdlib.h>
 
 using namespace esc;
@@ -96,18 +97,19 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char **argv) {
-	cmdargs args(argc,argv,0);
-	try {
-		args.parse("c i k",&tostdout,&showinfo,&keep);
-		if(args.is_help())
-			usage(argv[0]);
-	}
-	catch(const cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
-		usage(argv[0]);
+	// parse params
+	int opt;
+	while((opt = getopt(argc,argv,"cik")) != -1) {
+		switch(opt) {
+			case 'c': tostdout = true; break;
+			case 'i': showinfo = true; break;
+			case 'k': keep = true; break;
+			default:
+				usage(argv[0]);
+		}
 	}
 
-	if(args.get_free().size() == 0 || (args.get_free().size() == 1 && *(args.get_free()[0]) == "-")) {
+	if(optind >= argc || (optind + 1 == argc && strcmp(argv[optind],"-") == 0)) {
 		tostdout = true;
 		try {
 			uncompress(sin,"stdin");
@@ -117,18 +119,18 @@ int main(int argc,char **argv) {
 		}
 	}
 	else {
-		for(auto file = args.get_free().begin(); file != args.get_free().end(); ++file) {
-			FStream f((*file)->c_str(),"r");
+		for(int i = optind; i < argc; ++i) {
+			FStream f(argv[i],"r");
 			if(!f) {
-				errmsg("Unable to open '" << **file << "' for reading");
+				errmsg("Unable to open '" << argv[i] << "' for reading");
 				continue;
 			}
 
 			try {
-				uncompress(f,**file);
+				uncompress(f,argv[i]);
 			}
 			catch(const std::exception &e) {
-				errmsg(**file << ": " << e.what());
+				errmsg(argv[i] << ": " << e.what());
 			}
 		}
 	}

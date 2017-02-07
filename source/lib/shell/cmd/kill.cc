@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/io.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,12 +58,18 @@ int shell_cmdKill(int argc,char **argv) {
 	bool list = false;
 	size_t i;
 
-	int res = ca_parse(argc,(const char**)argv,0,"L s=s",&list,&ssig);
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
-		return usage(argv[0]);
+	// parse params
+	int opt;
+	optind = 1;
+	while((opt = getopt(argc,argv,"Ls:")) != -1) {
+		switch(opt) {
+			case 'L': list = true; break;
+			case 's': ssig = optarg; break;
+			default:
+				return usage(argv[0]);
+		}
 	}
-	if((!list && ca_getFreeCount() == 0) || ca_hasHelp())
+	if((!list && optind >= argc))
 		return usage(argv[0]);
 
 	/* translate signal-name to signal-number */
@@ -84,24 +90,22 @@ int shell_cmdKill(int argc,char **argv) {
 	}
 	else {
 		/* kill processes */
-		const char **args = ca_getFree();
-		while(*args) {
-			if((*args)[0] == '%') {
-				tJobId cmd = atoi(*args + 1);
+		for(int i = optind; i < argc; ++i) {
+			if(argv[i][0] == '%') {
+				tJobId cmd = atoi(argv[i] + 1);
 				ast_termProcsOfJob(cmd);
 			}
 			else {
-				pid_t pid = atoi(*args);
+				pid_t pid = atoi(argv[i]);
 				if(pid > 0) {
 					if(kill(pid,sig) < 0)
 						printe("Unable to send signal %d to %d",sig,pid);
 				}
-				else if(strcmp(*args,"0") != 0)
-					printe("Unable to kill process with pid '%s'",*args);
+				else if(strcmp(argv[i],"0") != 0)
+					printe("Unable to kill process with pid '%s'",argv[i]);
 				else
 					printe("You can't kill 'init'");
 			}
-			args++;
 		}
 	}
 	return EXIT_SUCCESS;

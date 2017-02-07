@@ -19,7 +19,6 @@
 
 #include <esc/proto/vterm.h>
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <esc/env.h>
 #include <esc/file.h>
 #include <info/process.h>
@@ -31,6 +30,7 @@
 #include <sys/proc.h>
 #include <usergroup/usergroup.h>
 #include <algorithm>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -48,7 +48,7 @@ struct sort {
 	const static int NAME	= 5;
 
 	int type;
-	string name;
+	const char *name;
 };
 
 static bool compareProcs(const process* a,const process* b);
@@ -93,26 +93,25 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char **argv) {
-	string ssort("pid");
+	const char *ssort = "pid";
 	int own = 0,numeric = 0;
 	sNamedItem *userList = nullptr;
 	sNamedItem *groupList = nullptr;
 
-	// parse args
-	esc::cmdargs args(argc,argv,esc::cmdargs::NO_FREE);
-	try {
-		args.parse("s=s u n",&ssort,&own,&numeric);
-		if(args.is_help())
-			usage(argv[0]);
-	}
-	catch(const esc::cmdargs_error& e) {
-		serr << "Invalid arguments: " << e.what() << '\n';
-		usage(argv[0]);
+	int opt;
+	while((opt = getopt(argc,argv,"uns:")) != -1) {
+		switch(opt) {
+			case 'u': own = 1; break;
+			case 'n': numeric = 1; break;
+			case 's': ssort = optarg; break;
+			default:
+				usage(argv[0]);
+		}
 	}
 
 	// determine sort
 	for(size_t i = 0; i < ARRAY_SIZE(sorts); i++) {
-		if(ssort == sorts[i].name) {
+		if(strcmp(ssort,sorts[i].name) == 0) {
 			sortcol = sorts[i].type;
 			break;
 		}

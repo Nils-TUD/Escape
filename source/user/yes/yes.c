@@ -18,7 +18,7 @@
  */
 
 #include <sys/common.h>
-#include <sys/cmdargs.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -41,7 +41,7 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char **argv) {
-	if(isHelpCmd(argc,argv))
+	if(getopt_ishelp(argc,argv))
 		usage(argv[0]);
 
 	if(argc < 2) {

@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/thread.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -28,16 +28,10 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc,const char **argv) {
-	int secs;
-	int res = ca_parse(argc,argv,0,"=d*",&secs);
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
-		usage(argv[0]);
-	}
-	if(ca_hasHelp())
+int main(int argc,char **argv) {
+	if(argc != 2 || getopt_ishelp(argc,argv))
 		usage(argv[0]);
 
-	sleep(secs);
+	sleep(atoi(argv[1]));
 	return 0;
 }

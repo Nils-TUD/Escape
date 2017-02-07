@@ -18,11 +18,11 @@
  */
 
 #include <esc/proto/vterm.h>
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <sys/proc.h>
 #include <usergroup/usergroup.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,7 +46,7 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char *argv[]) {
-	if(argc < 2 || argv[1][0] == '\0' || (argc == 2 && isHelpCmd(argc,argv)))
+	if(argc < 2 || argv[1][0] == '\0' || (argc == 2 && getopt_ishelp(argc,argv)))
 		usage(argv[0]);
 
 	switch(argv[1][1]) {

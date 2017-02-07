@@ -20,9 +20,9 @@
 #include <esc/proto/net.h>
 #include <esc/proto/socket.h>
 #include <esc/stream/std.h>
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/thread.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -36,7 +36,7 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char **argv) {
-	if(isHelpCmd(argc,argv) || argc != 2)
+	if(getopt_ishelp(argc,argv) || argc != 2)
 		usage(argv[0]);
 
 	Socket sock(Socket::SOCK_STREAM,Socket::PROTO_TCP);

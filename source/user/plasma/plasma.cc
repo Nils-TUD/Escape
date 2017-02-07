@@ -19,13 +19,13 @@
 
 #include <esc/proto/ui.h>
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <esc/util.h>
 #include <sys/common.h>
 #include <sys/esccodes.h>
 #include <sys/keycodes.h>
 #include <sys/thread.h>
 #include <sys/time.h>
+#include <getopt.h>
 #include <math.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -102,37 +102,36 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char **argv) {
-	std::string modestr;
-	std::string scrsize;
+	const char *modestr = NULL;
+	const char *scrsize = NULL;
 
-	esc::cmdargs args(argc,argv,esc::cmdargs::NO_FREE);
-	try {
-		args.parse("m=s s=s",&modestr,&scrsize);
-		if(args.is_help())
-			usage(argv[0]);
-	}
-	catch(const esc::cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
-		usage(argv[0]);
+	int opt;
+	while((opt = getopt(argc,argv,"m:s:")) != -1) {
+		switch(opt) {
+			case 'm': modestr = optarg; break;
+			case 's': scrsize = optarg; break;
+			default:
+				usage(argv[0]);
+		}
 	}
 
 	Mode mode = TUI;
 	gsize_t width = 100;
 	gsize_t height = 37;
-	if(!modestr.empty()) {
-		if(modestr == "gui") {
+	if(modestr) {
+		if(strcmp(modestr,"gui") == 0) {
 			width = 1024;
 			height = 700;
 			mode = GUI;
 		}
-		else if(modestr == "win") {
+		else if(strcmp(modestr,"win") == 0) {
 			width = 400;
 			height = 300;
 			mode = WIN;
 		}
 	}
-	if(!scrsize.empty()) {
-		if(sscanf(scrsize.c_str(),"%zux%zu",&width,&height) != 2)
+	if(scrsize) {
+		if(sscanf(scrsize,"%zux%zu",&width,&height) != 2)
 			usage(argv[0]);
 	}
 

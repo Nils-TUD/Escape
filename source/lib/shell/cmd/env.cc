@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/io.h>
 #include <sys/messages.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,7 +31,7 @@
 
 int shell_cmdEnv(int argc,char **argv) {
 	char *valBuf,*nameBuf;
-	if(argc > 2 || isHelpCmd(argc,argv)) {
+	if(argc > 2 || getopt_ishelp(argc,argv)) {
 		printf("Usage: %s [<name>|<name>=<value>]\n",argv[0]);
 		return EXIT_FAILURE;
 	}

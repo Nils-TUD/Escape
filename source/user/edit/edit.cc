@@ -17,7 +17,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/esccodes.h>
 #include <sys/keycodes.h>
@@ -26,6 +25,7 @@
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
+#include <getopt.h>
 #include <limits.h>
 #include <stdio.h>
 
@@ -41,7 +41,7 @@ int main(int argc,char *argv[]) {
 	bool run = true;
 	char c;
 	int cmd,n1,n2,n3;
-	if(argc > 2 || isHelpCmd(argc,argv))
+	if(argc > 2 || getopt_ishelp(argc,argv))
 		usage(argv[0]);
 
 	/* init everything */

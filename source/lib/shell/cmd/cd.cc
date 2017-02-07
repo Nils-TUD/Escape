@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/io.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,7 +30,7 @@
 
 int shell_cmdCd(int argc,char **argv) {
 	char path[MAX_PATH_LEN];
-	if(argc != 2 || isHelpCmd(argc,argv)) {
+	if(argc != 2 || getopt_ishelp(argc,argv)) {
 		fprintf(stderr,"Usage: cd <dir>\n");
 		return EXIT_FAILURE;
 	}

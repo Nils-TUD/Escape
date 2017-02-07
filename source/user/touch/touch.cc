@@ -18,9 +18,9 @@
  */
 
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <sys/common.h>
 #include <sys/stat.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -42,22 +42,24 @@ int main(int argc,char **argv) {
 	bool noCreate = false;
 
 	// parse params
-	esc::cmdargs args(argc,argv,0);
-	try {
-		args.parse("a c m",&onlyAccess,&noCreate,&onlyModify);
-		if(args.is_help() || args.get_free().size() == 0)
-			usage(argv[0]);
+	int opt;
+	while((opt = getopt(argc,argv,"amc")) != -1) {
+		switch(opt) {
+			case 'a': onlyAccess = true; break;
+			case 'm': onlyModify = true; break;
+			case 'c': noCreate = true; break;
+			default:
+				usage(argv[0]);
+		}
 	}
-	catch(const esc::cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
+	if(optind >= argc)
 		usage(argv[0]);
-	}
 
-	for(auto f = args.get_free().begin(); f != args.get_free().end(); ++f) {
+	for(int i = optind; i < argc; ++i) {
 		if(!noCreate) {
-			int fd = creat((*f)->c_str(),FILE_DEF_MODE);
+			int fd = creat(argv[i],FILE_DEF_MODE);
 			if(fd < 0)
-				errmsg("Unable to open file '" << **f << "'");
+				errmsg("Unable to open file '" << argv[i] << "'");
 			close(fd);
 		}
 
@@ -66,8 +68,8 @@ int main(int argc,char **argv) {
 
 		if(onlyAccess || onlyModify) {
 			struct stat info;
-			if(stat((*f)->c_str(),&info) < 0) {
-				errmsg("Unable to stat '" << **f << "'");
+			if(stat(argv[i],&info) < 0) {
+				errmsg("Unable to stat '" << argv[i] << "'");
 				continue;
 			}
 
@@ -77,8 +79,8 @@ int main(int argc,char **argv) {
 				utimes.actime = info.st_atime;
 		}
 
-		if(utime((*f)->c_str(),&utimes) < 0)
-			errmsg("Unable to set access/modification time for '" << **f << "'");
+		if(utime(argv[i],&utimes) < 0)
+			errmsg("Unable to set access/modification time for '" << argv[i] << "'");
 	}
 	return 0;
 }

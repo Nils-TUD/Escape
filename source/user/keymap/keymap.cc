@@ -19,13 +19,13 @@
 
 #include <esc/proto/vterm.h>
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <esc/env.h>
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <sys/proc.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
@@ -40,23 +40,22 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char **argv) {
-	std::string kmname;
+	const char *kmname = NULL;
 
-	cmdargs args(argc,argv,cmdargs::NO_FREE);
-	try {
-		args.parse("s=s",&kmname);
-		if(args.is_help())
-			usage(argv[0]);
-	}
-	catch(const cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
-		usage(argv[0]);
+	// parse params
+	int opt;
+	while((opt = getopt(argc,argv,"s:")) != -1) {
+		switch(opt) {
+			case 's': kmname = optarg; break;
+			default:
+				usage(argv[0]);
+		}
 	}
 
 	esc::VTerm vterm(esc::env::get("TERM").c_str());
 
 	/* set keymap? */
-	if(!kmname.empty()) {
+	if(kmname) {
 		std::string keymap = std::string(KEYMAP_DIR) + "/" + kmname;
 		vterm.setKeymap(keymap);
 		sout << "Successfully changed keymap to '" << keymap << "'\n";

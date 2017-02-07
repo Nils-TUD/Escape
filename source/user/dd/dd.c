@@ -17,14 +17,15 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/proc.h>
 #include <sys/time.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 static bool run = true;
 
@@ -37,7 +38,7 @@ static void interrupted(A_UNUSED int sig) {
 	run = false;
 }
 
-int main(int argc,const char *argv[]) {
+int main(int argc,char *argv[]) {
 	size_t bs = 4096;
 	size_t count = 0;
 	ullong total = 0;
@@ -46,14 +47,18 @@ int main(int argc,const char *argv[]) {
 	int infd = STDIN_FILENO;
 	int outfd = STDOUT_FILENO;
 
-	int res = ca_parse(argc,argv,CA_NO_DASHES | CA_NO_FREE | CA_REQ_EQ,
-			"if=s of=s bs=k count=k",&inFile,&outFile,&bs,&count);
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
-		usage(argv[0]);
+	for(int i = 1; i < argc; ++i) {
+		if(strncmp(argv[i],"if=",3) == 0)
+			inFile = argv[i] + 3;
+		else if(strncmp(argv[i],"of=",3) == 0)
+			outFile = argv[i] + 3;
+		else if(strncmp(argv[i],"bs=",3) == 0)
+			bs = getopt_tosize(argv[i] + 3);
+		else if(strncmp(argv[i],"count=",6) == 0)
+			count = getopt_tosize(argv[i] + 6);
+		else
+			usage(argv[0]);
 	}
-	if(ca_hasHelp())
-		usage(argv[0]);
 
 	if(signal(SIGINT,interrupted) == SIG_ERR)
 		error("Unable to set sig-handler for SIGINT");

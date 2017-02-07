@@ -18,7 +18,7 @@
  */
 
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
+#include <getopt.h>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
@@ -39,22 +39,20 @@ static int figncase = 0;
 static int freverse = 0;
 
 int main(int argc,char *argv[]) {
-	FStream *in = &sin;
-
-	esc::cmdargs args(argc,argv,esc::cmdargs::MAX1_FREE);
-	try {
-		args.parse("r i",&freverse,&figncase);
-		if(args.is_help())
-			usage(argv[0]);
-	}
-	catch(const esc::cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
-		usage(argv[0]);
+	int opt;
+	while((opt = getopt(argc,argv,"ri")) != -1) {
+		switch(opt) {
+			case 'r': freverse = 1; break;
+			case 'i': figncase = 1; break;
+			default:
+				usage(argv[0]);
+		}
 	}
 
 	// use arg?
-	if(!args.get_free().empty()) {
-		in = new FStream((args.get_free()[0])->c_str(),"r");
+	FStream *in = &sin;
+	if(optind < argc) {
+		in = new FStream(argv[optind],"r");
 		if(!in->good())
 			exitmsg("Open failed");
 	}

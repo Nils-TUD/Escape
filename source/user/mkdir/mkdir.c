@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/io.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -30,22 +30,13 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc,const char *argv[]) {
-	const char **args;
-
-	int res = ca_parse(argc,argv,0,"");
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
-		usage(argv[0]);
-	}
-	if(ca_hasHelp() || ca_getFreeCount() == 0)
+int main(int argc,char *argv[]) {
+	if(argc < 2 || getopt_ishelp(argc,argv))
 		usage(argv[0]);
 
-	args = ca_getFree();
-	while(*args) {
-		if(mkdir(*args,DIR_DEF_MODE) < 0)
-			printe("Unable to create directory '%s'",*args);
-		args++;
+	for(int i = 1; i < argc; ++i) {
+		if(mkdir(argv[i],DIR_DEF_MODE) < 0)
+			printe("Unable to create directory '%s'",argv[i]);
 	}
 	return EXIT_SUCCESS;
 }

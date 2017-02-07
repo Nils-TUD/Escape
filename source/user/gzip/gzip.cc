@@ -20,12 +20,12 @@
 #include <esc/stream/istream.h>
 #include <esc/stream/ostream.h>
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <esc/vthrow.h>
 #include <sys/common.h>
 #include <sys/endian.h>
 #include <z/deflate.h>
 #include <z/gzip.h>
+#include <getopt.h>
 #include <stdlib.h>
 
 using namespace esc;
@@ -73,39 +73,44 @@ static void compress(IStream &is,const std::string &filename) {
 }
 
 static void usage(const char *name) {
-	serr << "Usage: " << name << " [-c] [-k] [<file>...]\n";
+	serr << "Usage: " << name << " [-c] [-l <level>] [-k] [<file>...]\n";
 	serr << "  -c: write to stdout\n";
+	serr << "  -l: the compression type (0=none, 1=fixed, 2=dyn)\n";
 	serr << "  -k: keep the original files, don't delete them\n";
 	serr << "  If no file is given or <file> is '-', stdin is compressed to stdout.\n";
 	exit(EXIT_FAILURE);
 }
 
 int main(int argc,char **argv) {
-	esc::cmdargs args(argc,argv,0);
-	try {
-		args.parse("c l=d k",&tostdout,&compr,&keep);
-		if(args.is_help() ||
-			(compr != z::Deflate::NONE && compr != z::Deflate::FIXED && compr != z::Deflate::DYN))
-			usage(argv[0]);
-	}
-	catch(const esc::cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
-		usage(argv[0]);
+	// parse params
+	int opt;
+	while((opt = getopt(argc,argv,"ckl:")) != -1) {
+		switch(opt) {
+			case 'c': tostdout = true; break;
+			case 'k': keep = true; break;
+			case 'l':
+				compr = atoi(optarg);
+				if(compr != z::Deflate::NONE && compr != z::Deflate::FIXED && compr != z::Deflate::DYN)
+					usage(argv[0]);
+				break;
+			default:
+				usage(argv[0]);
+		}
 	}
 
-	if(args.get_free().size() == 0 || (args.get_free().size() == 1 && *(args.get_free()[0]) == "-")) {
+	if(optind >= argc || (optind + 1 == argc && strcmp(argv[optind],"-") == 0)) {
 		tostdout = true;
 		compress(sin,"stdin");
 	}
 	else {
-		for(auto file = args.get_free().begin(); file != args.get_free().end(); ++file) {
-			FStream f((*file)->c_str(),"r");
+		for(int i = optind; i < argc; ++i) {
+			FStream f(argv[i],"r");
 			if(!f) {
-				errmsg("Unable to open '" << **file << "' for reading");
+				errmsg("Unable to open '" << argv[i] << "' for reading");
 				continue;
 			}
 
-			compress(f,**file);
+			compress(f,argv[i]);
 		}
 	}
 	return 0;

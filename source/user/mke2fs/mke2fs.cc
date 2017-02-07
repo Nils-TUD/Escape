@@ -18,11 +18,11 @@
  */
 
 #include <fs/ext2/ext2.h>
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/endian.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -251,17 +251,23 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc,const char **argv) {
-	int res = ca_parse(argc,argv,CA_MAX1_FREE,"b=k N=k L=s G=k",
-		&blockSize,&inodeCount,&volumeLabel,&blockGroups);
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
-		usage(argv[0]);
+int main(int argc,char **argv) {
+	// parse params
+	int opt;
+	while((opt = getopt(argc,argv,"b:N:L:G:")) != -1) {
+		switch(opt) {
+			case 'b': blockSize = getopt_tosize(optarg); break;
+			case 'N': inodeCount = getopt_tosize(optarg); break;
+			case 'L': volumeLabel = optarg; break;
+			case 'G': blockGroups = getopt_tosize(optarg); break;
+			default:
+				usage(argv[0]);
+		}
 	}
-	if(ca_hasHelp() || ca_getFreeCount() == 0)
+	if(optind >= argc)
 		usage(argv[0]);
 
-	disk = ca_getFree()[0];
+	disk = argv[optind];
 	if(!isblock(disk))
 		error("'%s' is neither a block-device nor a regular file",disk);
 

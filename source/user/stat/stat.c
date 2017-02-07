@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/io.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,20 +41,22 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc,const char *argv[]) {
+int main(int argc,char *argv[]) {
 	bool useOpen = false;
 
-	int res = ca_parse(argc,argv,0,"o",&useOpen);
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
-		usage(argv[0]);
+	int opt;
+	while((opt = getopt(argc,argv,"o")) != -1) {
+		switch(opt) {
+			case 'o': useOpen = true; break;
+			default:
+				usage(argv[0]);
+		}
 	}
-	size_t count = count = ca_getFreeCount();
-	if(count == 0 || ca_hasHelp())
+	if(optind >= argc)
 		usage(argv[0]);
 
-	for(size_t i = 0; i < count; ++i)
-		printFileInfo(ca_getFree()[i],useOpen);
+	for(int i = optind; i < argc; ++i)
+		printFileInfo(argv[i],useOpen);
 	return EXIT_SUCCESS;
 }
 

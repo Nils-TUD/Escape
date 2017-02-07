@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/io.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -38,29 +38,24 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc,const char *argv[]) {
-	const char **args;
-	FILE *in = stdin;
-	size_t i,lines,n = 5;
-	int c;
-	fpos_t pos;
-	sReadBuf *first,*buf,*prev;
+int main(int argc,char *argv[]) {
+	size_t n = 5;
 
-	/* parse args */
-	int res = ca_parse(argc,argv,CA_MAX1_FREE,"n=d",&n);
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
-		usage(argv[0]);
+	int opt;
+	while((opt = getopt(argc,argv,"n:")) != -1) {
+		switch(opt) {
+			case 'n': n = atoi(optarg); break;
+			default:
+				usage(argv[0]);
+		}
 	}
-	if(ca_hasHelp())
-		usage(argv[0]);
 
 	/* open file, if any */
-	args = ca_getFree();
-	if(args[0]) {
-		in = fopen(args[0],"r");
+	FILE *in = stdin;
+	if(optind < argc) {
+		in = fopen(argv[optind],"r");
 		if(!in)
-			error("Unable to open '%s'",args[0]);
+			error("Unable to open '%s'",argv[optind]);
 	}
 
 	/* check whether we can seek */
@@ -74,9 +69,10 @@ int main(int argc,const char *argv[]) {
 		 * <n> lines. therefore, we introduce a single-linked-list and reuse the first one if all
 		 * others still contain at least <n> lines. this way, we save a lot of memory and time
 		 * because we don't need so many heap-allocs/reallocs. */
-		lines = 0;
-		prev = NULL;
-		first = NULL;
+		size_t lines = 0;
+		sReadBuf *buf;
+		sReadBuf *prev = NULL;
+		sReadBuf *first = NULL;
 		do {
 			if(first && (lines - first->lines) > n) {
 				buf = first;
@@ -112,8 +108,8 @@ int main(int argc,const char *argv[]) {
 		/* print out the lines */
 		buf = first;
 		while(!ferror(stdout) && buf != NULL) {
-			for(i = 0; i < buf->bytes; i++) {
-				c = buf->buffer[i];
+			for(size_t i = 0; i < buf->bytes; i++) {
+				int c = buf->buffer[i];
 				if(lines <= n)
 					putchar(c);
 				if(c == '\n')
@@ -125,17 +121,18 @@ int main(int argc,const char *argv[]) {
 	else {
 		/* we can seek, therefore we can do it better. we don't need to search through the whole
 		 * file, but can seek to the end and stepwise backwards until we've found enough lines. */
+		fpos_t pos;
 		if(fgetpos(in,&pos) < 0)
 			error("Unable to get file-position");
 
 		/* search backwards until we've found the number of requested lines */
-		lines = 0;
+		size_t lines = 0;
 		while(!ferror(in) && pos > 0 && lines < n) {
 			size_t amount = MIN(BUF_SIZE,pos);
 			pos -= amount;
 			fseek(in,pos,SEEK_SET);
-			for(i = 0; i < amount; i++) {
-				c = fgetc(in);
+			for(size_t i = 0; i < amount; i++) {
+				int c = fgetc(in);
 				if(c == '\n')
 					lines++;
 			}
@@ -145,6 +142,7 @@ int main(int argc,const char *argv[]) {
 
 		/* print the lines */
 		fseek(in,pos,SEEK_SET);
+		int c;
 		while((c = fgetc(in)) != EOF) {
 			if(lines <= n)
 				putchar(c);
@@ -161,7 +159,7 @@ int main(int argc,const char *argv[]) {
 		error("Write failed");
 
 	/* clean up */
-	if(args[0])
+	if(optind < argc)
 		fclose(in);
 	return EXIT_SUCCESS;
 }

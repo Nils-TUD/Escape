@@ -17,7 +17,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/esccodes.h>
 #include <sys/io.h>
@@ -26,6 +25,7 @@
 #include <sys/thread.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <getopt.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -42,7 +42,7 @@ static void sigInt(A_UNUSED int sig) {
 }
 
 int main(int argc,char *argv[]) {
-	if((argc != 1 && argc != 3) || isHelpCmd(argc,argv)) {
+	if((argc != 1 && argc != 3) || getopt_ishelp(argc,argv)) {
 		fprintf(stderr,"Usage: %s [<cols> <rows>]\n",argv[0]);
 		return EXIT_FAILURE;
 	}

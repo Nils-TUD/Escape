@@ -19,7 +19,7 @@
 
 #include <esc/proto/init.h>
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
+#include <getopt.h>
 #include <stdlib.h>
 
 static void usage(const char *name) {
@@ -28,24 +28,15 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char *argv[]) {
-	int reboot = 0;
-	int shutdown = 0;
-
-	esc::cmdargs args(argc,argv,esc::cmdargs::NO_FREE);
-	try {
-		args.parse("r s",&reboot,&shutdown);
-		if(args.is_help() || (!reboot && !shutdown) || (reboot && shutdown))
-			usage(argv[0]);
-	}
-	catch(const esc::cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
+	if(argc < 2 || getopt_ishelp(argc,argv))
 		usage(argv[0]);
-	}
 
 	esc::Init init("/dev/init");
-	if(reboot)
+	if(strcmp(argv[1],"-r") == 0)
 		init.reboot();
-	else if(shutdown)
+	else if(strcmp(argv[1],"-s") == 0)
 		init.shutdown();
+	else
+		usage(argv[0]);
 	return EXIT_SUCCESS;
 }

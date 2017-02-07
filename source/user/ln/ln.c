@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/io.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -29,18 +29,11 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc,const char *argv[]) {
-	char *oldp,*newp;
-
-	int res = ca_parse(argc,argv,CA_NO_FREE,"=s =s",&oldp,&newp);
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
-		usage(argv[0]);
-	}
-	if(ca_hasHelp())
+int main(int argc,char *argv[]) {
+	if(argc != 3 || getopt_ishelp(argc,argv))
 		usage(argv[0]);
 
-	if(link(oldp,newp) < 0)
-		error("Unable to create the link '%s' to '%s'",newp,oldp);
+	if(link(argv[1],argv[2]) < 0)
+		error("Unable to create the link '%s' to '%s'",argv[1],argv[2]);
 	return EXIT_SUCCESS;
 }

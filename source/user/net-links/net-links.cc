@@ -20,7 +20,6 @@
 #include <esc/proto/net.h>
 #include <esc/stream/istringstream.h>
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <info/link.h>
 #include <sys/common.h>
 #include <sys/stat.h>

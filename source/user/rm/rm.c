@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/io.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,22 +58,21 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc,const char *argv[]) {
+int main(int argc,char *argv[]) {
 	int rec = false;
-	const char **args;
 
-	int res = ca_parse(argc,argv,0,"r",&rec,&rec);
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
-		usage(argv[0]);
+	int opt;
+	while((opt = getopt(argc,argv,"r")) != -1) {
+		switch(opt) {
+			case 'r': rec = true; break;
+			default:
+				usage(argv[0]);
+		}
 	}
-	if(ca_hasHelp() || ca_getFreeCount() == 0)
+	if(optind >= argc)
 		usage(argv[0]);
 
-	args = ca_getFree();
-	while(*args) {
-		removeRec(*args,rec);
-		args++;
-	}
+	for(int i = optind; i < argc; ++i)
+		removeRec(argv[i],rec);
 	return EXIT_SUCCESS;
 }

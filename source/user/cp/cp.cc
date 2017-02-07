@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/cmdargs.h>
 #include <esc/filecopy.h>
 #include <sys/common.h>
 #include <sys/stat.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -48,45 +48,35 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char *argv[]) {
-	int rec = false;
-	int force = false;
-	int progress = false;
-
-	// parse params
-	esc::cmdargs args(argc,argv,0);
-	try {
-		args.parse("r f p",&rec,&force,&progress);
-		if(args.is_help() || args.get_free().size() < 2)
-			usage(argv[0]);
-	}
-	catch(const esc::cmdargs_error& e) {
-		fprintf(stderr,"Invalid arguments: %s\n",e.what());
-		usage(argv[0]);
-	}
-
 	uint flags = 0;
-	if(rec)
-		flags |= esc::FileCopy::FL_RECURSIVE;
-	if(force)
-		flags |= esc::FileCopy::FL_FORCE;
-	if(progress)
-		flags |= esc::FileCopy::FL_PROGRESS;
+
+	int opt;
+	while((opt = getopt(argc,argv,"rfp")) != -1) {
+		switch(opt) {
+			case 'r': flags |= esc::FileCopy::FL_RECURSIVE; break;
+			case 'f': flags |= esc::FileCopy::FL_FORCE; break;
+			case 'p': flags |= esc::FileCopy::FL_PROGRESS; break;
+			default:
+				usage(argv[0]);
+		}
+	}
+	if(optind + 2 > argc)
+		usage(argv[0]);
+
 	CpFileCopy cp(flags);
 
-	auto files = args.get_free();
-	std::string *first = files[0];
-	std::string *last = files[files.size() - 1];
-	if(!isdir(last->c_str())) {
-		if(files.size() > 2)
-			error("'%s' is not a directory, but there are multiple source-files.",last->c_str());
-		if(isdir(files[0]->c_str()))
-			error("'%s' is not a directory, but the source '%s' is.",last->c_str(),first->c_str());
-		cp.copyFile(first->c_str(),last->c_str());
+	const char *first = argv[optind];
+	const char *last = argv[argc - 1];
+	if(!isdir(last)) {
+		if(argc - optind > 2)
+			error("'%s' is not a directory, but there are multiple source-files.",last);
+		if(isdir(first))
+			error("'%s' is not a directory, but the source '%s' is.",last,first);
+		cp.copyFile(first,last);
 	}
 	else {
-		auto dest = files.end() - 1;
-		for(auto it = files.begin(); it != dest; ++it)
-			cp.copy((*it)->c_str(),last->c_str());
+		for(int i = optind; i < argc - 1; ++i)
+			cp.copy(argv[i],last);
 	}
 	return EXIT_SUCCESS;
 }

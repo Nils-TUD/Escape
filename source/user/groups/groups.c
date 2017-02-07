@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/messages.h>
 #include <sys/proc.h>
 #include <sys/stat.h>
 #include <usergroup/usergroup.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -55,7 +55,7 @@ static sNamedItem *userList;
 
 int main(int argc,char *argv[]) {
 	size_t count;
-	if(argc < 2 || argv[1][0] == '\0' || isHelpCmd(argc,argv))
+	if(argc < 2 || argv[1][0] == '\0' || getopt_ishelp(argc,argv))
 		usage(argv[0]);
 
 	groupList = usergroup_parse(GROUPS_PATH,&count);

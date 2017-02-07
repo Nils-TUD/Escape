@@ -19,8 +19,8 @@
 
 #include <sys/common.h>
 #include <sys/stat.h>
-#include <esc/cmdargs.h>
 #include <esc/stream/std.h>
+#include <getopt.h>
 
 static void usage(const char *name) {
 	esc::serr << "Usage: " << name << " [-c] [-s <size>] <file>...\n";
@@ -32,25 +32,27 @@ static void usage(const char *name) {
 int main(int argc,char **argv) {
 	int no_create = false;
 	size_t size = 0;
-	esc::cmdargs args(argc,argv,0);
-	try {
-		args.parse("c s=k",&no_create,&size);
-		if(args.is_help())
-			usage(argv[0]);
+
+	int opt;
+	while((opt = getopt(argc,argv,"cs:")) != -1) {
+		switch(opt) {
+			case 'c': no_create = true; break;
+			case 's': size = getopt_tosize(optarg); break;
+			default:
+				usage(argv[0]);
+		}
 	}
-	catch(const esc::cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
+	if(optind >= argc)
 		usage(argv[0]);
-	}
 
 	int openargs = no_create ? O_WRONLY : O_WRONLY | O_CREAT;
-	for(auto &arg : args.get_free()) {
-		int fd = open((*arg).c_str(),openargs,FILE_DEF_MODE);
+	for(int i = optind; i < argc; ++i) {
+		int fd = open(argv[i],openargs,FILE_DEF_MODE);
 		if(fd < 0)
-			errmsg("Unable to open '" << *arg << "' for writing");
+			errmsg("Unable to open '" << argv[i] << "' for writing");
 		else {
 			if(ftruncate(fd,size) != 0)
-				errmsg("Unable to truncate '" << *arg << "'");
+				errmsg("Unable to truncate '" << argv[i] << "'");
 			close(fd);
 		}
 	}

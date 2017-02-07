@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/cmdargs.h>
 #include <esc/regex/regex.h>
 #include <esc/stream/std.h>
 #include <esc/stream/fstream.h>
+#include <getopt.h>
 
 using namespace esc;
 
@@ -31,31 +31,29 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char **argv) {
-	FStream *in = &sin;
-	bool ci = false;
+	uint flags = Regex::NONE;
 
 	// parse params
-	cmdargs args(argc,argv,0);
-	try {
-		args.parse("i",&ci);
-		if(args.is_help() || args.get_free().size() < 1)
-			usage(argv[0]);
+	int opt;
+	while((opt = getopt(argc,argv,"i")) != -1) {
+		switch(opt) {
+			case 'i': flags |= Regex::CASE_INSENSITIVE; break;
+			default:
+				usage(argv[0]);
+		}
 	}
-	catch(const cmdargs_error& e) {
-		serr << "Invalid arguments: " << e.what() << "\n";
+	if(optind >= argc)
 		usage(argv[0]);
+
+	const char *regex = argv[optind++];
+
+	FStream *in = &sin;
+	if(optind < argc) {
+		in = new FStream(argv[optind],"r");
+		if(in->error())
+			error("Unable to open '%s'",argv[optind]);
 	}
 
-	std::string regex = *args.get_free()[0];
-	if(args.get_free().size() > 1) {
-		in = new FStream(args.get_free()[1]->c_str(),"r");
-		if(!in)
-			error("Unable to open '%s'",args.get_free()[1]->c_str());
-	}
-
-	uint flags = Regex::NONE;
-	if(ci)
-		flags |= Regex::CASE_INSENSITIVE;
 	Regex::Pattern pattern = Regex::compile(regex);
 
 	std::string line;
@@ -69,7 +67,7 @@ int main(int argc,char **argv) {
 	if(sout.error())
 		error("Write failed");
 
-	if(args.get_free().size() > 1)
+	if(optind < argc)
 		delete in;
 	return EXIT_SUCCESS;
 }

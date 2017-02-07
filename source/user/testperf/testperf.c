@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -55,7 +55,7 @@ static sTestModule modules[] = {
 
 int main(int argc,char *argv[]) {
 	size_t i;
-	if(isHelpCmd(argc,argv)) {
+	if(getopt_ishelp(argc,argv)) {
 		fprintf(stderr,"Usage: %s [<module>] [...]\n",argv[0]);
 		fprintf(stderr,"	Available modules:\n");
 		for(i = 0; i < ARRAY_SIZE(modules); i++)

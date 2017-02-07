@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/io.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -30,7 +30,7 @@ static void printFile(const char *filename,FILE *file);
 static char buffer[512];
 
 int main(int argc,char *argv[]) {
-	if(isHelpCmd(argc,argv)) {
+	if(getopt_ishelp(argc,argv)) {
 		fprintf(stderr,"Usage: %s [<file> ...]\n",argv[0]);
 		return EXIT_FAILURE;
 	}

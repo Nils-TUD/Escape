@@ -18,11 +18,11 @@
  */
 
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <esc/filecopy.h>
 #include <sys/common.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -52,47 +52,40 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char *argv[]) {
-	int force = false;
-	int progress = false;
+	uint flags = FileCopy::FL_RECURSIVE;
 
 	// parse params
-	cmdargs args(argc,argv,0);
-	try {
-		args.parse("f p",&force,&progress);
-		if(args.is_help() || args.get_free().size() < 2)
-			usage(argv[0]);
+	int opt;
+	while((opt = getopt(argc,argv,"pf")) != -1) {
+		switch(opt) {
+			case 'p': flags |= FileCopy::FL_PROGRESS; break;
+			case 'f': flags |= FileCopy::FL_FORCE; break;
+			default:
+				usage(argv[0]);
+		}
 	}
-	catch(const cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
+	if(optind + 2 > argc)
 		usage(argv[0]);
-	}
 
-	uint flags = FileCopy::FL_RECURSIVE;
-	if(force)
-		flags |= FileCopy::FL_FORCE;
-	if(progress)
-		flags |= FileCopy::FL_PROGRESS;
 	MoveFileCopy cp(flags);
 
-	auto files = args.get_free();
-	std::string *last = files[files.size() - 1];
-	if(isdir(last->c_str())) {
+	const char *last = argv[argc - 1];
+	if(isdir(last)) {
 		char src[MAX_PATH_LEN];
-		auto dest = files.end() - 1;
-		for(auto it = files.begin(); it != dest; ++it) {
-			strnzcpy(src,(*it)->c_str(),sizeof(src));
+		for(int i = optind; i < argc - 1; ++i) {
+			strnzcpy(src,argv[i],sizeof(src));
 			char *filename = basename(src);
-			cp.move((*it)->c_str(),last->c_str(),filename);
+			cp.move(argv[i],last,filename);
 		}
 	}
 	else {
-		if(files.size() != 2)
+		if(argc - optind != 2)
 			usage(argv[0]);
 		char dir[MAX_PATH_LEN];
 		char filename[MAX_PATH_LEN];
-		strnzcpy(dir,last->c_str(),sizeof(dir));
-		strnzcpy(filename,last->c_str(),sizeof(filename));
-		cp.move(files[0]->c_str(),dirname(dir),basename(filename));
+		strnzcpy(dir,last,sizeof(dir));
+		strnzcpy(filename,last,sizeof(filename));
+		cp.move(argv[optind],dirname(dir),basename(filename));
 	}
 	return EXIT_SUCCESS;
 }

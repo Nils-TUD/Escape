@@ -21,7 +21,6 @@
 #include <esc/stream/istringstream.h>
 #include <esc/stream/ostringstream.h>
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <info/arp.h>
 #include <sys/common.h>
 #include <stdio.h>

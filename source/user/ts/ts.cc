@@ -19,7 +19,6 @@
 
 #include <esc/proto/vterm.h>
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <esc/env.h>
 #include <esc/file.h>
 #include <info/process.h>
@@ -30,6 +29,7 @@
 #include <sys/debug.h>
 #include <sys/messages.h>
 #include <algorithm>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -48,7 +48,7 @@ struct sort {
 	const static int TIME	= 7;
 
 	int type;
-	string name;
+	const char *name;
 };
 
 static bool compareThreads(const thread* a,const thread* b);
@@ -99,23 +99,20 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char **argv) {
-	string ssort("tid");
+	const char *ssort = "tid";
 
-	// parse args
-	cmdargs args(argc,argv,cmdargs::NO_FREE);
-	try {
-		args.parse("s=s",&ssort);
-		if(args.is_help())
-			usage(argv[0]);
-	}
-	catch(const cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
-		usage(argv[0]);
+	int opt;
+	while((opt = getopt(argc,argv,"s:")) != -1) {
+		switch(opt) {
+			case 's': ssort = optarg; break;
+			default:
+				usage(argv[0]);
+		}
 	}
 
 	// determine sort
 	for(size_t i = 0; i < ARRAY_SIZE(sorts); i++) {
-		if(ssort == sorts[i].name) {
+		if(strcmp(ssort,sorts[i].name) == 0) {
 			sortcol = sorts[i].type;
 			break;
 		}

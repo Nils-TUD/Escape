@@ -20,11 +20,11 @@
 #include <fs/tar/tar.h>
 #include <esc/stream/obufstream.h>
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <sys/common.h>
 #include <sys/stat.h>
 #include <usergroup/usergroup.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <stdlib.h>
 #include <time.h>
 #include <utime.h>
@@ -184,14 +184,14 @@ static void listArchive(FILE *f) {
 	}
 }
 
-static void createArchive(FILE *f,esc::cmdargs &args) {
-	if(args.get_free().empty())
+static void createArchive(FILE *f,int argc,char **argv) {
+	if(argc == 0)
 		exitmsg("Please provide at least one file to store");
 
-	for(auto it = args.get_free().begin(); it != args.get_free().end(); ++it) {
+	for(int i = 0; i < argc; ++i) {
 		char tmp[MAX_PATH_LEN];
-		strncpy(tmp,(*it)->c_str(),sizeof(tmp));
-		addFolder(f,**it,basename(tmp));
+		strncpy(tmp,argv[i],sizeof(tmp));
+		addFolder(f,argv[i],basename(tmp));
 	}
 }
 
@@ -222,21 +222,25 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc, char **argv) {
-	std::string archive;
-	std::string cmd;
+int main(int argc,char **argv) {
+	const char *archive = NULL;
+
+	// the first is the command
+	optind = 2;
 
 	// parse params
-	esc::cmdargs args(argc,argv,0);
-	try {
-		args.parse("=s f=s",&cmd,&archive);
-		if(args.is_help())
-			usage(argv[0]);
+	int opt;
+	while((opt = getopt(argc,argv,"f:")) != -1) {
+		switch(opt) {
+			case 'f': archive = optarg; break;
+			default:
+				usage(argv[0]);
+		}
 	}
-	catch(const esc::cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
+	if(argc < 2 || getopt_ishelp(argc,argv))
 		usage(argv[0]);
-	}
+
+	const char *cmd = argv[1];
 
 	userList = usergroup_parse(USERS_PATH,nullptr);
 	if(!userList)
@@ -245,23 +249,23 @@ int main(int argc, char **argv) {
 	if(!groupList)
 		errmsg("Warning: unable to parse groups from file");
 
-	FILE *ar = cmd == "-c" ? stdout : stdin;
-	if(!archive.empty()) {
-		ar = fopen(archive.c_str(),cmd == "-c" ? "w" : "r");
+	FILE *ar = strcmp(cmd,"-c") == 0 ? stdout : stdin;
+	if(archive) {
+		ar = fopen(archive,strcmp(cmd,"-c") == 0 ? "w" : "r");
 		if(ar == NULL)
 			exitmsg("Opening '" << archive << "' failed");
 	}
 
-	if(cmd == "-t")
+	if(strcmp(cmd,"-t") == 0)
 		listArchive(ar);
-	else if(cmd == "-c")
-		createArchive(ar,args);
-	else if(cmd == "-x")
+	else if(strcmp(cmd,"-c") == 0)
+		createArchive(ar,argc - optind,argv + optind);
+	else if(strcmp(cmd,"-x") == 0)
 		extractArchive(ar);
 	else
 		exitmsg("Invalid command: " << cmd);
 
-	if(!archive.empty())
+	if(archive)
 		fclose(ar);
 	return 0;
 }

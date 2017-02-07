@@ -20,12 +20,12 @@
 #include <esc/proto/vterm.h>
 #include <shell/history.h>
 #include <shell/shell.h>
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/io.h>
 #include <sys/messages.h>
 #include <sys/proc.h>
 #include <usergroup/usergroup.h>
+#include <getopt.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,7 +39,7 @@ int main(int argc,char **argv) {
 	char *buffer;
 
 	/* we need either no args or "-e <cmd>" */
-	if((argc != 1 && argc != 3) || isHelpCmd(argc,argv)) {
+	if((argc != 1 && argc != 3) || getopt_ishelp(argc,argv)) {
 		usage(argv[0]);
 		return EXIT_FAILURE;
 	}

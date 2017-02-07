@@ -21,8 +21,8 @@
 #include <esc/stream/std.h>
 #include <esc/env.h>
 #include <info/process.h>
-#include <sys/cmdargs.h>
 #include <sys/common.h>
+#include <getopt.h>
 #include <map>
 #include <stdlib.h>
 
@@ -91,7 +91,7 @@ static bool isLess(ProcNode *a,ProcNode *b) {
 }
 
 int main(int argc,char **argv) {
-	if(isHelpCmd(argc,argv))
+	if(getopt_ishelp(argc,argv))
 		usage(argv[0]);
 
 	int pid = argc > 1 ? atoi(argv[1]) : 0;

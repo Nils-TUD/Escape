@@ -21,9 +21,9 @@
 #include <esc/proto/socket.h>
 #include <esc/stream/istringstream.h>
 #include <esc/stream/std.h>
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/stat.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -37,7 +37,7 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char **argv) {
-	if(isHelpCmd(argc,argv) || argc != 3)
+	if(getopt_ishelp(argc,argv) || argc != 3)
 		usage(argv[0]);
 
 	esc::Socket::Addr addr;

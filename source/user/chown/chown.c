@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/proc.h>
 #include <sys/stat.h>
 #include <usergroup/usergroup.h>
 #include <ctype.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -104,28 +104,20 @@ static bool parseUserGroup(const char *spec,uid_t *uid,gid_t *gid) {
 	return true;
 }
 
-int main(int argc,const char **argv) {
-	char *spec = NULL;
+int main(int argc,char **argv) {
 	uid_t uid = -1;
 	gid_t gid = -1;
-	const char **args;
 
-	int res = ca_parse(argc,argv,0,"=s*",&spec);
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
-		usage(argv[0]);
-	}
-	if(ca_hasHelp())
+	if(argc < 3 || getopt_ishelp(argc,argv))
 		usage(argv[0]);
 
+	const char *spec = argv[1];
 	if(!parseUserGroup(spec,&uid,&gid))
 		exit(EXIT_FAILURE);
 
-	args = ca_getFree();
-	while(*args) {
-		if(chown(*args,uid,gid) < 0)
-			printe("Unable to set owner/group of '%s' to %u/%u",*args,uid,gid);
-		args++;
+	for(int i = 2; i < argc; ++i) {
+		if(chown(argv[i],uid,gid) < 0)
+			printe("Unable to set owner/group of '%s' to %u/%u",argv[i],uid,gid);
 	}
 	return EXIT_SUCCESS;
 }

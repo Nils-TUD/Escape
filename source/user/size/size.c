@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/elf.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -84,7 +84,7 @@ done:
 }
 
 int main(int argc,char **argv) {
-	if(isHelpCmd(argc,argv) || argc < 2)
+	if(getopt_ishelp(argc,argv) || argc < 2)
 		usage(argv[0]);
 
 	printf("   text	   data	    bss	    dec	    hex	filename\n");

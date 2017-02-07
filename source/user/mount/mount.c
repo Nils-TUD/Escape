@@ -17,7 +17,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/io.h>
 #include <sys/mount.h>
@@ -26,6 +25,7 @@
 #include <sys/thread.h>
 #include <sys/wait.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <limits.h>
 #include <signal.h>
 #include <stdio.h>
@@ -59,22 +59,30 @@ static void cleanup(int pid) {
 	}
 }
 
-int main(int argc,const char *argv[]) {
+int main(int argc,char *argv[]) {
 	char fsname[MAX_PATH_LEN];
 	char fsdev[MAX_PATH_LEN];
 	char devpath[MAX_PATH_LEN];
 	char *mspath = (char*)"/sys/proc/self/ms";
-	char *path = NULL;
-	char *dev = NULL;
-	char *fs = NULL;
 
-	int res = ca_parse(argc,argv,CA_NO_FREE,"ms=s =s* =s* =s*",&mspath,&dev,&path,&fs);
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
-		usage(argv[0]);
+	int opt;
+	const struct option longopts[] = {
+		{"ms",		required_argument,	0,	'm'},
+		{0, 0, 0, 0},
+	};
+	while((opt = getopt_long(argc,argv,"",longopts,NULL)) != -1) {
+		switch(opt) {
+			case 'm': mspath = optarg; break;
+			default:
+				usage(argv[0]);
+		}
 	}
-	if(ca_hasHelp())
+	if(optind + 2 >= argc)
 		usage(argv[0]);
+
+	char *dev = argv[optind];
+	const char *path = argv[optind + 1];
+	const char *fs = argv[optind + 2];
 
 	if(signal(SIGCHLD,sigchild) == SIG_ERR)
 		error("Unable to announce signal handler");

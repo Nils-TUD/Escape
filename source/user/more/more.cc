@@ -20,7 +20,6 @@
 #include <esc/proto/vterm.h>
 #include <esc/stream/fstream.h>
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <esc/env.h>
 #include <sys/common.h>
 #include <sys/esccodes.h>
@@ -28,6 +27,7 @@
 #include <sys/keycodes.h>
 #include <sys/messages.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <stdlib.h>
 
 using namespace esc;
@@ -41,26 +41,15 @@ static void usage(const char *name) {
 static bool run = true;
 
 int main(int argc,char *argv[]) {
-	FStream *in = &sin;
-
-	/* parse args */
-	cmdargs ca(argc,argv,cmdargs::MAX1_FREE);
-	try {
-		ca.parse("");
-		if(ca.is_help())
-			usage(argv[0]);
-	}
-	catch(const cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
+	if(getopt_ishelp(argc,argv))
 		usage(argv[0]);
-	}
 
 	/* open file, if any */
-	auto args = ca.get_free();
-	if(args.size() > 0) {
-		in = new FStream(args[0]->c_str(),"r");
+	FStream *in = &sin;
+	if(argc > 1) {
+		in = new FStream(argv[1],"r");
 		if(!in)
-			exitmsg("Unable to open '" << *args[0] << "'");
+			exitmsg("Unable to open '" << argv[1] << "'");
 	}
 	else if(isatty(STDIN_FILENO))
 		exitmsg("If stdin is a terminal, you have to provide a file");
@@ -105,7 +94,7 @@ int main(int argc,char *argv[]) {
 
 	/* clean up */
 	vterm.setFlag(VTerm::FL_READLINE,true);
-	if(args.size() > 0)
+	if(argc > 1)
 		delete in;
 	return EXIT_SUCCESS;
 }

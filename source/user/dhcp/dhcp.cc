@@ -21,12 +21,12 @@
 #include <esc/proto/socket.h>
 #include <esc/stream/fstream.h>
 #include <esc/stream/std.h>
-#include <esc/cmdargs.h>
 #include <esc/dns.h>
 #include <sys/common.h>
 #include <sys/endian.h>
 #include <sys/sync.h>
 #include <sys/thread.h>
+#include <getopt.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <time.h>
@@ -295,23 +295,21 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char **argv) {
-	const char *link = NULL;
 	uint timeout = DHCP_TIMEOUT;
-	if(argc < 2)
-		usage(argv[0]);
 
 	// parse params
-	esc::cmdargs args(argc,argv,esc::cmdargs::MAX1_FREE);
-	try {
-		args.parse("t=d",&timeout);
-		if(args.is_help())
-			usage(argv[0]);
-		link = args.get_free().at(0)->c_str();
+	int opt;
+	while((opt = getopt(argc,argv,"t:")) != -1) {
+		switch(opt) {
+			case 't': timeout = atoi(optarg); break;
+			default:
+				usage(argv[0]);
+		}
 	}
-	catch(const esc::cmdargs_error& e) {
-		errmsg("Invalid arguments: " << e.what());
+	if(optind >= argc)
 		usage(argv[0]);
-	}
+
+	const char *link = argv[optind];
 
 	srand(time(NULL));
 	if(signal(SIGALRM,sigalarm) == SIG_ERR)

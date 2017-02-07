@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <sys/cmdargs.h>
 #include <sys/common.h>
 #include <sys/io.h>
 #include <sys/mount.h>
 #include <dirent.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,17 +33,25 @@ static void usage(const char *name) {
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc,const char *argv[]) {
-	char *path = NULL;
+int main(int argc,char *argv[]) {
 	char *mspath = (char*)"/sys/proc/self/ms";
 
-	int res = ca_parse(argc,argv,CA_NO_FREE,"ms=s =s*",&mspath,&path);
-	if(res < 0) {
-		printe("Invalid arguments: %s",ca_error(res));
-		usage(argv[0]);
+	int opt;
+	const struct option longopts[] = {
+		{"ms",		required_argument,	0,	'm'},
+		{0, 0, 0, 0},
+	};
+	while((opt = getopt_long(argc,argv,"",longopts,NULL)) != -1) {
+		switch(opt) {
+			case 'm': mspath = optarg; break;
+			default:
+				usage(argv[0]);
+		}
 	}
-	if(ca_hasHelp())
+	if(optind >= argc)
 		usage(argv[0]);
+
+	const char *path = argv[optind];
 
 	int ms = open(mspath,O_WRITE);
 	if(ms < 0)

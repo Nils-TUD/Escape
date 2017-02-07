@@ -98,18 +98,20 @@ int OpenFile::fstat(pid_t pid,struct stat *info) const {
 	int res = 0;
 	if(devNo == VFS_DEV_NO)
 		node->getInfo(pid,info);
-	else {
+	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
 		res = VFSFS::fstat(pid,chan,info);
 	}
+	else
+		res = -EINVAL;
 	return res;
 }
 
 int OpenFile::chmod(pid_t pid,mode_t mode) {
-	int err;
+	int err = -EINVAL;
 	if(devNo == VFS_DEV_NO)
 		err = node->chmod(pid,mode);
-	else {
+	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
 		err = VFSFS::chmod(pid,chan,mode);
 	}
@@ -117,10 +119,10 @@ int OpenFile::chmod(pid_t pid,mode_t mode) {
 }
 
 int OpenFile::chown(pid_t pid,uid_t uid,gid_t gid) {
-	int err;
+	int err = -EINVAL;
 	if(devNo == VFS_DEV_NO)
 		err = node->chown(pid,uid,gid);
-	else {
+	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
 		err = VFSFS::chown(pid,chan,uid,gid);
 	}
@@ -128,10 +130,10 @@ int OpenFile::chown(pid_t pid,uid_t uid,gid_t gid) {
 }
 
 int OpenFile::utime(pid_t pid,const struct utimbuf *utimes) {
-	int err;
+	int err = -EINVAL;
 	if(devNo == VFS_DEV_NO)
 		err = node->utime(pid,utimes);
-	else {
+	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
 		err = VFSFS::utime(pid,chan,utimes);
 	}
@@ -144,10 +146,10 @@ int OpenFile::link(pid_t pid,OpenFile *dir,const char *name) {
 	if(!(dir->flags & VFS_WRITE))
 		return -EACCES;
 
-	int err;
+	int err = -EINVAL;
 	if(devNo == VFS_DEV_NO)
 		err = node->link(pid,dir->node,name);
-	else {
+	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *targetChan = static_cast<VFSChannel*>(node);
 		VFSChannel *dirChan = static_cast<VFSChannel*>(dir->node);
 		err = VFSFS::link(pid,targetChan,dirChan,name);
@@ -159,10 +161,10 @@ int OpenFile::unlink(pid_t pid,const char *name) {
 	if(!(flags & VFS_WRITE))
 		return -EACCES;
 
-	int err;
+	int err = -EINVAL;
 	if(devNo == VFS_DEV_NO)
 		err = node->unlink(pid,name);
-	else {
+	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
 		err = VFSFS::unlink(pid,chan,name);
 	}
@@ -175,10 +177,10 @@ int OpenFile::rename(pid_t pid,const char *oldName,OpenFile *newDir,const char *
 	if(!(flags & VFS_WRITE) || !(newDir->flags & VFS_WRITE))
 		return -EACCES;
 
-	int err;
+	int err = -EINVAL;
 	if(devNo == VFS_DEV_NO)
 		err = node->rename(pid,oldName,newDir->node,newName);
-	else {
+	else if(IS_CHANNEL(node->getMode()) && IS_CHANNEL(newDir->node->getMode())) {
 		VFSChannel *oldChan = static_cast<VFSChannel*>(node);
 		VFSChannel *newChan = static_cast<VFSChannel*>(newDir->node);
 		err = VFSFS::rename(pid,oldChan,oldName,newChan,newName);
@@ -190,13 +192,13 @@ int OpenFile::mkdir(pid_t pid,const char *name,mode_t mode) {
 	if(!(flags & VFS_WRITE))
 		return -EACCES;
 
-	int err;
-	if(devNo != VFS_DEV_NO) {
+	int err = -EINVAL;
+	if(devNo == VFS_DEV_NO)
+		err = node->mkdir(pid,name,mode);
+	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
 		err = VFSFS::mkdir(pid,chan,name,S_IFDIR | (mode & MODE_PERM));
 	}
-	else
-		err = node->mkdir(pid,name,mode);
 	return err;
 }
 
@@ -204,13 +206,13 @@ int OpenFile::rmdir(pid_t pid,const char *name) {
 	if(!(flags & VFS_WRITE))
 		return -EACCES;
 
-	int err;
-	if(devNo != VFS_DEV_NO) {
+	int err = -EINVAL;
+	if(devNo == VFS_DEV_NO)
+		err = node->rmdir(pid,name);
+	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
 		err = VFSFS::rmdir(pid,chan,name);
 	}
-	else
-		err = node->rmdir(pid,name);
 	return err;
 }
 
@@ -378,10 +380,10 @@ int OpenFile::truncate(pid_t pid,off_t length) {
 	if(EXPECT_FALSE(!(flags & VFS_WRITE)))
 		return -EACCES;
 
-	int res;
+	int res = -EINVAL;
 	if(devNo == VFS_DEV_NO)
 		res = node->truncate(pid,length);
-	else {
+	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
 		res = VFSFS::truncate(pid,chan,length);
 	}
@@ -430,6 +432,8 @@ int OpenFile::bindto(tid_t tid) {
 int OpenFile::syncfs(pid_t pid) {
 	if(EXPECT_FALSE(devNo == VFS_DEV_NO))
 		return -EPERM;
+	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))
+		return -ENOTSUP;
 
 	VFSChannel *chan = static_cast<VFSChannel*>(node);
 	return VFSFS::syncfs(pid,chan);

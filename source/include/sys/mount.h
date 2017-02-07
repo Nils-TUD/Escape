@@ -22,6 +22,10 @@
 #include <sys/common.h>
 #include <sys/syscalls.h>
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 /**
  * Mounts the device denoted by <fs> at <path> into given mountspace
  *
@@ -62,3 +66,7 @@ static inline int clonems(int ms,const char *name) {
 static inline int joinms(int ms) {
 	return syscall1(SYSCALL_JOINMS,ms);
 }
+
+#if defined(__cplusplus)
+}
+#endif

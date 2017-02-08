@@ -193,8 +193,6 @@ private:
 	static bool hasMsg(VFSNode *node);
 	static bool hasData(VFSNode *node);
 	static bool hasWork(VFSNode *node);
-	static int request(pid_t pid,const char *path,ushort flags,mode_t mode,const char **begin,
-		OpenFile **res);
 
 	static VFSNode *procsNode;
 	static VFSNode *devNode;

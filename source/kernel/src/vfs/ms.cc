@@ -24,8 +24,9 @@
 #include <ostringstream.h>
 #include <util.h>
 
-VFSMS::MSTreeItem::MSTreeItem(const VFSMS::MSTreeItem &i) : esc::PathTreeItem<OpenFile>(i) {
-	if(getData() && !IS_NODE(getData()))
+VFSMS::MSTreeItem::MSTreeItem(const VFSMS::MSTreeItem &i)
+		: esc::PathTreeItem<OpenFile>(i) {
+	if(getData())
 		getData()->incRefs();
 }
 
@@ -37,19 +38,16 @@ int VFSMS::request(const char *path,const char **end,OpenFile **file) {
 			return -ENOENT;
 		*file = match->getData();
 	}
-	if(!IS_NODE(*file))
-		(*file)->incUsages();
+	(*file)->incUsages();
 	return 0;
 }
 
 void VFSMS::release(OpenFile *file) {
-	if(!IS_NODE(file))
-		file->decUsages();
+	file->decUsages();
 }
 
 int VFSMS::mount(Proc *,const char *path,OpenFile *file) {
-	if(!IS_NODE(file))
-		file->incRefs();
+	file->incRefs();
 	LockGuard<SpinLock> guard(&lock);
 	return _tree.insert(path,file);
 }
@@ -60,11 +58,9 @@ int VFSMS::unmount(Proc *p,const char *path) {
 		LockGuard<SpinLock> guard(&lock);
 		file = _tree.remove(path);
 	}
-	if(file) {
-		if(!IS_NODE(file))
-			file->close(p->getPid());
-		return 0;
-	}
+
+	if(file)
+		file->close(p->getPid());
 	return -ENOENT;
 }
 
@@ -100,10 +96,5 @@ void VFSMS::print(OStream &os) const {
 }
 
 void VFSMS::printItem(OStream &os,OpenFile *file) {
-	if(IS_NODE(file)) {
-		VFSNode *node = reinterpret_cast<VFSNode*>(file);
-		os.writef("%s",node->getPath());
-	}
-	else
-		os.writef("%s",file->getPath());
+	os.writef("%s",file->getPath());
 }

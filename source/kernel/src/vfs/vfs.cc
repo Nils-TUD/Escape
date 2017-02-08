@@ -93,11 +93,23 @@ void VFS::init() {
 }
 
 void VFS::mountAll(Proc *p) {
-	if(p->getMS()->mount(p,"/dev",reinterpret_cast<OpenFile*>(devNode)) < 0)
+	const uint rwx = VFS_READ | VFS_WRITE | VFS_EXEC;
+	OpenFile *devFile,*sysFile,*tmpFile;
+
+	if(openFile(KERNEL_PID,rwx,devNode,devNode->getNo(),VFS_DEV_NO,&devFile) < 0)
+		Util::panic("Unable to open /dev");
+	if(p->getMS()->mount(p,"/dev",devFile) < 0)
 		Util::panic("Unable to mount /dev");
-	if(p->getMS()->mount(p,"/sys",reinterpret_cast<OpenFile*>(procsNode->getParent())) < 0)
-		Util::panic("Unable to mount /dev");
-	if(p->getMS()->mount(p,"/tmp",reinterpret_cast<OpenFile*>(tmpNode)) < 0)
+
+	VFSNode *sys = procsNode->getParent();
+	if(openFile(KERNEL_PID,rwx,sys,sys->getNo(),VFS_DEV_NO,&sysFile) < 0)
+		Util::panic("Unable to open /sys");
+	if(p->getMS()->mount(p,"/sys",sysFile) < 0)
+		Util::panic("Unable to mount /sys");
+
+	if(openFile(KERNEL_PID,rwx,tmpNode,tmpNode->getNo(),VFS_DEV_NO,&tmpFile) < 0)
+		Util::panic("Unable to open /tmp");
+	if(p->getMS()->mount(p,"/tmp",tmpFile) < 0)
 		Util::panic("Unable to mount /tmp");
 }
 
@@ -143,50 +155,43 @@ int VFS::hasAccess(pid_t pid,mode_t mode,uid_t uid,gid_t gid,ushort flags) {
 	return fs::Permissions::canAccess<Groups::contains>(&u,mode,uid,gid,perms);
 }
 
-int VFS::request(pid_t pid,const char *path,ushort flags,mode_t mode,const char **begin,OpenFile **res) {
-	Proc *p = Proc::getByPid(pid);
-	int err = p->getMS()->request(path,begin,res);
-	if(err < 0)
-		return err;
-
-	/* if it's in the virtual fs, it is a VFSNode, not an OpenFile */
-	if(IS_NODE(*res)) {
-		VFSNode *node = reinterpret_cast<VFSNode*>(*res);
-		const char *vpath = *begin;
-		err = VFSNode::request(vpath,begin,&node,NULL,flags,mode);
-		*res = reinterpret_cast<OpenFile*>(node);
-	}
-	return err;
-}
-
 int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile **file) {
 	OpenFile *fsFile;
 	const char *begin;
-	int err = request(pid,path,flags,mode,&begin,&fsFile);
+	int err;
+
+	Proc *p = Proc::getByPid(pid);
+	err = p->getMS()->request(path,&begin,&fsFile);
 	if(err < 0)
 		return err;
 
-	/* if it's in the virtual fs, it is a VFSNode, not an OpenFile */
+	/* check if the file to the mounted filesystem has the permissions we are requesting */
+	const uint rwx = VFS_READ | VFS_WRITE | VFS_EXEC;
+	if(~(fsFile->getFlags() &  rwx) & (flags & rwx)) {
+		err = -EACCES;
+		goto errorMnt;
+	}
+
+	/* if it's in the virtual fs, it's a directory, not a channel */
 	VFSNode *node;
 	msgid_t openmsg;
-	if(IS_NODE(fsFile)) {
-		node = reinterpret_cast<VFSNode*>(fsFile);
-		openmsg = MSG_FILE_OPEN;
-		/* check if we can access the device */
+	if(!IS_CHANNEL(fsFile->getNode()->getMode())) {
+		const char *vpath = begin;
+		node = fsFile->getNode();
+		err = VFSNode::request(vpath,&begin,&node,NULL,flags,mode);
+		if(err < 0)
+			goto errorMnt;
 		if((err = hasAccess(pid,node,flags)) < 0)
 			goto error;
+
+		openmsg = MSG_FILE_OPEN;
 	}
 	/* otherwise use the device-node of the fs */
 	else {
 		node = fsFile->getNode();
 		node = VFSNode::request(node->getParent()->getNo());
+
 		openmsg = MSG_FS_OPEN;
-		/* check if the file to the mounted filesystem has the permissions we are requesting */
-		const uint rwx = VFS_READ | VFS_WRITE | VFS_EXEC;
-		if(~(fsFile->getFlags() &  rwx) & (flags & rwx)) {
-			err = -EACCES;
-			goto error;
-		}
 	}
 
 	/* if its a device, create the channel-node, by default. If VFS_NOCHAN is given, don't do that
@@ -207,15 +212,15 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 		goto error;
 
 	/* open file */
-	if(IS_NODE(fsFile))
-		err = openFile(pid,flags,node,node->getNo(),VFS_DEV_NO,file);
-	else
+	if(openmsg == MSG_FS_OPEN)
 		err = openFile(pid,flags,node,err,fsFile->getNodeNo(),file);
+	else
+		err = openFile(pid,flags,node,node->getNo(),VFS_DEV_NO,file);
 	if(err < 0)
 		goto error;
 
 	/* store the path for debugging purposes */
-	if(!IS_NODE(fsFile))
+	if(openmsg == MSG_FS_OPEN)
 		(*file)->setPath(strdup(path));
 	VFSNode::release(node);
 

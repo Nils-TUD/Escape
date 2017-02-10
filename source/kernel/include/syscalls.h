@@ -109,6 +109,8 @@ private:
 	static int rename(Thread *t,IntrptStackFrame *stack);
 	static int mkdir(Thread *t,IntrptStackFrame *stack);
 	static int rmdir(Thread *t,IntrptStackFrame *stack);
+
+	// mounts
 	static int mount(Thread *t,IntrptStackFrame *stack);
 	static int unmount(Thread *t,IntrptStackFrame *stack);
 	static int clonems(Thread *t,IntrptStackFrame *stack);

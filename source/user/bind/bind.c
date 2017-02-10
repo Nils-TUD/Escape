@@ -26,25 +26,31 @@
 #include <stdlib.h>
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [--ms <ms>] <fs-device> <path>\n",name);
-	fprintf(stderr,"    Opens <fs-device> and makes it appear at <path>.\n");
+	fprintf(stderr,"Usage: %s [--ms <ms>] [-p <perms>] <source> <path>\n",name);
+	fprintf(stderr,"    Opens <source> and makes it appear at <path>. <source> can be a\n");
+	fprintf(stderr,"    filesystem device or a directory.\n");
 	fprintf(stderr,"\n");
-	fprintf(stderr,"    By default, the current mountspace (/sys/proc/self/ms) will\n");
-	fprintf(stderr,"    be used. This can be overwritten by specifying --ms <ms>.\n");
+	fprintf(stderr,"    -p <perms>: set the permissions to <perms>, which is a combination\n");
+	fprintf(stderr,"                of the letters r, w and x (rwx by default).\n");
+	fprintf(stderr,"    --ms <ms>:  By default, the current mountspace (/sys/proc/self/ms)\n");
+	fprintf(stderr,"                will be used. This can be overwritten by specifying\n");
+	fprintf(stderr,"                --ms <ms>.\n");
 	exit(EXIT_FAILURE);
 }
 
 int main(int argc,char *argv[]) {
 	const char *mspath = "/sys/proc/self/ms";
+	const char *perms = "rwx";
 
 	int opt;
 	const struct option longopts[] = {
 		{"ms",		required_argument,	0,	'm'},
 		{0, 0, 0, 0},
 	};
-	while((opt = getopt_long(argc,argv,"",longopts,NULL)) != -1) {
+	while((opt = getopt_long(argc,argv,"p:",longopts,NULL)) != -1) {
 		switch(opt) {
 			case 'm': mspath = optarg; break;
+			case 'p': perms = optarg; break;
 			default:
 				usage(argv[0]);
 		}
@@ -55,15 +61,36 @@ int main(int argc,char *argv[]) {
 	const char *src = argv[optind];
 	const char *path = argv[optind + 1];
 
-	int fd = open(src,O_MSGS);
+	uint flags = 0;
+	for(size_t i = 0; perms[i]; ++i) {
+		if(perms[i] == 'r')
+			flags |= O_RDONLY;
+		else if(perms[i] == 'w')
+			flags |= O_WRONLY;
+		else if(perms[i] == 'x')
+			flags |= O_EXEC;
+	}
+
+	int fd = open(src,O_NOCHAN);
 	if(fd < 0)
 		error("Unable to open '%s'",src);
+	struct stat info;
+	if(fstat(fd,&info) < 0)
+		error("Unable to stat '%s'",src);
+
+	/* if it's a filesystem, reopen with requested permissions */
+	if(S_ISFS(info.st_mode)) {
+		close(fd);
+		fd = open(src,flags);
+		if(fd < 0)
+			error("Unable to open '%s' for %s",perms);
+	}
 
 	/* now mount it */
 	int ms = open(mspath,O_WRITE);
 	if(ms < 0)
 		error("Unable to open '%s' for writing",mspath);
-	if(mount(ms,fd,path) < 0)
+	if(remount(ms,fd,path,flags) < 0)
 		error("Unable to mount '%s' @ '%s' in mountspace '%s'",src,path,mspath);
 
 	close(ms);

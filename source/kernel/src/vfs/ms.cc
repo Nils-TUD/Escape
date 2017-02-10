@@ -25,21 +25,23 @@
 #include <util.h>
 
 VFSMS::MSTreeItem::MSTreeItem(const VFSMS::MSTreeItem &i)
-		: esc::PathTreeItem<OpenFile>(i) {
+		: esc::PathTreeItem<OpenFile>(i), root(i.root), devno(i.devno) {
 	if(getData())
 		getData()->incRefs();
 }
 
-int VFSMS::request(const char *path,const char **end,OpenFile **file) {
+ino_t VFSMS::request(const char *path,const char **end,OpenFile **file) {
+	ino_t res = 0;
 	{
 		LockGuard<SpinLock> guard(&lock);
 		MSTreeItem *match = _tree.find(path,end);
 		if(!match)
 			return -ENOENT;
 		*file = match->getData();
+		res = match->root;
 	}
 	(*file)->incUsages();
-	return 0;
+	return res;
 }
 
 void VFSMS::release(OpenFile *file) {
@@ -52,16 +54,71 @@ int VFSMS::mount(Proc *,const char *path,OpenFile *file) {
 	return _tree.insert(path,file);
 }
 
+int VFSMS::remount(Proc *p,const char *path,OpenFile *dir,uint flags) {
+	LockGuard<SpinLock> guard(&lock);
+	const char *end;
+	MSTreeItem *match = _tree.find(path,&end);
+	if(!match)
+		return -ENOENT;
+
+	/* create a new file, if necessary with adjusted permissions */
+	OpenFile *nfile;
+	OpenFile *old = match->getData();
+	const uint rwx = VFS_READ | VFS_WRITE | VFS_EXEC;
+	if((flags & rwx) != (old->getFlags() & rwx)) {
+		flags = (old->getFlags() & ~rwx) | (flags & rwx);
+		int res = OpenFile::getFree(p->getPid(),flags,flags,old->getNodeNo(),old->getDev(),
+			old->getNode(),&nfile,true);
+		if(res < 0)
+			return res;
+	}
+	else {
+		nfile = old;
+		nfile->incRefs();
+	}
+
+	/* if we remount at the same place, remove the old one */
+	if(end[0] == '\0') {
+		_tree.remove(path);
+		old->close(p->getPid());
+	}
+
+	/* mount it */
+	int res = _tree.insert(path,nfile);
+	if(res < 0) {
+		nfile->close(p->getPid());
+		return res;
+	}
+
+	/* remember root inode */
+	match = _tree.find(path,&end);
+	assert(match != NULL);
+	match->root = dir->getNodeNo();
+	match->devno = dir->getDev();
+	/* increase references to prevent that we delete the node while it's mounted */
+	if(match->devno == VFS_DEV_NO)
+		VFSNode::request(match->root);
+	return 0;
+}
+
 int VFSMS::unmount(Proc *p,const char *path) {
 	OpenFile *file;
 	{
 		LockGuard<SpinLock> guard(&lock);
+		/* release vfs node for moints of virtual filesystems */
+		const char *end;
+		MSTreeItem *match = _tree.find(path,&end);
+		if(!match)
+			return -ENOENT;
+		if(match->devno == VFS_DEV_NO)
+			VFSNode::release(VFSNode::get(match->root));
+		/* remove the mountpoint */
 		file = _tree.remove(path);
+		assert(file != NULL);
 	}
 
-	if(file)
-		file->close(p->getPid());
-	return -ENOENT;
+	file->close(p->getPid());
+	return 0;
 }
 
 void VFSMS::join(Proc *p) {
@@ -95,6 +152,7 @@ void VFSMS::print(OStream &os) const {
 	_tree.print(os,printItem);
 }
 
-void VFSMS::printItem(OStream &os,OpenFile *file) {
-	os.writef("%s",file->getPath());
+void VFSMS::printItem(OStream &os,MSTreeItem *item) {
+	OpenFile *file = item->getData();
+	os.writef("%s [flags=%#x root=%d]",file->getPath(),file->getFlags(),item->root);
 }

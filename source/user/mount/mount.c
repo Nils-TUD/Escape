@@ -35,7 +35,7 @@
 static bool run = true;
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [--ms <ms>] <device> <path> <fs>\n",name);
+	fprintf(stderr,"Usage: %s [--ms <ms>] [-p <perms>] <device> <path> <fs>\n",name);
 	fprintf(stderr,"    Creates a child process that executes <fs>. <fs> receives\n");
 	fprintf(stderr,"    the fs-device to create and the device to work with (<device>)\n");
 	fprintf(stderr,"    as command line arguments. Afterwards, mount opens the\n");
@@ -43,8 +43,11 @@ static void usage(const char *name) {
 	fprintf(stderr,"\n");
 	fprintf(stderr,"    Example: %s /dev/hda1 /mnt /sbin/ext2.\n",name);
 	fprintf(stderr,"\n");
-	fprintf(stderr,"    By default, the current mountspace (/sys/proc/self/ms) will\n");
-	fprintf(stderr,"    be used. This can be overwritten by specifying --ms <ms>.\n");
+	fprintf(stderr,"    -p <perms>: set the permissions to <perms>, which is a combination\n");
+	fprintf(stderr,"                of the letters r, w and x (rwx by default).\n");
+	fprintf(stderr,"    --ms <ms>:  By default, the current mountspace (/sys/proc/self/ms)\n");
+	fprintf(stderr,"                will be used. This can be overwritten by specifying\n");
+	fprintf(stderr,"                --ms <ms>.\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -64,15 +67,17 @@ int main(int argc,char *argv[]) {
 	char fsdev[MAX_PATH_LEN];
 	char devpath[MAX_PATH_LEN];
 	char *mspath = (char*)"/sys/proc/self/ms";
+	char *perms = (char*)"rwx";
 
 	int opt;
 	const struct option longopts[] = {
 		{"ms",		required_argument,	0,	'm'},
 		{0, 0, 0, 0},
 	};
-	while((opt = getopt_long(argc,argv,"",longopts,NULL)) != -1) {
+	while((opt = getopt_long(argc,argv,"p:",longopts,NULL)) != -1) {
 		switch(opt) {
 			case 'm': mspath = optarg; break;
+			case 'p': perms = optarg; break;
 			default:
 				usage(argv[0]);
 		}
@@ -96,6 +101,16 @@ int main(int argc,char *argv[]) {
 			dev[i] = '-';
 	}
 
+	uint flags = 0;
+	for(size_t i = 0; perms[i]; ++i) {
+		if(perms[i] == 'r')
+			flags |= O_RDONLY;
+		else if(perms[i] == 'w')
+			flags |= O_WRONLY;
+		else if(perms[i] == 'x')
+			flags |= O_EXEC;
+	}
+
 	strnzcpy(fsname,fs,sizeof(fsname));
 	/* use dev-number and inode-number if it's a file */
 	struct stat info;
@@ -115,7 +130,7 @@ int main(int argc,char *argv[]) {
 	}
 	else {
 		/* wait until fs-device is present */
-		while(run && (fd = open(fsdev,O_MSGS)) == -ENOENT)
+		while(run && (fd = open(fsdev,flags)) == -ENOENT)
 			usleep(5 * 1000);
 		if(!run)
 			errno = -ENOENT;

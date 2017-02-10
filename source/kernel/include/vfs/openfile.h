@@ -159,6 +159,12 @@ public:
 		return flags;
 	}
 	/**
+	 * @return the mount permissions
+	 */
+	uint8_t getMntPerms() const {
+		return mntperm;
+	}
+	/**
 	 * @return true if the file was created for a device (and not a client of the device)
 	 */
 	bool isDevice() const {
@@ -470,6 +476,7 @@ private:
 	 * Requests a new file or reuses an existing file for the given node+dev to open.
 	 *
 	 * @param pid the process-id
+	 * @param mntperm the permissions for the mountpoint
 	 * @param flags the flags
 	 * @param nodeNo the node-number
 	 * @param devNo the dev-number
@@ -478,13 +485,15 @@ private:
 	 * @param clone whether this is a clone of an existing OpenFile (no exclusive/lonely check)
 	 * @return 0 on success
 	 */
-	static int getFree(pid_t pid,ushort flags,ino_t nodeNo,dev_t devNo,const VFSNode *n,
+	static int getFree(pid_t pid,uint8_t mntperm,ushort flags,ino_t nodeNo,dev_t devNo,const VFSNode *n,
 		OpenFile **f,bool clone);
 
 	static void releaseFile(OpenFile *file);
 	bool doClose(pid_t pid);
 
 	SpinLock lock;
+	/* the permissions for the mountpoint */
+	uint8_t mntperm;
 	/* read OR write; flags = 0 => entry unused */
 	ushort flags;
 	/* the owner of this file */

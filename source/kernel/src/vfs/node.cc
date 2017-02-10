@@ -92,7 +92,7 @@ bool VFSNode::isDeletable() const {
 	return getOwner() != KERNEL_PID;
 }
 
-ssize_t VFSNode::open(pid_t pid,A_UNUSED const char *path,uint flags,
+ssize_t VFSNode::open(pid_t pid,A_UNUSED const char *path,A_UNUSED ino_t root,uint flags,
 	A_UNUSED int msgid,A_UNUSED mode_t mode) {
 	int err;
 	if((err = VFS::hasAccess(pid,this,flags)) < 0)

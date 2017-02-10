@@ -96,18 +96,18 @@ void VFS::mountAll(Proc *p) {
 	const uint rwx = VFS_READ | VFS_WRITE | VFS_EXEC;
 	OpenFile *devFile,*sysFile,*tmpFile;
 
-	if(openFile(KERNEL_PID,rwx,devNode,devNode->getNo(),VFS_DEV_NO,&devFile) < 0)
+	if(openFile(KERNEL_PID,rwx,rwx,devNode,devNode->getNo(),VFS_DEV_NO,&devFile) < 0)
 		Util::panic("Unable to open /dev");
 	if(p->getMS()->mount(p,"/dev",devFile) < 0)
 		Util::panic("Unable to mount /dev");
 
 	VFSNode *sys = procsNode->getParent();
-	if(openFile(KERNEL_PID,rwx,sys,sys->getNo(),VFS_DEV_NO,&sysFile) < 0)
+	if(openFile(KERNEL_PID,rwx,rwx,sys,sys->getNo(),VFS_DEV_NO,&sysFile) < 0)
 		Util::panic("Unable to open /sys");
 	if(p->getMS()->mount(p,"/sys",sysFile) < 0)
 		Util::panic("Unable to mount /sys");
 
-	if(openFile(KERNEL_PID,rwx,tmpNode,tmpNode->getNo(),VFS_DEV_NO,&tmpFile) < 0)
+	if(openFile(KERNEL_PID,rwx,rwx,tmpNode,tmpNode->getNo(),VFS_DEV_NO,&tmpFile) < 0)
 		Util::panic("Unable to open /tmp");
 	if(p->getMS()->mount(p,"/tmp",tmpFile) < 0)
 		Util::panic("Unable to mount /tmp");
@@ -161,9 +161,9 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 	int err;
 
 	Proc *p = Proc::getByPid(pid);
-	err = p->getMS()->request(path,&begin,&fsFile);
-	if(err < 0)
-		return err;
+	ino_t root = p->getMS()->request(path,&begin,&fsFile);
+	if(root < 0)
+		return root;
 
 	/* check if the file to the mounted filesystem has the permissions we are requesting */
 	const uint rwx = VFS_READ | VFS_WRITE | VFS_EXEC;
@@ -177,7 +177,10 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 	msgid_t openmsg;
 	if(!IS_CHANNEL(fsFile->getNode()->getMode())) {
 		const char *vpath = begin;
-		node = fsFile->getNode();
+		if(root == 0)
+			node = fsFile->getNode();
+		else
+			node = VFSNode::get(root);
 		err = VFSNode::request(vpath,&begin,&node,NULL,flags,mode);
 		if(err < 0)
 			goto errorMnt;
@@ -207,15 +210,15 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 	}
 
 	/* give the node a chance to react on it */
-	err = node->open(pid,begin,flags,openmsg,mode);
+	err = node->open(pid,begin,root,flags,openmsg,mode);
 	if(err < 0)
 		goto error;
 
 	/* open file */
 	if(openmsg == MSG_FS_OPEN)
-		err = openFile(pid,flags,node,err,fsFile->getNodeNo(),file);
+		err = openFile(pid,fsFile->getFlags(),flags,node,err,fsFile->getNodeNo(),file);
 	else
-		err = openFile(pid,flags,node,node->getNo(),VFS_DEV_NO,file);
+		err = openFile(pid,fsFile->getFlags(),flags,node,node->getNo(),VFS_DEV_NO,file);
 	if(err < 0)
 		goto error;
 
@@ -242,8 +245,8 @@ errorMnt:
 	return err;
 }
 
-int VFS::openFile(pid_t pid,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t devNo,
-                  OpenFile **file) {
+int VFS::openFile(pid_t pid,uint8_t mntperms,ushort flags,const VFSNode *node,ino_t nodeNo,
+				  dev_t devNo,OpenFile **file) {
 	int err;
 
 	/* cleanup flags */
@@ -253,13 +256,13 @@ int VFS::openFile(pid_t pid,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t 
 		return err;
 
 	/* determine free file */
-	return OpenFile::getFree(pid,flags,nodeNo,devNo,node,file,false);
+	return OpenFile::getFree(pid,mntperms,flags,nodeNo,devNo,node,file,false);
 }
 
-int VFS::openFileDesc(pid_t pid,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t devNo) {
+int VFS::openFileDesc(pid_t pid,uint8_t mntperms,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t devNo) {
 	OpenFile *file;
 	/* no permission check here; and the flags are already valid */
-	int res = OpenFile::getFree(pid,flags,nodeNo,devNo,node,&file,true);
+	int res = OpenFile::getFree(pid,mntperms,flags,nodeNo,devNo,node,&file,true);
 	if(res < 0)
 		return res;
 

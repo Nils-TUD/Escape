@@ -33,7 +33,7 @@
 #include "path.h"
 #include "rw.h"
 
-ino_t Ext2Path::resolve(Ext2FileSystem *e,fs::User *u,const char *path,uint flags,mode_t mode) {
+ino_t Ext2Path::resolve(Ext2FileSystem *e,fs::User *u,const char *path,ino_t root,uint flags,mode_t mode) {
 	Ext2CInode *cnode = NULL;
 	ino_t res;
 	const char *p = path;
@@ -43,7 +43,10 @@ ino_t Ext2Path::resolve(Ext2FileSystem *e,fs::User *u,const char *path,uint flag
 	while(*p == '/')
 		p++;
 
-	cnode = e->inodeCache.request(EXT2_ROOT_INO,IMODE_READ);
+	if(root == 0)
+		root = EXT2_ROOT_INO;
+
+	cnode = e->inodeCache.request(root,IMODE_READ);
 	if(cnode == NULL)
 		return -ENOBUFS;
 
@@ -55,7 +58,12 @@ ino_t Ext2Path::resolve(Ext2FileSystem *e,fs::User *u,const char *path,uint flag
 			return err;
 		}
 
-		res = Ext2Dir::find(e,cnode,p,pos);
+		// walking past the root node is not allowed
+		if(cnode->inodeNo == root && pos == 2 && strncmp(p,"..",2) == 0)
+			res = root;
+		else
+			res = Ext2Dir::find(e,cnode,p,pos);
+
 		if(res >= 0) {
 			p += pos;
 			e->inodeCache.release(cnode);

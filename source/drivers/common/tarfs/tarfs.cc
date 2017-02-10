@@ -93,7 +93,11 @@ public:
 		init(_archive);
 	}
 
-	ino_t open(User *u,const char *path,uint flags,mode_t mode,int fd,OpenTarFile **file) override  {
+	ino_t open(User *u,const char *path,ino_t root,uint flags,mode_t mode,int fd,OpenTarFile **file) override  {
+		/* TODO support different root inodes */
+		if(root != 0)
+			return -ENOTSUP;
+
 		const char *end = NULL;
 		PathTreeItem<TarINode> *tfile = tree.find(path,&end);
 		if(file == NULL || *end != '\0') {

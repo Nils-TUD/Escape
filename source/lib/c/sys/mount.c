@@ -25,7 +25,12 @@
 
 int mount(int ms,int fs,const char *path) {
 	char apath[MAX_PATH_LEN];
-	return syscall3(SYSCALL_MOUNT,ms,fs,(ulong)abspath(apath,sizeof(apath),path));
+	return syscall4(SYSCALL_MOUNT,ms,fs,(ulong)abspath(apath,sizeof(apath),path),0);
+}
+
+int remount(int ms,int dir,const char *path,uint perm) {
+	char apath[MAX_PATH_LEN];
+	return syscall4(SYSCALL_MOUNT,ms,dir,(ulong)abspath(apath,sizeof(apath),path),perm);
 }
 
 int unmount(int ms,const char *path) {

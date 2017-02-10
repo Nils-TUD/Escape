@@ -50,67 +50,57 @@ static int getMS(Proc *p,int ms,OpenFile **msfile,VFSMS **msobj,uint perm) {
 
 int Syscalls::mount(Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
-	struct stat pinfo;
 	int ms = SYSC_ARG1(stack);
 	int fs = SYSC_ARG2(stack);
 	const char *path = (const char*)SYSC_ARG3(stack);
-	pid_t pid = t->getProc()->getPid();
+	uint flags = (uint)SYSC_ARG4(stack);
+	Proc *p = t->getProc();
 	VFSMS *msobj;
-	OpenFile *fsfile,*msfile,*pfile = NULL;
+	OpenFile *fsfile,*msfile;
 	int res;
 
 	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	/* root can mount everywhere, though. this is necessary because it needs to mount e.g. '/',
-	 * which doesn't exist initially. */
-	uid_t uid = t->getProc()->getUid();
-	if(uid != ROOT_UID) {
-		res = VFS::openPath(pid,VFS_NOCHAN,0,abspath,&pfile);
-		if(res < 0)
-			goto errPath;
-
-		res = pfile->fstat(pid,&pinfo);
-		if(res < 0 || !S_ISDIR(pinfo.st_mode))
-			goto errStat;
-		/* if it's sticky, we have to be the owner */
-		if((pinfo.st_mode & S_ISSTICKY) && pinfo.st_uid != uid)
-			goto errStat;
-		/* check for write-permission. if we can write to the directory, we can add/remove entries
-		 * already. mounting something there, doesn't give us more power */
-		res = VFS::hasAccess(pid,pinfo.st_mode,pinfo.st_uid,pinfo.st_gid,VFS_WRITE);
-		if(res < 0)
-			goto errStat;
-	}
-
-	/* get files */
-	fsfile = FileDesc::request(t->getProc(),fs);
+	/* get fs file */
+	fsfile = FileDesc::request(p,fs);
 	if(EXPECT_FALSE(fsfile == NULL)) {
 		res = -EBADF;
-		goto errStat;
+		goto errPath;
 	}
 
-	res = getMS(t->getProc(),ms,&msfile,&msobj,VFS_WRITE);
+	/* get mountspace file */
+	res = getMS(p,ms,&msfile,&msobj,VFS_WRITE);
 	if(res < 0)
 		goto errorMs;
 
-	/* <fs> it has to be a filesystem */
-	if(fsfile->getDev() != VFS_DEV_NO || !IS_CHANNEL(fsfile->getNode()->getMode()) ||
-			!IS_FS(fsfile->getNode()->getParent()->getMode())) {
-		res = -EINVAL;
-		goto errorFs;
+	/* if it's a filesystem, mount it */
+	if(fsfile->getDev() == VFS_DEV_NO && IS_CHANNEL(fsfile->getNode()->getMode()) &&
+			IS_FS(fsfile->getNode()->getParent()->getMode())) {
+		res = msobj->mount(p,abspath,fsfile);
 	}
+	else {
+		if((flags & (VFS_READ | VFS_WRITE | VFS_EXEC)) == 0) {
+			res = -EINVAL;
+			goto errorFs;
+		}
 
-	/* mount it */
-	res = msobj->mount(t->getProc(),abspath,fsfile);
+		/* otherwise, remount the directory */
+		struct stat info;
+		if((res = fsfile->fstat(p->getPid(),&info)) < 0)
+			goto errorFs;
+		if(!S_ISDIR(info.st_mode)) {
+			res = -ENOTDIR;
+			goto errorFs;
+		}
+
+		res = msobj->remount(p,abspath,fsfile,flags);
+	}
 
 errorFs:
 	FileDesc::release(msfile);
 errorMs:
 	FileDesc::release(fsfile);
-errStat:
-	if(pfile)
-		pfile->close(pid);
 errPath:
 	if(res < 0)
 		SYSC_ERROR(stack,res);

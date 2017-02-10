@@ -140,7 +140,7 @@ void Boot::createModFiles() {
 		Util::panic("Unable to create /sys/boot/arguments");
 
 	OpenFile *file;
-	if(VFS::openFile(KERNEL_PID,VFS_WRITE,args,args->getNo(),VFS_DEV_NO,&file) < 0)
+	if(VFS::openFile(KERNEL_PID,0,VFS_WRITE,args,args->getNo(),VFS_DEV_NO,&file) < 0)
 		Util::panic("Unable to open /sys/boot/arguments");
 
 	for(auto mod = modsBegin(); mod != modsEnd(); ++mod) {

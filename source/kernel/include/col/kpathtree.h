@@ -31,7 +31,7 @@
 template<class T,class ITEM>
 class KPathTree : public esc::PathTree<T,ITEM> {
 public:
-	typedef void (*fPrintItem)(OStream &os,T *data);
+	typedef void (*fPrintItem)(OStream &os,ITEM *item);
 
 	/**
 	 * Prints the tree to the given stream.
@@ -50,7 +50,7 @@ private:
 			if(item->_data) {
 				os.writef(" -> ");
 				if(printItem)
-					printItem(os,item->_data);
+					printItem(os,item);
 				else
 					os.writef("%p",item->_data);
 			}

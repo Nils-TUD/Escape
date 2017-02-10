@@ -32,9 +32,12 @@ class VFSMS : public VFSNode {
 	class MSTreeItem : public esc::PathTreeItem<OpenFile>, public CacheAllocatable {
 	public:
 		explicit MSTreeItem(char *name,OpenFile *data = NULL)
-			: esc::PathTreeItem<OpenFile>(name,data), CacheAllocatable() {
+			: esc::PathTreeItem<OpenFile>(name,data), CacheAllocatable(), root(0), devno(0) {
 		}
 		explicit MSTreeItem(const MSTreeItem &i);
+
+		ino_t root;
+		dev_t devno;
 	};
 
 public:
@@ -96,9 +99,9 @@ public:
 	 * @param path the path to resolve
 	 * @param begin will be set to the beginning of the path in the found mountpoint
 	 * @param file will be set to the file associated with the found mountpoint
-	 * @return 0 on success
+	 * @return the root inode on success
 	 */
-	int request(const char *path,const char **begin,OpenFile **file);
+	ino_t request(const char *path,const char **begin,OpenFile **file);
 
 	/**
 	 * Releases the previously with request() requested file.
@@ -116,6 +119,17 @@ public:
 	 * @return 0 on success
 	 */
 	int mount(Proc *p,const char *path,OpenFile *file);
+
+	/**
+	 * Remounts <dir> at <path> with given permissions.
+	 *
+	 * @param p the process
+	 * @param path the path to mount it at
+	 * @param dir the directory to remount
+	 * @param flags the flags (rwx) to use; only downgrading is allowed
+	 * @return 0 on success
+	 */
+	int remount(Proc *p,const char *path,OpenFile *dir,uint flags);
 
 	/**
 	 * Unmounts the filesystem that is mounted at <path>.
@@ -146,7 +160,7 @@ public:
 
 private:
 	static void readCallback(VFSNode *node,size_t *dataSize,void **buffer);
-	static void printItem(OStream &os,OpenFile *file);
+	static void printItem(OStream &os,MSTreeItem *item);
 
 	KPathTree<OpenFile,MSTreeItem> _tree;
 };

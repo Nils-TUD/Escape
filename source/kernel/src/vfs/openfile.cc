@@ -108,6 +108,9 @@ int OpenFile::fstat(pid_t pid,struct stat *info) const {
 }
 
 int OpenFile::chmod(pid_t pid,mode_t mode) {
+	if(~mntperm & VFS_WRITE)
+		return -EPERM;
+
 	int err = -EINVAL;
 	if(devNo == VFS_DEV_NO)
 		err = node->chmod(pid,mode);
@@ -119,6 +122,9 @@ int OpenFile::chmod(pid_t pid,mode_t mode) {
 }
 
 int OpenFile::chown(pid_t pid,uid_t uid,gid_t gid) {
+	if(~mntperm & VFS_WRITE)
+		return -EPERM;
+
 	int err = -EINVAL;
 	if(devNo == VFS_DEV_NO)
 		err = node->chown(pid,uid,gid);
@@ -130,6 +136,9 @@ int OpenFile::chown(pid_t pid,uid_t uid,gid_t gid) {
 }
 
 int OpenFile::utime(pid_t pid,const struct utimbuf *utimes) {
+	if(~mntperm & VFS_WRITE)
+		return -EPERM;
+
 	int err = -EINVAL;
 	if(devNo == VFS_DEV_NO)
 		err = node->utime(pid,utimes);
@@ -227,7 +236,7 @@ int OpenFile::createdev(pid_t pid,const char *name,mode_t mode,uint type,uint op
 	if(res < 0)
 		return res;
 
-	res = VFS::openFile(pid,VFS_DEVICE,srv,srv->getNo(),VFS_DEV_NO,file);
+	res = VFS::openFile(pid,mntperm,VFS_DEVICE,srv,srv->getNo(),VFS_DEV_NO,file);
 	/* if an error occurred, release it twice to destroy the node */
 	if(res < 0)
 		VFSNode::release(srv);
@@ -245,7 +254,7 @@ int OpenFile::createchan(pid_t pid,uint perm,OpenFile **chan) {
 		return -ENOMEM;
 
 	/* open new file for the channel */
-	int res = VFS::openFile(pid,VFS_DEVICE | perm,chnode,chnode->getNo(),VFS_DEV_NO,chan);
+	int res = VFS::openFile(pid,0,VFS_DEVICE | perm,chnode,chnode->getNo(),VFS_DEV_NO,chan);
 	if(res < 0) {
 		VFSNode::release(chnode);
 		VFSNode::release(chnode);
@@ -544,8 +553,8 @@ size_t OpenFile::getCount() {
 	return count;
 }
 
-int OpenFile::getFree(pid_t pid,ushort flags,ino_t nodeNo,dev_t devNo,const VFSNode *n,
-		OpenFile **f,bool clone) {
+int OpenFile::getFree(pid_t pid,uint8_t mntperm,ushort flags,ino_t nodeNo,dev_t devNo,
+		const VFSNode *n,OpenFile **f,bool clone) {
 	A_UNUSED uint userFlags = VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOCHAN | VFS_NOBLOCK |
 							  VFS_DEVICE | VFS_LONELY;
 	size_t i;
@@ -627,6 +636,7 @@ int OpenFile::getFree(pid_t pid,ushort flags,ino_t nodeNo,dev_t devNo,const VFSN
 	n->increaseRefs();
 	e->node = const_cast<VFSNode*>(n);
 	e->owner = pid;
+	e->mntperm = mntperm;
 	e->flags = flags;
 	e->refCount = 1;
 	e->usageCount = 0;

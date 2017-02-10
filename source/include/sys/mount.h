@@ -37,6 +37,17 @@ extern "C" {
 A_CHECKRET int mount(int ms,int fs,const char *path);
 
 /**
+ * Remounts <dir> at <path> with given permissions flags.
+ *
+ * @param ms the mountspace to mount the fs into
+ * @param dir the file descriptor to the directory to remount
+ * @param path the path to mount it at
+ * @param perm the permissions (O_RDONLY | O_WRONLY | O_EXEC) to use; only downgrading is allowed
+ * @return 0 on success
+ */
+A_CHECKRET int remount(int ms,int dir,const char *path,uint perm);
+
+/**
  * Unmounts the device mounted at <path> from given mountspace
  *
  * @param ms the mountspace

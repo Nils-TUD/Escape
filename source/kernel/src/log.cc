@@ -53,14 +53,14 @@ void Log::vfsIsReady() {
 	logNode->reserve(VFS::MAX_FILE_SIZE);
 	assert(logNode != NULL);
 	VFSNode::release(dir);
-	sassert(VFS::openFile(KERNEL_PID,VFS_WRITE,logNode,logNode->getNo(),VFS_DEV_NO,&inst.logFile) == 0);
+	sassert(VFS::openFile(KERNEL_PID,0,VFS_WRITE,logNode,logNode->getNo(),VFS_DEV_NO,&inst.logFile) == 0);
 	VFSNode::release(logNode);
 
 	/* create stdin, stdout and stderr for initloader. out and err should write to the log-file */
 	/* stdin is just a dummy file. init will remove these fds before starting the shells which will
 	 * create new ones (for the vterm of the shell) */
 	sassert(VFSNode::request(DUMMY_STDIN,NULL,&stdin,NULL,VFS_CREATE,FILE_DEF_MODE) == 0);
-	sassert(VFS::openFile(pid,VFS_READ,stdin,stdin->getNo(),VFS_DEV_NO,&inFile) == 0);
+	sassert(VFS::openFile(pid,0,VFS_READ,stdin,stdin->getNo(),VFS_DEV_NO,&inFile) == 0);
 	VFSNode::release(stdin);
 	sassert(FileDesc::assoc(Proc::getByPid(pid),inFile) == 0);
 	sassert(FileDesc::assoc(Proc::getByPid(pid),inst.logFile) == 1);

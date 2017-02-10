@@ -33,8 +33,9 @@ public:
 	 * @param e the ext2-handle
 	 * @param u the user
 	 * @param path the path
+	 * @param root the inode where to start
 	 * @param flags the flags with which to open the file
 	 * @return the inode-Number or EXT2_BAD_INO
 	 */
-	static ino_t resolve(Ext2FileSystem *e,fs::User *u,const char *path,uint flags,mode_t mode);
+	static ino_t resolve(Ext2FileSystem *e,fs::User *u,const char *path,ino_t root,uint flags,mode_t mode);
 };

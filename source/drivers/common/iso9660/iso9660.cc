@@ -63,7 +63,7 @@ int main(int argc,char *argv[]) {
 				/* try to find our kernel. if we've found it, it's likely that the user wants to
 				 * boot from this device. unfortunatly there doesn't seem to be an easy way
 				 * to find out the real boot-device from GRUB */
-				ino_t ino = ISO9660Dir::resolve(fs,&u,"/boot/escape",O_RDONLY);
+				ino_t ino = ISO9660Dir::resolve(fs,&u,"/boot/escape",0,O_RDONLY);
 				if(ino >= 0)
 					break;
 			}
@@ -118,8 +118,8 @@ int ISO9660FileSystem::initPrimaryVol(ISO9660FileSystem *fs,const char *device) 
 	return 0;
 }
 
-ino_t ISO9660FileSystem::open(fs::User *u,const char *path,uint flags,mode_t,int fd,fs::OpenFile **file) {
-	ino_t ino = ISO9660Dir::resolve(this,u,path,flags);
+ino_t ISO9660FileSystem::open(fs::User *u,const char *path,ino_t root,uint flags,mode_t,int fd,fs::OpenFile **file) {
+	ino_t ino = ISO9660Dir::resolve(this,u,path,root,flags);
 	if(ino < 0)
 		return ino;
 	*file = new fs::OpenFile(fd,ino);

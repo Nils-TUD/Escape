@@ -33,10 +33,11 @@ public:
 	 * @param h the iso9660-handle
 	 * @param u the user
 	 * @param path the path
+	 * @param root the root inode
 	 * @param flags the flags with which to open the file
 	 * @return the id or < 0
 	 */
-	static ino_t resolve(ISO9660FileSystem *h,fs::User *u,const char *path,uint flags);
+	static ino_t resolve(ISO9660FileSystem *h,fs::User *u,const char *path,ino_t root,uint flags);
 
 	/**
 	 * Finds the entry to the name <name> in <dir>

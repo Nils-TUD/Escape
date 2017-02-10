@@ -107,7 +107,7 @@ public:
 		is >> r;
 
 		F *file;
-		ino_t no = _fs->open(&r.u,path,r.flags,S_IFREG | (r.mode & MODE_PERM),is.fd(),&file);
+		ino_t no = _fs->open(&r.u,path,r.root,r.flags,S_IFREG | (r.mode & MODE_PERM),is.fd(),&file);
 		if(no >= 0)
 			this->add(is.fd(),file);
 		is << esc::FileOpen::Response::result(no) << esc::Reply();

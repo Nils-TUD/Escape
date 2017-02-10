@@ -464,11 +464,12 @@ public:
 	 *
 	 * @param pid the process-id
 	 * @param path the path (behind the mountpoint)
+	 * @param root the root inode
 	 * @param flags the open-flags
 	 * @param msgid the message-id to use (only important for channel)
 	 * @param mode the mode to set
 	 */
-	virtual ssize_t open(pid_t pid,const char *path,uint flags,int msgid,mode_t mode);
+	virtual ssize_t open(pid_t pid,const char *path,ino_t root,uint flags,int msgid,mode_t mode);
 
 	/**
 	 * @param pid the process-id

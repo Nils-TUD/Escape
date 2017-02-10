@@ -81,7 +81,7 @@ int VFSChannel::isSupported(int op) const {
 	return 0;
 }
 
-ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid,mode_t mode) {
+ssize_t VFSChannel::open(pid_t pid,const char *path,ino_t root,uint flags,int msgid,mode_t mode) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 	ssize_t res;
@@ -90,7 +90,7 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid,mode_t 
 
 	/* give the driver a file-descriptor for this new client; note that we have to do that
 	 * immediatly because in close() we assume that the device has already one reference to it */
-	res = VFS::openFileDesc(getParent()->getOwner(),VFS_MSGS | VFS_DEVICE,this,getNo(),VFS_DEV_NO);
+	res = VFS::openFileDesc(getParent()->getOwner(),0,VFS_MSGS | VFS_DEVICE,this,getNo(),VFS_DEV_NO);
 	if(res < 0)
 		return res;
 	fd = res;
@@ -107,7 +107,7 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,uint flags,int msgid,mode_t 
 
 	/* send msg to driver */
 	ib << esc::FileOpen::Request(flags,fs::User(p->getUid(),p->getGid(),p->getPid()),
-		esc::CString(path),mode);
+		esc::CString(path),root,mode);
 	if(ib.error()) {
 		res = -EINVAL;
 		goto error;
@@ -366,7 +366,8 @@ int VFSChannel::delegate(pid_t pid,OpenFile *chan,OpenFile *file,uint perm,int a
 
 	/* first, give the driver a file-descriptor for the new channel */
 	uint flags = (file->getFlags() & ~O_ACCMODE) | perm;
-	res = VFS::openFileDesc(getParent()->getOwner(),flags,file->getNode(),file->getNodeNo(),file->getDev());
+	res = VFS::openFileDesc(getParent()->getOwner(),file->getMntPerms(),flags,
+		file->getNode(),file->getNodeNo(),file->getDev());
 	if(res < 0)
 		goto errorShm;
 	nfd = res;
@@ -466,7 +467,8 @@ int VFSChannel::obtain(pid_t pid,OpenFile *chan,int arg) {
 		 * createchan to the client and keep a copy for them. the drivers file has VFS_DEVICE set,
 		 * but with this, we remove it while it's passed to the client. */
 		uint flags = (ofile->getFlags() & ~(O_ACCMODE | VFS_DEVICE)) | r.perm;
-		res = VFS::openFileDesc(pid,flags,ofile->getNode(),ofile->getNodeNo(),ofile->getDev());
+		res = VFS::openFileDesc(pid,ofile->getMntPerms(),flags,
+			ofile->getNode(),ofile->getNodeNo(),ofile->getDev());
 	}
 
 errorFile:

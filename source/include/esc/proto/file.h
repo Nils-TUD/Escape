@@ -38,20 +38,21 @@ struct FileOpen {
 		}
 		explicit Request(char *buffer,size_t size) : path(buffer,size) {
 		}
-		explicit Request(uint _flags,const fs::User &_u,const CString &_path,mode_t _mode)
-			: flags(_flags), u(_u), path(_path), mode(_mode) {
+		explicit Request(uint _flags,const fs::User &_u,const CString &_path,ino_t _root,mode_t _mode)
+			: flags(_flags), u(_u), path(_path), root(_root), mode(_mode) {
 		}
 
 		friend IPCBuf &operator<<(IPCBuf &ib,const Request &r) {
-			return ib << r.flags << r.u.uid << r.u.gid << r.u.pid << r.path << r.mode;
+			return ib << r.flags << r.u.uid << r.u.gid << r.u.pid << r.path << r.root << r.mode;
 		}
 		friend IPCStream &operator>>(IPCStream &is,Request &r) {
-			return is >> r.flags >> r.u.uid >> r.u.gid >> r.u.pid >> r.path >> r.mode;
+			return is >> r.flags >> r.u.uid >> r.u.gid >> r.u.pid >> r.path >> r.root >> r.mode;
 		}
 
 		uint flags;
 		fs::User u;
 		CString path;
+		ino_t root;
 		mode_t mode;
 	};
 

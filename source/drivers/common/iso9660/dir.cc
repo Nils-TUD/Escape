@@ -31,14 +31,31 @@
 
 using namespace fs;
 
-ino_t ISO9660Dir::resolve(ISO9660FileSystem *h,A_UNUSED User *u,const char *path,uint flags) {
+ino_t ISO9660Dir::resolve(ISO9660FileSystem *h,A_UNUSED User *u,const char *path,ino_t root,uint flags) {
 	const char *p = path;
 	while(*p == '/')
 		p++;
 
-	size_t extLoc = h->primary.data.primary.rootDir.extentLoc.littleEndian;
-	size_t extSize = h->primary.data.primary.rootDir.extentSize.littleEndian;
-	ino_t res = h->rootDirId();
+	size_t extLoc,extSize;
+	ino_t res;
+	if(root == 0) {
+		extLoc = h->primary.data.primary.rootDir.extentLoc.littleEndian;
+		extSize = h->primary.data.primary.rootDir.extentSize.littleEndian;
+		res = h->rootDirId();
+	}
+	else {
+		extLoc = root / h->blockSize();
+		CBlock *blk = h->blockCache.request(extLoc,BlockCache::READ);
+		if(blk == NULL)
+			return -ENOBUFS;
+
+		size_t offset = root % h->blockSize();
+		const ISODirEntry *e = (const ISODirEntry*)((uintptr_t)blk->buffer + offset);
+		extLoc = e->extentLoc.littleEndian;
+		extSize = e->extentSize.littleEndian;
+		res = root;
+		h->blockCache.release(blk);
+	}
 
 	ssize_t pos = strchri(p,'/');
 	while(*p) {

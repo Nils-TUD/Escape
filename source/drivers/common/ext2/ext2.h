@@ -55,7 +55,7 @@ public:
 	explicit Ext2FileSystem(const char *device);
 	virtual ~Ext2FileSystem();
 
-	ino_t open(fs::User *u,const char *path,uint flags,mode_t mode,int fd,
+	ino_t open(fs::User *u,const char *path,ino_t root,uint flags,mode_t mode,int fd,
 		fs::OpenFile **file) override;
 	void close(fs::OpenFile *file) override;
 	ino_t find(fs::User *u,fs::OpenFile *dir,const char *name);

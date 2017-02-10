@@ -109,8 +109,8 @@ error:
 	return ino;
 }
 
-ino_t Ext2FileSystem::open(fs::User *u,const char *path,uint flags,mode_t mode,int fd,fs::OpenFile **file) {
-	ino_t ino = Ext2Path::resolve(this,u,path,flags,mode);
+ino_t Ext2FileSystem::open(fs::User *u,const char *path,ino_t root,uint flags,mode_t mode,int fd,fs::OpenFile **file) {
+	ino_t ino = Ext2Path::resolve(this,u,path,root,flags,mode);
 	if(ino < 0)
 		return ino;
 

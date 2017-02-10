@@ -39,7 +39,7 @@ public:
 	virtual ~FileSystem() {
 	}
 
-	virtual ino_t open(User *u,const char *path,uint flags,mode_t mode,int fd,F **) = 0;
+	virtual ino_t open(User *u,const char *path,ino_t root,uint flags,mode_t mode,int fd,F **) = 0;
 
 	virtual void close(F *file) = 0;
 

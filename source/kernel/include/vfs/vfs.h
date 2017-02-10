@@ -111,6 +111,7 @@ public:
 	 * Note that multiple processs may read from the same file simultaneously but NOT write!
 	 *
 	 * @param pid the process-id with which the file should be opened
+	 * @param mntperms the permissions for the mountpoint
 	 * @param flags whether it is a virtual or real file and whether you want to read or write
 	 * @param node the node if its virtual or NULL otherwise.
 	 * @param nodeNo the node-number (in the virtual or real environment)
@@ -118,7 +119,7 @@ public:
 	 * @param file will be set to the opened file
 	 * @return 0 if successfull or < 0
 	 */
-	static int openFile(pid_t pid,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t devNo,
+	static int openFile(pid_t pid,uint8_t mntperms,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t devNo,
 	                    OpenFile **file);
 
 	/**
@@ -126,13 +127,14 @@ public:
 	 * with that file.
 	 *
 	 * @param pid the process-id with which the file should be opened
+	 * @param mntperms the permissions for the mountpoint
 	 * @param flags whether it is a virtual or real file and whether you want to read or write
 	 * @param node the node if its virtual or NULL otherwise.
 	 * @param nodeNo the node-number (in the virtual or real environment)
 	 * @param devNo the device-number
 	 * @return the file descriptor on success
 	 */
-	static int openFileDesc(pid_t pid,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t devNo);
+	static int openFileDesc(pid_t pid,uint8_t mntperms,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t devNo);
 
 	/**
 	 * Closes the given file descriptor for process <pid>.

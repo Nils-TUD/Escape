@@ -360,6 +360,8 @@ int main(int argc,char **argv) {
 		net.routeAdd(link,Net::IPv4Addr(),cfg.router,Net::IPv4Addr());
 
 		FStream os(esc::DNS::getResolveFile(),"w");
+		if(!os)
+			error("Unable to open %s for writing",esc::DNS::getResolveFile());
 		os << (cfg.dnsServer.value() == 0 ? cfg.router : cfg.dnsServer) << "\n";
 	}
 	return 0;

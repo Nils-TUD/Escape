@@ -35,68 +35,74 @@
 #include <util.h>
 
 int Syscalls::gettid(Thread *t,IntrptStackFrame *stack) {
-	SYSC_RESULT(stack,t->getTid());
+	SYSC_SUCCESS(stack,t->getTid());
 }
 
 int Syscalls::startthread(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	uintptr_t entryPoint = SYSC_ARG1(stack);
 	void *arg = (void*)SYSC_ARG2(stack);
+
 	if(EXPECT_FALSE(!PageDir::isInUserSpace(entryPoint,1)))
 		SYSC_ERROR(stack, -EINVAL);
 
 	int res = Proc::startThread(entryPoint,0,arg);
-	if(EXPECT_FALSE(res < 0))
-		SYSC_ERROR(stack,res);
 	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::exit(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int exitCode = (int)SYSC_ARG1(stack);
+
 	Proc::terminateThread(exitCode);
 	A_UNREACHED;
 }
 
 int Syscalls::getcycles(Thread *t,IntrptStackFrame *stack) {
 	uint64_t *res = (uint64_t*)SYSC_ARG1(stack);
+
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)res,sizeof(uint64_t))))
 		SYSC_ERROR(stack,-EFAULT);
+
 	*res = t->getStats().curCycleCount;
-	SYSC_RESULT(stack,0);
+	SYSC_SUCCESS(stack,0);
 }
 
 int Syscalls::alarm(Thread *t,IntrptStackFrame *stack) {
 	time_t usecs = SYSC_ARG1(stack);
-	int res;
+
 	/* ensure that we're not already in the list */
 	Timer::removeThread(t->getTid());
+
 	/* TODO support microseconds */
-	if(EXPECT_FALSE((res = Timer::sleepFor(t->getTid(),usecs / 1000,false)) < 0))
-		SYSC_ERROR(stack,res);
-	SYSC_RESULT(stack,0);
+	int res = Timer::sleepFor(t->getTid(),usecs / 1000,false);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::sleep(Thread *t,IntrptStackFrame *stack) {
 	time_t usecs = SYSC_ARG1(stack);
-	int res;
+
 	/* TODO support microseconds */
-	if(EXPECT_FALSE((res = Timer::sleepFor(t->getTid(),usecs / 1000,true)) < 0))
+	int res = Timer::sleepFor(t->getTid(),usecs / 1000,true);
+	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
+
 	Thread::switchAway();
+
 	/* ensure that we're no longer in the timer-list. this may for example happen if we get a signal
 	 * and the sleep-time was not over yet. */
 	Timer::removeThread(t->getTid());
 	if(EXPECT_FALSE(t->hasSignal()))
 		SYSC_ERROR(stack,-EINTR);
-	SYSC_RESULT(stack,0);
+	SYSC_SUCCESS(stack,0);
 }
 
 int Syscalls::yield(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	Thread::switchAway();
-	SYSC_RESULT(stack,0);
+	SYSC_SUCCESS(stack,0);
 }
 
 int Syscalls::join(Thread *t,IntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
+
 	if(tid != 0) {
 		const Thread *tt = Thread::getById(tid);
 		/* just threads from the own process */
@@ -106,9 +112,7 @@ int Syscalls::join(Thread *t,IntrptStackFrame *stack) {
 	}
 
 	int res = Proc::join(tid);
-	if(res < 0)
-		SYSC_ERROR(stack,res);
-	SYSC_RESULT(stack,0);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::semcrtirq(Thread *t,IntrptStackFrame *stack) {
@@ -120,35 +124,34 @@ int Syscalls::semcrtirq(Thread *t,IntrptStackFrame *stack) {
 	uint64_t kmsiaddr;
 	uint32_t kmsival;
 	int irq,res;
-	pid_t pid = t->getProc()->getPid();
+	Proc *p = t->getProc();
 
 	if(EXPECT_FALSE(msiaddr && !PageDir::isInUserSpace((uintptr_t)msiaddr,sizeof(*msiaddr))))
 		SYSC_ERROR(stack,-EINVAL);
 	if(EXPECT_FALSE(msiaddr && !PageDir::isInUserSpace((uintptr_t)msival,sizeof(*msival))))
 		SYSC_ERROR(stack,-EINVAL);
 
-	/* get IRQ file */
-	OpenFile *irqFile = FileDesc::request(t->getProc(),fd);
-	if(EXPECT_FALSE(irqFile == NULL))
-		SYSC_ERROR(stack,-EBADF);
+	{
+		/* get IRQ file */
+		ScopedFile irqFile(p,fd);
+		if(EXPECT_FALSE(!irqFile))
+			SYSC_ERROR(stack,-EBADF);
 
-	/* it has to be an IRQ */
-	if(irqFile->getDev() != VFS_DEV_NO || !S_ISIRQ(irqFile->getNode()->getMode())) {
-		res = -EINVAL;
-		goto errFile;
+		/* it has to be an IRQ */
+		if(irqFile->getDev() != VFS_DEV_NO || !S_ISIRQ(irqFile->getNode()->getMode()))
+			SYSC_ERROR(stack,-EINVAL);
+		/* and we need exec permissions to get notified about irqs */
+		res = VFS::hasAccess(p->getPid(),irqFile->getNode(),VFS_EXEC);
+		if(res < 0)
+			SYSC_ERROR(stack,res);
+
+		/* get irq number */
+		irq = static_cast<VFSIRQ*>(irqFile->getNode())->getIRQ();
 	}
-	/* and we need exec permissions to get notified about irqs */
-	res = VFS::hasAccess(pid,irqFile->getNode(),VFS_EXEC);
-	if(res < 0)
-		goto errFile;
-
-	/* get irq number */
-	irq = static_cast<VFSIRQ*>(irqFile->getNode())->getIRQ();
-	FileDesc::release(irqFile);
 
 	/* create semaphore and attach it */
 	strnzcpy(kname,name,sizeof(kname));
-	res = Sems::create(t->getProc(),0,irq,kname,msiaddr ? &kmsiaddr : NULL,msiaddr ? &kmsival : NULL);
+	res = Sems::create(p,0,irq,kname,msiaddr ? &kmsiaddr : NULL,msiaddr ? &kmsival : NULL);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
@@ -156,32 +159,27 @@ int Syscalls::semcrtirq(Thread *t,IntrptStackFrame *stack) {
 		*msiaddr = kmsiaddr;
 		*msival = kmsival;
 	}
-	SYSC_RESULT(stack,res);
-
-errFile:
-	FileDesc::release(irqFile);
-	SYSC_ERROR(stack,res);
+	SYSC_SUCCESS(stack,res);
 }
 
 int Syscalls::semcrt(Thread *t,IntrptStackFrame *stack) {
 	uint value = (uint)SYSC_ARG1(stack);
+
 	int res = Sems::create(t->getProc(),value);
-	if(res < 0)
-		SYSC_ERROR(stack,res);
 	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::semop(Thread *t,IntrptStackFrame *stack) {
 	int sem = (int)SYSC_ARG1(stack);
 	int amount = (int)SYSC_ARG2(stack);
+
 	int res = Sems::op(t->getProc(),sem,amount);
-	if(res < 0)
-		SYSC_ERROR(stack,res);
-	SYSC_RESULT(stack,0);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::semdestr(Thread *t,IntrptStackFrame *stack) {
 	int sem = (int)SYSC_ARG1(stack);
+
 	Sems::destroy(t->getProc(),sem);
-	SYSC_RESULT(stack,0);
+	SYSC_SUCCESS(stack,0);
 }

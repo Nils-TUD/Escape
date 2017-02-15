@@ -55,22 +55,17 @@ int Syscalls::createdev(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(~ops & DEV_CLOSE))
 		SYSC_ERROR(stack,-EINVAL);
 
-	/* get file */
-	OpenFile *dir = FileDesc::request(p,fd);
-	if(EXPECT_FALSE(dir == NULL))
-		SYSC_ERROR(stack,-EBADF);
-
-	/* create device and open it */
+	/* create device */
 	OpenFile *file;
-	int res = dir->createdev(p->getPid(),name,mode,type,ops,&file);
-	FileDesc::release(dir);
-	if(EXPECT_FALSE(res < 0))
-		SYSC_ERROR(stack,res);
+	{
+		ScopedFile dir(p,fd);
+		int res = EXPECT_TRUE(dir) ? dir->createdev(p->getPid(),name,mode,type,ops,&file) : -EBADF;
+		if(EXPECT_FALSE(res < 0))
+			SYSC_ERROR(stack,res);
+	}
 
 	/* assoc fd with it */
 	int nfd = FileDesc::assoc(p,file);
-	if(EXPECT_FALSE(nfd < 0))
-		SYSC_ERROR(stack,nfd);
 	SYSC_RESULT(stack,nfd);
 }
 
@@ -82,44 +77,32 @@ int Syscalls::createchan(Thread *t,IntrptStackFrame *stack) {
 	if(perm & ~O_ACCMODE)
 		SYSC_ERROR(stack,-EINVAL);
 
-	/* get device */
-	OpenFile *file = FileDesc::request(p,dev);
-	if(EXPECT_FALSE(file == NULL))
-		SYSC_ERROR(stack,-EBADF);
-
 	/* create channel */
 	OpenFile *chan;
-	int res = file->createchan(p->getPid(),perm,&chan);
-	FileDesc::release(file);
-	if(res < 0)
-		SYSC_ERROR(stack,res);
+	{
+		ScopedFile file(p,dev);
+		int res = EXPECT_TRUE(file) ? file->createchan(p->getPid(),perm,&chan) : -EBADF;
+		if(EXPECT_FALSE(res < 0))
+			SYSC_ERROR(stack,res);
+	}
 
 	/* give it a file descriptor */
 	int nfd = FileDesc::assoc(p,chan);
 	if(nfd < 0) {
 		chan->close(p->getPid());
-		SYSC_ERROR(stack,res);
+		SYSC_ERROR(stack,nfd);
 	}
 	static_cast<VFSChannel*>(chan->getNode())->setFd(nfd);
-	SYSC_RESULT(stack,nfd);
+	SYSC_SUCCESS(stack,nfd);
 }
 
 int Syscalls::bindto(Thread *t,IntrptStackFrame *stack) {
 	int fd = SYSC_ARG1(stack);
 	tid_t tid = SYSC_ARG2(stack);
 	Proc *p = t->getProc();
-	OpenFile *file;
 
-	/* get file */
-	file = FileDesc::request(p,fd);
-	if(EXPECT_FALSE(file == NULL))
-		SYSC_ERROR(stack,-EBADF);
-
-	/* perform operation */
-	int res = file->bindto(tid);
-	FileDesc::release(file);
-	if(res < 0)
-		SYSC_ERROR(stack,res);
+	ScopedFile file(p,fd);
+	int res = EXPECT_TRUE(file) ? file->bindto(tid) : -EBADF;
 	SYSC_RESULT(stack,res);
 }
 
@@ -130,7 +113,6 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 	size_t size = SYSC_ARG4(stack);
 	uint flags = SYSC_ARG1(stack) & 0x3;
 	Proc *p = t->getProc();
-	OpenFile *file;
 	msgid_t mid = *id;
 
 	/* validate pointers */
@@ -139,30 +121,20 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)data,size)))
 		SYSC_ERROR(stack,-EFAULT);
 
-	/* translate to files */
-	file = FileDesc::request(p,fd);
-	if(EXPECT_FALSE(file == NULL))
-		SYSC_ERROR(stack,-EBADF);
-
-	/* open a client */
-	int clifd = OpenFile::getWork(file,flags);
-
-	/* release files */
-	FileDesc::release(file);
-
-	if(EXPECT_FALSE(clifd < 0))
-		SYSC_ERROR(stack,clifd);
-
-	OpenFile *client = FileDesc::request(p,clifd);
-	if(EXPECT_FALSE(!client))
-		SYSC_ERROR(stack,-EBADF);
+	/* get client */
+	int clifd;
+	{
+		ScopedFile file(p,fd);
+		clifd = EXPECT_TRUE(file) ? OpenFile::getWork(&*file,flags) : -EBADF;
+		if(EXPECT_FALSE(clifd < 0))
+			SYSC_ERROR(stack,clifd);
+	}
 
 	/* receive a message */
-	int res = client->receiveMsg(p->getPid(),&mid,data,size,VFS_SIGNALS);
-	FileDesc::release(client);
-
+	ScopedFile cli(p,clifd);
+	int res = EXPECT_TRUE(cli) ? cli->receiveMsg(p->getPid(),&mid,data,size,VFS_SIGNALS) : -EBADF;
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	*id = mid;
-	SYSC_RESULT(stack,clifd);
+	SYSC_SUCCESS(stack,clifd);
 }

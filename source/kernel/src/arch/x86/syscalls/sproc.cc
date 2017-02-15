@@ -31,10 +31,8 @@ int Syscalls::reqports(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	if(count == 0 || count > 0xFFFF || (uint32_t)start + count > 0xFFFF)
 		SYSC_ERROR(stack,-EINVAL);
 
-	int err = IOPorts::request(start,count);
-	if(err < 0)
-		SYSC_ERROR(stack,err);
-	SYSC_RESULT(stack,0);
+	int res = IOPorts::request(start,count);
+	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::relports(A_UNUSED Thread *t,IntrptStackFrame *stack) {
@@ -45,8 +43,6 @@ int Syscalls::relports(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	if(count == 0 || count > 0xFFFF || (uint32_t)start + count > 0xFFFF)
 		SYSC_ERROR(stack,-EINVAL);
 
-	int err = IOPorts::release(start,count);
-	if(err < 0)
-		SYSC_ERROR(stack,err);
-	SYSC_RESULT(stack,0);
+	int res = IOPorts::release(start,count);
+	SYSC_RESULT(stack,res);
 }

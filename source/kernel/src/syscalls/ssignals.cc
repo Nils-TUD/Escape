@@ -54,7 +54,7 @@ int Syscalls::signal(Thread *t,IntrptStackFrame *stack) {
 	}
 	if(old == SIG_ERR)
 		SYSC_ERROR(stack,(long)old);
-	SYSC_RESULT(stack,(long)old);
+	SYSC_SUCCESS(stack,(long)old);
 }
 
 int Syscalls::acksignal(A_UNUSED Thread *t,IntrptStackFrame *stack) {
@@ -74,27 +74,20 @@ int Syscalls::kill(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EINVAL);
 
 	/* get file */
-	OpenFile *file = FileDesc::request(p,fd);
-	if(EXPECT_FALSE(file == NULL))
+	ScopedFile file(p,fd);
+	if(EXPECT_FALSE(!file))
 		SYSC_ERROR(stack,-EBADF);
 
 	/* it needs to be a node in /sys/proc */
-	if(file->getDev() != VFS_DEV_NO || !VFS::isProcDir(file->getNode()) || !file->getNode()->isAlive()) {
-		FileDesc::release(file);
+	if(file->getDev() != VFS_DEV_NO || !VFS::isProcDir(file->getNode()) || !file->getNode()->isAlive())
 		SYSC_ERROR(stack,-EINVAL);
-	}
 
 	/* write access is required */
 	int res = VFS::hasAccess(p->getPid(),file->getNode(),VFS_WRITE);
-	if(res < 0) {
-		FileDesc::release(file);
+	if(res < 0)
 		SYSC_ERROR(stack,res);
-	}
 
 	/* send signal to process */
 	res = Proc::addSignalFor(atoi(file->getNode()->getName()),signal);
-	FileDesc::release(file);
-	if(res < 0)
-		SYSC_ERROR(stack,res);
-	SYSC_RESULT(stack,0);
+	SYSC_RESULT(stack,res);
 }

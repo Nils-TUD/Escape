@@ -21,6 +21,7 @@
 
 #include <mem/useraccess.h>
 #include <sys/syscalls.h>
+#include <task/filedesc.h>
 #include <task/thread.h>
 #include <common.h>
 #include <interrupts.h>
@@ -36,6 +37,13 @@
 #	include <arch/mmix/syscalls.h>
 #endif
 
+#define SYSC_RESULT(stack,res) do {				\
+		if(EXPECT_FALSE((res) < 0))				\
+			SYSC_ERROR((stack),(res));			\
+		SYSC_SUCCESS((stack),(res));			\
+	}											\
+	while(0)
+
 class OStringStream;
 
 class Syscalls {
@@ -44,6 +52,44 @@ class Syscalls {
 	Syscalls() = delete;
 
 public:
+	/**
+	 * Requests an OpenFile from a given fd on construction and releases it on destruction
+	 */
+	class ScopedFile {
+	public:
+		ScopedFile() : file() {
+		}
+		ScopedFile(Proc *p,int fd) : file(FileDesc::request(p,fd)) {
+		}
+		ScopedFile(const ScopedFile &) = delete;
+		ScopedFile &operator=(const ScopedFile &) = delete;
+		ScopedFile(ScopedFile &&sf) : file(sf.file) {
+			sf.file = NULL;
+		}
+		ScopedFile &operator=(ScopedFile &&sf) {
+			file = sf.file;
+			sf.file = NULL;
+			return *this;
+		}
+		~ScopedFile() {
+			if(file)
+				FileDesc::release(file);
+		}
+
+		operator bool() const {
+			return file != NULL;
+		}
+		OpenFile &operator *() {
+			return *file;
+		}
+		OpenFile *operator ->() {
+			return file;
+		}
+
+	private:
+		OpenFile *file;
+	};
+
 	/**
 	 * Handles the syscall for the given stack
 	 *

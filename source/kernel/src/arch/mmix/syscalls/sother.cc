@@ -23,5 +23,5 @@
 
 int Syscalls::debug(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 	Console::start(NULL);
-	SYSC_RESULT(stack,0);
+	SYSC_SUCCESS(stack,0);
 }

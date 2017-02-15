@@ -26,7 +26,7 @@
 /* some convenience-macros */
 #define SYSC_SETERROR(stack,errorCode)	((stack)->rdx = (errorCode))
 #define SYSC_ERROR(stack,errorCode)		{ ((stack)->rdx = (errorCode)); return (errorCode); }
-#define SYSC_RESULT(stack,val)			{ ((stack)->rax = (val)); ((stack)->rdx = 0); return 0; }
+#define SYSC_SUCCESS(stack,val)			{ ((stack)->rax = (val)); ((stack)->rdx = 0); return 0; }
 #define SYSC_GETRET(stack)				((stack)->rax)
 #define SYSC_GETERR(stack)				((stack)->rdx)
 #define SYSC_NUMBER(stack)				((stack)->rdi)

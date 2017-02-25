@@ -136,6 +136,6 @@ int Syscalls::joinms(Thread *t,IntrptStackFrame *stack) {
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
-	msobj->join(t->getProc());
-	SYSC_SUCCESS(stack,res);
+	res = VFS::joinMS(t->getProc(),msobj);
+	SYSC_RESULT(stack,res);
 }

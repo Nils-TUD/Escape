@@ -113,6 +113,16 @@ void VFS::mountAll(Proc *p) {
 		Util::panic("Unable to mount /tmp");
 }
 
+static int updateMSLink(Proc *p,VFSMS *ms) {
+	VFSNode *node = VFSNode::get(p->getThreadsDir());
+	int res = VFSNode::request("../ms",NULL,&node,NULL,VFS_READ | VFS_NOLINKRES,0);
+	if(res < 0)
+		return res;
+	static_cast<VFSLink*>(node)->setTarget(ms);
+	VFSNode::release(node);
+	return 0;
+}
+
 int VFS::cloneMS(Proc *p,const VFSMS *src,const char *name) {
 	size_t len = strlen(name);
 	char *copy = (char*)Cache::alloc(len + 1);
@@ -120,11 +130,39 @@ int VFS::cloneMS(Proc *p,const VFSMS *src,const char *name) {
 		return -ENOMEM;
 	strcpy(copy,name);
 
-	p->msnode = createObj<VFSMS>(p->getPid(),*src,msNode,copy,0600);
-	if(p->msnode == NULL) {
+	// check if the file exists
+	VFSNode *tmp = msNode;
+	if(VFSNode::request(copy,NULL,&tmp,NULL,VFS_READ,0) == 0) {
+		VFSNode::release(tmp);
+		Cache::free(copy);
+		return -EEXIST;
+	}
+
+	// create new mountspace
+	VFSMS *ms = createObj<VFSMS>(p->getPid(),*src,msNode,copy,0600);
+	if(ms == NULL) {
 		Cache::free(copy);
 		return -ENOMEM;
 	}
+
+	// update link in proc directory
+	int res = updateMSLink(p,ms);
+	if(res < 0) {
+		VFSNode::release(ms);
+		return res;
+	}
+
+	// use mountspace
+	p->msnode = ms;
+	return 0;
+}
+
+int VFS::joinMS(Proc *p,VFSMS *src) {
+	int res = updateMSLink(p,src);
+	if(res < 0)
+		return res;
+
+	src->join(p);
 	return 0;
 }
 

@@ -70,6 +70,15 @@ public:
 	static int cloneMS(Proc *p,const VFSMS *src,const char *name);
 
 	/**
+	 * Joins the given mountspace.
+	 *
+	 * @param p the process
+	 * @param src the mountspace to join
+	 * @return 0 on success
+	 */
+	static int joinMS(Proc *p,VFSMS *src);
+
+	/**
 	 * Checks whether the process with given id has permission to use <n> with the given flags
 	 *
 	 * @param pid the process-id

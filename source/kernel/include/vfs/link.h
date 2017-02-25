@@ -46,6 +46,15 @@ public:
 	}
 
 	/**
+	 * Sets the new target node
+	 *
+	 * @param n the node
+	 */
+	void setTarget(const VFSNode *n) {
+		target = n;
+	}
+
+	/**
 	 * @return the link-target
 	 */
 	virtual const VFSNode *resolve() const {

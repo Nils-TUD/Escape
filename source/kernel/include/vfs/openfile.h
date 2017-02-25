@@ -47,6 +47,7 @@ enum {
 	VFS_DEVICE 		= 1024,		/* kernel-intern: whether the file was created for a device */
 	VFS_SIGNALS 	= 2048,		/* kernel-intern: allow signals during blocking */
 	VFS_BLOCK 		= 4096,		/* kernel-intern: force blocking */
+	VFS_NOLINKRES	= 8192,		/* kernel-intern: don't resolve link */
 
 	/* all flags that the user can use */
 	VFS_USER_FLAGS	= VFS_MSGS | VFS_WRITE | VFS_READ | VFS_CREATE | VFS_TRUNCATE |

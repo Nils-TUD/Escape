@@ -94,17 +94,18 @@ int Syscalls::unmount(Thread *t,IntrptStackFrame *stack) {
 	char abspath[MAX_PATH_LEN + 1];
 	int ms = SYSC_ARG1(stack);
 	const char *path = (const char*)SYSC_ARG2(stack);
+	Proc *p = t->getProc();
 
 	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	ScopedFile msfile;
 	VFSMS *msobj;
-	int res = getMS(t->getProc(),ms,&msfile,&msobj,VFS_WRITE);
+	int res = getMS(p,ms,&msfile,&msobj,VFS_WRITE);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
-	res = msobj->unmount(t->getProc(),abspath);
+	res = msobj->unmount(p,abspath);
 	SYSC_RESULT(stack,res);
 }
 
@@ -112,6 +113,7 @@ int Syscalls::clonems(Thread *t,IntrptStackFrame *stack) {
 	char namecpy[64];
 	int ms = SYSC_ARG1(stack);
 	const char *name = (const char*)SYSC_ARG2(stack);
+	Proc *p = t->getProc();
 	int res;
 
 	if(!isStrInUserSpace(name,NULL))
@@ -120,22 +122,23 @@ int Syscalls::clonems(Thread *t,IntrptStackFrame *stack) {
 
 	ScopedFile msfile;
 	VFSMS *msobj;
-	if((res = getMS(t->getProc(),ms,&msfile,&msobj,VFS_READ)) < 0)
+	if((res = getMS(p,ms,&msfile,&msobj,VFS_READ)) < 0)
 		SYSC_ERROR(stack,res);
 
-	res = VFS::cloneMS(t->getProc(),msobj,namecpy);
+	res = VFS::cloneMS(p,msobj,namecpy);
 	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::joinms(Thread *t,IntrptStackFrame *stack) {
 	int ms = SYSC_ARG1(stack);
+	Proc *p = t->getProc();
 
 	ScopedFile msfile;
 	VFSMS *msobj;
-	int res = getMS(t->getProc(),ms,&msfile,&msobj,VFS_READ);
+	int res = getMS(p,ms,&msfile,&msobj,VFS_READ);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
-	res = VFS::joinMS(t->getProc(),msobj);
+	res = VFS::joinMS(p,msobj);
 	SYSC_RESULT(stack,res);
 }

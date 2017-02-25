@@ -149,6 +149,7 @@ void VFSMS::readCallback(VFSNode *node,size_t *dataSize,void **buffer) {
 
 void VFSMS::print(OStream &os) const {
 	LockGuard<SpinLock> guard(&lock);
+	os.writef("Mountspace %s:\n",getName());
 	_tree.print(os,printItem);
 }
 

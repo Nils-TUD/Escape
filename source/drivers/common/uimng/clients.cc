@@ -214,5 +214,6 @@ void UIClient::remove() {
 }
 
 void UIClient::print(esc::OStream &os) {
-	os << _idx << " " << _type << " " << modeid();
+	const Keymap *km = _map ? _map : Keymap::getDefault();
+	os << _idx << " " << _type << " " << modeid() << " " << km->file();
 }

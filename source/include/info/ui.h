@@ -23,6 +23,7 @@
 #include <esc/stream/ostream.h>
 #include <esc/stream/istream.h>
 #include <map>
+#include <string>
 
 namespace info {
 	class ui;
@@ -36,7 +37,7 @@ namespace info {
 
 		static std::map<id_type,ui> get_list();
 
-		explicit ui() : _id(), _type(), _mode() {
+		explicit ui() : _id(), _type(), _mode(), _keymap() {
 		}
 
 		id_type id() const {
@@ -48,10 +49,14 @@ namespace info {
 		int mode() const {
 			return _mode;
 		}
+		const std::string keymap() const {
+			return _keymap;
+		}
 
 	private:
 		id_type _id;
 		esc::InitUI::Type _type;
 		int _mode;
+		std::string _keymap;
 	};
 }

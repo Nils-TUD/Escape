@@ -59,6 +59,8 @@ public:
 		set(MSG_UIM_SETMODE,std::make_memfun(this,&WinMngDevice::setMode));
 		set(MSG_WIN_GETTHEME,std::make_memfun(this,&WinMngDevice::getTheme));
 		set(MSG_WIN_SETTHEME,std::make_memfun(this,&WinMngDevice::setTheme));
+		set(MSG_UIM_GETKEYMAP,std::make_memfun(this,&WinMngDevice::getKeymap));
+		set(MSG_UIM_SETKEYMAP,std::make_memfun(this,&WinMngDevice::setKeymap));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&WinMngDevice::close),false);
 		set(MSG_DEV_DELEGATE,std::make_memfun(this,&WinMngDevice::delegate),false);
 	}
@@ -203,6 +205,18 @@ public:
 
 		WinList::get().setTheme(name.str());
 		is << 0 << Reply();
+	}
+
+	void getKeymap(IPCStream &is) {
+		std::string keymap = ui->getKeymap();
+		is << errcode_t(0) << CString(keymap.c_str(),keymap.length()) << Reply();
+	}
+
+	void setKeymap(IPCStream &is) {
+		CStringBuf<MAX_PATH_LEN> path;
+		is >> path;
+		ui->setKeymap(std::string(path.str()));
+		is << errcode_t(0) << Reply();
 	}
 
 	void close(IPCStream &is) {

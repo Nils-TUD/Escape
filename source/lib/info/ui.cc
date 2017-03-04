@@ -38,16 +38,15 @@ namespace info {
 	}
 
 	IStream& operator >>(IStream& is,ui& u) {
-		size_t unlimited = std::numeric_limits<size_t>::max();
 		int type;
-		is >> u._id >> type >> u._mode;
+		is >> u._id >> type >> u._mode >> u._keymap;
 		u._type = static_cast<esc::InitUI::Type>(type);
-		is.ignore(unlimited,'\n');
 		return is;
 	}
 
 	OStream& operator <<(OStream& os,const ui& u) {
-		os << "ARP[id=" << u.id() << ", type=" << u.type() << ", mode=" << u.mode() << "]";
+		os << "ARP[id=" << u.id() << ", type=" << u.type()
+		   << ", mode=" << u.mode() << ", keymap=" << u.keymap() << "]";
 		return os;
 	}
 }

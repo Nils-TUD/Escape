@@ -53,8 +53,10 @@ static int uisFileThread(void *arg);
 
 static volatile bool run = true;
 static std::mutex mutex;
+static UIMngDevice *dev;
 
 static void sigterm(int) {
+	dev->stop();
 	run = false;
 }
 static void sigstop(int) {
@@ -83,7 +85,7 @@ int main(int argc,char *argv[]) {
 		error("Unable to change clipboard owner");
 	close(fd);
 
-	UIMngDevice dev("/dev/uimng",0110,mutex);
+	dev = new UIMngDevice("/dev/uimng",0110,mutex);
 
 	/* start helper threads */
 	if(startthread(kbClientThread,NULL) < 0)
@@ -103,12 +105,14 @@ int main(int argc,char *argv[]) {
 	if(signal(SIGTERM,sigterm) == SIG_ERR)
 		error("Unable to set signal handler");
 
-	dev.loop();
+	dev->loop();
 
 	/* stop other threads */
 	kill(getpid(),SIGUSR1);
 	join(0);
-	return 0;
+
+	delete dev;
+	return EXIT_FAILURE;
 }
 
 static int mouseClientThread(A_UNUSED void *arg) {

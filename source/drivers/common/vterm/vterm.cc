@@ -116,6 +116,8 @@ int main(int argc,char **argv) {
 
 	if(signal(SIGTERM,sigterm) == SIG_ERR)
 		error("Unable to set SIGTERM handler");
+	if(signal(SIGUSR1,sigterm) == SIG_ERR)
+		error("Unable to set SIGTERM handler");
 
 	print("Creating vterm at %s",argv[3]);
 
@@ -144,7 +146,7 @@ int main(int argc,char **argv) {
 	delete vterm.speaker;
 	delete vtdev;
 	vtctrl_destroy(&vterm);
-	return EXIT_SUCCESS;
+	return EXIT_FAILURE;
 }
 
 static void processKeyEvent(const UIEvents::Event &ev) {
@@ -210,16 +212,17 @@ static int uimInputThread(void *arg) {
 	}
 	catch(...) {
 		run = false;
-		vtdev->stop();
-		return 0;
 	}
 
 	/* read from uimanager and handle the keys */
 	while(run) {
 		UIEvents::Event ev;
-		uiev.is() >> ReceiveData(&ev,sizeof(ev),false);
-		if(!run)
+		try {
+			uiev.is() >> ReceiveData(&ev,sizeof(ev),false);
+		}
+		catch(...) {
 			break;
+		}
 
 		if(ev.type == UIEvents::Event::TYPE_KEYBOARD)
 			processKeyEvent(ev);
@@ -227,7 +230,9 @@ static int uimInputThread(void *arg) {
 			processMouseEvent(ev);
 		vtdev->checkPending();
 	}
-	return 0;
+
+	kill(getpid(),SIGUSR1);
+	return EXIT_SUCCESS;
 }
 
 static int vtermThread(void *arg) {

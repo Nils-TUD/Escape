@@ -186,7 +186,6 @@ static const char *winMsgs[] = {
 	"WIN_REMLISTENER",
 	"WIN_SET_ACTIVE",
 	"WIN_ATTACH",
-	"WIN_SETMODE",
 	"WIN_EVENT",
 	"WIN_GETTHEME",
 	"WIN_SETTHEME",
@@ -207,7 +206,6 @@ static const char *vtMsgs[] = {
 	"VT_RESTORE",
 	"VT_SHELLPID",
 	"VT_ISVTERM",
-	"VT_SETMODE",
 };
 
 static const char *kbMsgs[] = {
@@ -222,6 +220,7 @@ static const char *uimMsgs[] = {
 	"UIM_GETKEYMAP",
 	"UIM_SETKEYMAP",
 	"UIM_EVENT",
+	"UIM_SETMODE",
 };
 
 static const char *pciMsgs[] = {

@@ -133,8 +133,8 @@ namespace gui {
 		 *
 		 * @param mode the mode
 		 */
-		void setMode(const esc::Screen::Mode &mode) {
-			_winMng.setMode(mode.width,mode.height,mode.bitsPerPixel);
+		void setMode(int mode) {
+			_winMng.requestMode(mode);
 		}
 
 		/**

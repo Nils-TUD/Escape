@@ -20,7 +20,7 @@
 #pragma once
 
 #include <esc/ipc/ipcstream.h>
-#include <esc/proto/ui.h>
+#include <esc/proto/richui.h>
 #include <esc/vthrow.h>
 #include <sys/common.h>
 #include <sys/messages.h>
@@ -34,7 +34,7 @@ namespace esc {
  * The IPC-interface for the vterm-device. You can also use (most) of the UI/Screen interface (the
  * others are hidden).
  */
-class VTerm : public UI {
+class VTerm : public RichUI {
 public:
 	enum Flag {
 		FL_ECHO,
@@ -67,14 +67,14 @@ public:
 	 * @param path the path to the device
 	 * @throws if the open failed
 	 */
-	explicit VTerm(const char *path) : UI(path) {
+	explicit VTerm(const char *path) : RichUI(path) {
 	}
 	/**
 	 * Attaches this object to the given file-descriptor
 	 *
 	 * @param f the file-descriptor
 	 */
-	explicit VTerm(int f) : UI(f) {
+	explicit VTerm(int f) : RichUI(f) {
 	}
 
 	/**
@@ -139,19 +139,6 @@ public:
 		_is << pid << SendReceive(MSG_VT_SHELLPID) >> res;
 		if(res < 0)
 			VTHROWE("setShellPid(" << pid << ")",res);
-	}
-
-	/**
-	 * Sets the given video-mode.
-	 *
-	 * @param mode the video-mode
-	 * @throws if the operation failed
-	 */
-	void setMode(int mode) {
-		errcode_t res;
-		_is << mode << SendReceive(MSG_VT_SETMODE) >> res;
-		if(res < 0)
-			VTHROWE("setMode(" << mode << ")",res);
 	}
 
 private:

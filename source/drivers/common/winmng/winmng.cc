@@ -56,7 +56,7 @@ public:
 		set(MSG_WIN_UPDATE,std::make_memfun(this,&WinMngDevice::update));
 		set(MSG_SCR_GETMODES,std::make_memfun(this,&WinMngDevice::getModes));
 		set(MSG_SCR_GETMODE,std::make_memfun(this,&WinMngDevice::getMode));
-		set(MSG_WIN_SETMODE,std::make_memfun(this,&WinMngDevice::setMode));
+		set(MSG_UIM_SETMODE,std::make_memfun(this,&WinMngDevice::setMode));
 		set(MSG_WIN_GETTHEME,std::make_memfun(this,&WinMngDevice::getTheme));
 		set(MSG_WIN_SETTHEME,std::make_memfun(this,&WinMngDevice::setTheme));
 		set(MSG_FILE_CLOSE,std::make_memfun(this,&WinMngDevice::close),false);
@@ -185,11 +185,10 @@ public:
 	}
 
 	void setMode(IPCStream &is) {
-		gsize_t width,height;
-		gcoldepth_t bpp;
-		is >> width >> height >> bpp;
+		int mode;
+		is >> mode;
 
-		errcode_t res = WinList::get().setMode(gui::Size(width,height),bpp);
+		errcode_t res = WinList::get().setMode(mode);
 		is << res << Reply();
 	}
 
@@ -280,7 +279,8 @@ int main(int argc,char *argv[]) {
 	/* open input device and attach */
 	UIEvents *uiev = new UIEvents(*ui);
 
-	WinList::create(windev.id(),ui,gui::Size(atoi(argv[1]),atoi(argv[2])),DEF_BPP);
+	esc::Screen::Mode mode = ui->findGraphicsMode(atoi(argv[1]),atoi(argv[2]),DEF_BPP);
+	WinList::create(windev.id(),ui,mode.id);
 
 	/* start helper modules */
 	Listener::create(windev.id());

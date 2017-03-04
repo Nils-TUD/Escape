@@ -64,10 +64,9 @@ enum {
 	MSG_WIN_REMLISTENER				= 308,	/* removes a listener for CREATE_EV or DESTROY_EV */
 	MSG_WIN_SET_ACTIVE				= 309,	/* requests that a window is set to the active one */
 	MSG_WIN_ATTACH					= 310,	/* connect an event-channel to a window */
-	MSG_WIN_SETMODE					= 311,	/* sets the screen mode */
-	MSG_WIN_EVENT					= 312,	/* for all events */
-	MSG_WIN_GETTHEME				= 313,	/* get current theme name */
-	MSG_WIN_SETTHEME				= 314,	/* set theme */
+	MSG_WIN_EVENT					= 311,	/* for all events */
+	MSG_WIN_GETTHEME				= 312,	/* get current theme name */
+	MSG_WIN_SETTHEME				= 313,	/* set theme */
 
 	/* screen */
 	MSG_SCR_SETCURSOR				= 400,	/* sets the cursor */
@@ -83,7 +82,6 @@ enum {
 	MSG_VT_RESTORE					= 503,	/* restores the screen */
 	MSG_VT_SHELLPID					= 504,	/* gives the vterm the shell-pid */
 	MSG_VT_ISVTERM					= 505,	/* dummy message on which only vterm answers with no error */
-	MSG_VT_SETMODE					= 506,	/* requests vterm to set the video-mode */
 
 	/* keyboard */
 	MSG_KB_EVENT					= 600,	/* events that the keyboard-driver sends */
@@ -95,6 +93,7 @@ enum {
 	MSG_UIM_GETKEYMAP				= 800,	/* gets the current keymap path */
 	MSG_UIM_SETKEYMAP				= 801,	/* sets a keymap, expects the keymap-path as argument */
 	MSG_UIM_EVENT					= 802,	/* the message-id for sending events to the listeners */
+	MSG_UIM_SETMODE					= 803,	/* sets the video mode */
 
 	/* PCI */
 	MSG_PCI_GET_BY_CLASS			= 900,	/* searches for a PCI device with given class */

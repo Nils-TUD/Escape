@@ -62,7 +62,7 @@ public:
 		set(MSG_VT_RESTORE,std::make_memfun(this,&VTermDevice::restore));
 		set(MSG_VT_SHELLPID,std::make_memfun(this,&VTermDevice::setShellPid));
 		set(MSG_VT_ISVTERM,std::make_memfun(this,&VTermDevice::isVTerm));
-		set(MSG_VT_SETMODE,std::make_memfun(this,&VTermDevice::setMode));
+		set(MSG_UIM_SETMODE,std::make_memfun(this,&VTermDevice::setMode));
 	}
 
 	/**

@@ -40,7 +40,7 @@ GUIVTermDevice::GUIVTermDevice(const char *path,mode_t mode,std::shared_ptr<Shel
 	set(MSG_SCR_GETMODE,std::make_memfun(this,&GUIVTermDevice::getMode));
 	set(MSG_SCR_GETMODES,std::make_memfun(this,&GUIVTermDevice::getModes));
 	set(MSG_FILE_WRITE,std::make_memfun(this,&GUIVTermDevice::write));
-	unset(MSG_VT_SETMODE);
+	unset(MSG_UIM_SETMODE);
 	/* TODO MSG_UIM_{GET,SET}KEYMAP are not supported yet */
 
 	// open speaker

@@ -45,7 +45,7 @@ static void onApply(UIElement &) {
 
 		ssize_t sel = modeCombo->getSelectedIndex();
 		if(sel >= 0 && modes[sel].id != Application::getInstance()->getMode()->id)
-			Application::getInstance()->setMode(modes[sel]);
+			Application::getInstance()->setMode(modes[sel].id);
 	}
 	catch(const std::exception &e) {
 		printe("%s",e.what());

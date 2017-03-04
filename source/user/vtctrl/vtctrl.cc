@@ -62,7 +62,7 @@ int main(int argc,char *argv[]) {
 			usage(argv[0]);
 
 		int mode = atoi(argv[2]);
-		vterm.setMode(mode);
+		vterm.requestMode(mode);
 	}
 	return EXIT_SUCCESS;
 }

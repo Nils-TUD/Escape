@@ -30,12 +30,12 @@ std::mutex WinList::winMutex;
 gwinid_t WinList::nextId;
 WinList *WinList::_inst;
 
-WinList::WinList(int sid,esc::UI *uiobj,const gui::Size &size,gcoldepth_t bpp)
+WinList::WinList(int sid,esc::UI *uiobj,int mode)
 	: ui(uiobj), drvId(sid), theme("default"), mode(), fb(), activeWindow(WINID_UNUSED),
 	  topWindow(WINID_UNUSED), windows() {
 	srand(time(NULL));
 
-	setMode(size,bpp);
+	setMode(mode);
 }
 
 void WinList::setTheme(const char *name) {
@@ -46,11 +46,23 @@ void WinList::setTheme(const char *name) {
 	resetAll();
 }
 
-int WinList::setMode(const gui::Size &size,gcoldepth_t bpp) {
+int WinList::setMode(int id) {
 	std::lock_guard<std::mutex> guard(winMutex);
-	::print("Getting video mode for %zux%zux%u",size.width,size.height,bpp);
+	::print("Getting info for mode %d",id);
 
-	esc::Screen::Mode newmode = ui->findGraphicsMode(size.width,size.height,bpp);
+	/* get mode info */
+	bool found = false;
+	esc::Screen::Mode newmode;
+	std::vector<esc::Screen::Mode> modes = ui->getModes();
+	for(auto m : modes) {
+		if(m.id == id) {
+			newmode = m;
+			found = true;
+			break;
+		}
+	}
+	if(!found)
+		VTHROW("Unable to find mode " << id);
 
 	/* first destroy the old one because we use the same shm-name again */
 	delete fb;

@@ -33,7 +33,7 @@
 class WinList {
 	friend class Window;
 
-	explicit WinList(int sid,esc::UI *ui,const gui::Size &size,gcoldepth_t bpp);
+	explicit WinList(int sid,esc::UI *ui,int mode);
 
 public:
 	/**
@@ -41,12 +41,11 @@ public:
 	 *
 	 * @param sid the device-id
 	 * @param ui the ui
-	 * @param size the desired screen size
-	 * @param bpp the desired bits per pixel
+	 * @param mode the video mode
 	 * @return the mode id on success
 	 */
-	static void create(int sid,esc::UI *ui,const gui::Size &size,gcoldepth_t bpp) {
-		_inst = new WinList(sid,ui,size,bpp);
+	static void create(int sid,esc::UI *ui,int mode) {
+		_inst = new WinList(sid,ui,mode);
 	}
 
 	/**
@@ -87,11 +86,10 @@ public:
 	/**
 	 * Changes the mode to the given one.
 	 *
-	 * @param size the desired screen size
-	 * @param bpp the desired bits per pixel
+	 * @param mode the mode number
 	 * @return 0 on success
 	 */
-	int setMode(const gui::Size &size,gcoldepth_t bpp);
+	int setMode(int mode);
 
 	/**
 	 * Sets the cursor at given position (writes to vesa)

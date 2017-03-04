@@ -20,7 +20,7 @@
 #pragma once
 
 #include <esc/ipc/ipcstream.h>
-#include <esc/proto/ui.h>
+#include <esc/proto/richui.h>
 #include <esc/stream/ostream.h>
 #include <esc/vthrow.h>
 #include <sys/common.h>
@@ -34,7 +34,7 @@ namespace esc {
  * The IPC-interface for the window-manager-device. You can also use (most) of the UI/Screen
  * interface (the others are hidden).
  */
-class WinMng : public UI {
+class WinMng : public RichUI {
 public:
 	/**
 	 * Opens the given device
@@ -42,7 +42,7 @@ public:
 	 * @param path the path to the device
 	 * @throws if the open failed
 	 */
-	explicit WinMng(const char *path) : UI(path) {
+	explicit WinMng(const char *path) : RichUI(path) {
 	}
 
 	/**
@@ -164,21 +164,6 @@ public:
 		_is << CString(name.c_str(),name.length()) << esc::SendReceive(MSG_WIN_SETTHEME) >> res;
 		if(res < 0)
 			VTHROWE("setTheme(" << name << ")",res);
-	}
-
-	/**
-	 * Sets the given mode.
-	 *
-	 * @param width the width
-	 * @param height the height
-	 * @param bpp the color depth
-	 * @throws if the operation failed
-	 */
-	void setMode(gsize_t width,gsize_t height,gcoldepth_t bpp) {
-		errcode_t res;
-		_is << width << height << bpp << esc::SendReceive(MSG_WIN_SETMODE) >> res;
-		if(res < 0)
-			VTHROWE("setMode(" << width << "," << height << "," << bpp << ")",res);
 	}
 
 private:

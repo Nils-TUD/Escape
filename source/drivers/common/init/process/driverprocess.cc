@@ -27,6 +27,7 @@
 #include <sys/proc.h>
 #include <sys/stat.h>
 #include <sys/thread.h>
+#include <sys/wait.h>
 #include <usergroup/usergroup.h>
 
 #include "driverprocess.h"
@@ -87,8 +88,16 @@ void DriverProcess::load() {
 		int j = 0;
 		do {
 			fd = open(it->name().c_str(),O_NOCHAN);
-			if(fd < 0)
+			if(fd < 0) {
+				// check whether the child already died
+				int state;
+				if(waitpid(_pid,&state,WNOHANG) == _pid) {
+					VTHROW("Child '" << it->name() << "' died with exitcode "
+						<< WEXITSTATUS(state) << " (signal " << WTERMSIG(state) << ")");
+				}
+
 				usleep(RETRY_INTERVAL);
+			}
 		}
 		while(j++ < MAX_WAIT_RETRIES && fd < 0);
 		if(fd < 0)

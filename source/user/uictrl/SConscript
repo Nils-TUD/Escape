@@ -1,0 +1,2 @@
+Import('env')
+env.EscapeCXXProg('bin', target = 'uictrl', source = env.Glob('*.cc'), LIBS = ['info'])

@@ -1,2 +1,0 @@
-Import('env')
-env.EscapeCXXProg('bin', target = 'vtctrl', source = env.Glob('*.cc'))

@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/ipc/filedev.h>
 #include <esc/proto/input.h>
 #include <esc/proto/ui.h>
 #include <esc/proto/initui.h>
@@ -47,7 +48,8 @@
 
 static int mouseClientThread(void *arg);
 static int kbClientThread(void *arg);
-static int headerThread(A_UNUSED void *arg);
+static int headerThread(void *arg);
+static int uisFileThread(void *arg);
 
 static volatile bool run = true;
 static std::mutex mutex;
@@ -89,6 +91,8 @@ int main(int argc,char *argv[]) {
 	if(startthread(mouseClientThread,NULL) < 0)
 		error("Unable to start thread for reading from mouse");
 	if(startthread(headerThread,NULL) < 0)
+		error("Unable to start thread for drawing the header");
+	if(startthread(uisFileThread,NULL) < 0)
 		error("Unable to start thread for drawing the header");
 
 	/* create first client */
@@ -250,5 +254,31 @@ static int headerThread(A_UNUSED void *arg) {
 
 		sleep(1);
 	}
+	return EXIT_SUCCESS;
+}
+
+class UIsFileDevice : public esc::FileDevice {
+public:
+	explicit UIsFileDevice(const char *path,mode_t mode)
+		: esc::FileDevice(path,mode) {
+	}
+
+	virtual std::string handleRead() {
+		esc::OStringStream os;
+		std::lock_guard<std::mutex> guard(mutex);
+		for(size_t i = 0; i < UIClient::MAX_CLIENTS; ++i) {
+			UIClient *cli = UIClient::getByIdx(i);
+			if(cli) {
+				cli->print(os);
+				os << '\n';
+			}
+		}
+		return os.str();
+	}
+};
+
+static int uisFileThread(void*) {
+	UIsFileDevice dev("/sys/uis",0440);
+	dev.loop();
 	return 0;
 }

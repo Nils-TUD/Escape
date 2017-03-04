@@ -207,6 +207,13 @@ public:
 	 */
 	void remove();
 
+	/**
+	 * Prints information about this client to the given stream.
+	 *
+	 * @param os the stream
+	 */
+	void print(esc::OStream &os);
+
 private:
 	static void switchClient(int incr);
 	static int getOldMode() {

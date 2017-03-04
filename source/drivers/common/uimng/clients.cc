@@ -212,3 +212,7 @@ void UIClient::remove() {
 		while(_clientStack.size() > 0);
 	}
 }
+
+void UIClient::print(esc::OStream &os) {
+	os << _idx << " " << _type << " " << modeid();
+}

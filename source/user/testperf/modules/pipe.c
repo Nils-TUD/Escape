@@ -72,7 +72,7 @@ static void test_pipe(size_t size) {
 		end = rdtsc();
 		destroybuf(buf,buffd);
 		close(wfd);
-		waitchild(NULL,-1);
+		waitchild(NULL,-1,0);
 	}
 
 	printf("[%4d] %s(%3zuK): %6Lu cycles/call, %Lu MB/s\n",

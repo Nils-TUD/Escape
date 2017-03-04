@@ -20,9 +20,10 @@
 #include <sys/common.h>
 #include <sys/wait.h>
 
-pid_t waitpid(pid_t pid,int *stat_loc,A_UNUSED int options) {
+pid_t waitpid(pid_t pid,int *stat_loc,int options) {
 	sExitState state;
-	int res = waitchild(&state,pid);
+	state.pid = 0;
+	int res = waitchild(&state,pid,options);
 	if(res < 0)
 		return res;
 	*stat_loc = (state.exitCode & 0xFF) | (state.signal << 8);

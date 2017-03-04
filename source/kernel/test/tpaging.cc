@@ -114,7 +114,7 @@ static void test_paging_foreign() {
 	 * get a new kernel-stack */
 #ifndef __mmix__
 	/* give the process a chance to terminate */
-	Proc::waitChild(NULL,-1);
+	Proc::waitChild(NULL,-1,0);
 	test_assertTrue(Proc::getByPid(pid) == NULL);
 #endif
 }

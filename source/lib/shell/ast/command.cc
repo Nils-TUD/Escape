@@ -427,7 +427,7 @@ static bool ast_catchZombie(void) {
 	sExitState state;
 	int res = -1;
 	while(res != 0) {
-		res = waitchild(&state,-1);
+		res = waitchild(&state,-1,0);
 		if(res == -EINTR) {
 			if(lang_isInterrupted()) {
 				ast_termProcsOfJob(curJob);

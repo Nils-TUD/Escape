@@ -58,7 +58,7 @@ static void sigchild(A_UNUSED int sig) {
 static void cleanup(int pid) {
 	if(pid != -1) {
 		kill(pid,SIGTERM);
-		waitchild(NULL,pid);
+		waitchild(NULL,pid,0);
 	}
 }
 

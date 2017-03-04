@@ -731,7 +731,7 @@ void ProcBase::notifyProcDied(pid_t parent) {
 	Sched::wakeup(EV_CHILD_DIED,(evobj_t)getByPid(parent));
 }
 
-int ProcBase::waitChild(ExitState *state,pid_t pid) {
+int ProcBase::waitChild(ExitState *state,pid_t pid,int options) {
 	Thread *t = Thread::getRunning();
 	Proc *p = t->getProc();
 	/* check if there is already a dead child-proc */
@@ -741,6 +741,12 @@ int ProcBase::waitChild(ExitState *state,pid_t pid) {
 		/* no childs at all */
 		childLock.up();
 		return res;
+	}
+
+	/* if there is a matching child, but no zombie yet, return immediately on WNOHANG */
+	if(res == 0 && (options & WNOHANG)) {
+		childLock.up();
+		return 0;
 	}
 
 	while(res == 0) {

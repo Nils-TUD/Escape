@@ -106,7 +106,7 @@ int mod_reading(int argc,char **argv) {
 
 		do_read("/dev/ramdisk",useshm);
 		kill(pid,SIGTERM);
-		waitchild(NULL,-1);
+		waitchild(NULL,-1,0);
 	}
 
 	do_read("/sys/test",false);

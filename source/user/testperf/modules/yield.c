@@ -67,7 +67,7 @@ static void inter_yield(void) {
 	for(i = 0; i < THREAD_COUNT; ++i)
 		semup(sm);
 	for(i = 0; i < THREAD_COUNT; ++i)
-		waitchild(NULL,-1);
+		waitchild(NULL,-1,0);
 }
 
 int mod_yield(A_UNUSED int argc,A_UNUSED char *argv[]) {

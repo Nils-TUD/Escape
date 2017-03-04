@@ -85,6 +85,10 @@ protected:
 	explicit ProcBase();
 
 public:
+	enum {
+		WNOHANG		= 1,
+	};
+
 	struct ExitState {
 		pid_t pid;
 		/* the signal that killed the process (SIG_COUNT if none) */
@@ -286,9 +290,10 @@ public:
 	 *
 	 * @param state the state to write to (if not NULL)
 	 * @param pid the pid of the child to wait for (-1 = any child)
+	 * @param options 0 or WNOHANG
 	 * @return 0 on success
 	 */
-	static int waitChild(ExitState *state,pid_t pid);
+	static int waitChild(ExitState *state,pid_t pid,int options);
 
 	/**
 	 * Removes all regions from the given process

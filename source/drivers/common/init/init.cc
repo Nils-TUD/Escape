@@ -154,7 +154,7 @@ int main(void) {
 	// loop and wait forever
 	while(1) {
 		sExitState st;
-		if(waitchild(&st,-1) == 0) {
+		if(waitchild(&st,-1,0) == 0) {
 			std::lock_guard<std::mutex> guard(mutex);
 			try {
 				if(state != STATE_RUN)

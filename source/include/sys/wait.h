@@ -37,6 +37,10 @@ extern "C" {
 #define WSTOPSIG(stat_val)		0
 #define WIFCONTINUED(stat_val)	0
 
+enum {
+	WNOHANG	= 1,
+};
+
 typedef struct {
 	pid_t pid;
 	/* the signal that killed the process (SIG_COUNT if none) */
@@ -58,9 +62,11 @@ typedef struct {
  * Waits until a child process terminates and obtains status information from one of the
  * child-process. If pid is not -1, it waits until the child with that pid exits.
  *
+ * If WNOHANG is specified and no child has exited, waitpid() returns 0 immediately.
+ *
  * @param pid the child to wait for (-1 = any child)
  * @param stat_loc will be set to the status value
- * @param options unused currently
+ * @param options 0 or WNOHANG
  * @return the pid of the child process or a negative error value
  */
 pid_t waitpid(pid_t pid,int *stat_loc,int options);
@@ -82,12 +88,16 @@ static inline pid_t wait(int *stat_loc) {
  * You may get interrupted by a signal (and may want to call waitchild() again in this case). If so
  * you get -EINTR as return-value (and errno will be set).
  *
+ * If WNOHANG is specified and no child has exited, waitpid() returns 0 immediately. To check
+ * whether that happened, set state->pid to 0 before the call and check if it's still 0 afterwards.
+ *
  * @param state the exit-state (may be NULL)
  * @param pid the pid of the child to wait for (-1 = any child)
+ * @param options 0 or WNOHANG
  * @return 0 on success
  */
-static inline int waitchild(sExitState *state,int pid) {
-	return syscall2(SYSCALL_WAITCHILD,(ulong)state,pid);
+static inline int waitchild(sExitState *state,int pid,int options) {
+	return syscall3(SYSCALL_WAITCHILD,(ulong)state,pid,options);
 }
 
 #if defined(__cplusplus)

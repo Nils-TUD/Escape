@@ -49,7 +49,7 @@ int mod_forkbomb(int argc,char *argv[]) {
 				if(pids[i] > 0) {
 					if(kill(pids[i],SIGKILL) < 0)
 						perror("kill");
-					waitchild(NULL,-1);
+					waitchild(NULL,-1,0);
 				}
 				i--;
 			}

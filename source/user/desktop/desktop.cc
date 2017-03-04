@@ -65,7 +65,7 @@ static int childWaitThread(A_UNUSED void *arg) {
 	while(1) {
 		semdown(childsm);
 		sExitState state;
-		if(waitchild(&state,-1) < 0)
+		if(waitchild(&state,-1,0) < 0)
 			printe("waitchild");
 	}
 	return 0;

@@ -46,7 +46,7 @@ static void firenforget(void) {
 
 	/* better catch the zombies now */
 	for(i = 0; i < TEST_COUNT; ++i)
-		waitchild(NULL,-1);
+		waitchild(NULL,-1,0);
 }
 
 static void waitdead(void) {
@@ -61,7 +61,7 @@ static void waitdead(void) {
 			printe("fork failed");
 			return;
 		}
-		waitchild(NULL,-1);
+		waitchild(NULL,-1,0);
 		total += rdtsc() - start;
 	}
 	printf("fork      : %Lu cycles/call\n",total / TEST_COUNT);

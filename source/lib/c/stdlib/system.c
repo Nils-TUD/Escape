@@ -50,7 +50,7 @@ int system(const char *cmd) {
 		error("Fork failed");
 
 	/* wait and return exit-code */
-	if((child = waitchild(&state,-1)) < 0)
+	if((child = waitchild(&state,-1,0)) < 0)
 		return child;
 	return state.exitCode;
 }

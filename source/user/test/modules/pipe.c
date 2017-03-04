@@ -82,7 +82,7 @@ static void pipeReadChild(void) {
 			printf("Read '%s'\n",buf);
 		}
 		close(fd[0]);
-		waitchild(NULL,-1);
+		waitchild(NULL,-1,0);
 	}
 	else
 		error("fork() failed");
@@ -117,7 +117,7 @@ static void pipeReadParent(void) {
 			usleep(10 * 1000);
 		}
 		close(fd[1]);
-		waitchild(NULL,-1);
+		waitchild(NULL,-1,0);
 	}
 	else
 		error("fork() failed");
@@ -154,8 +154,8 @@ static void pipeChild2Child(void) {
 			/* parent */
 			close(fd[0]);
 			close(fd[1]);
-			waitchild(NULL,-1);
-			waitchild(NULL,-1);
+			waitchild(NULL,-1,0);
+			waitchild(NULL,-1,0);
 		}
 		else
 			error("inner fork() failed");
@@ -207,8 +207,8 @@ static void pipeThrough(void) {
 				printf("Read '%s'\n",buf);
 			}
 			close(fd[2]);
-			waitchild(NULL,-1);
-			waitchild(NULL,-1);
+			waitchild(NULL,-1,0);
+			waitchild(NULL,-1,0);
 		}
 		else
 			error("inner fork() failed");

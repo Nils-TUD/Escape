@@ -74,6 +74,6 @@ int mod_matmult(int argc,char *argv[]) {
 		}
 	}
 	for(int i = 0; i < parallel; ++i)
-		waitchild(NULL,-1);
+		waitchild(NULL,-1,0);
 	return EXIT_SUCCESS;
 }

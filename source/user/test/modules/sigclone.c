@@ -60,7 +60,7 @@ int mod_sigclone(A_UNUSED int argc,A_UNUSED char *argv[]) {
 
 	/* parent waits */
 	do {
-		res = waitchild(NULL,-1);
+		res = waitchild(NULL,-1,0);
 	}
 	while(res == -EINTR);
 	printf("Parent got %d signals\n",parentCount);

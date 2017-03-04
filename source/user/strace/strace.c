@@ -97,7 +97,7 @@ int main(int argc,char **argv) {
 		sExitState state;
 		int res;
 		while(1) {
-			res = waitchild(&state,-1);
+			res = waitchild(&state,-1,0);
 			if(res != -EINTR)
 				break;
 		}

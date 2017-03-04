@@ -79,7 +79,7 @@ const struct Syscall syscalls[] = {
 	{"rmdir",    		"%d,%s"						},
 	{"mount",    		"%d,%d,%s"					},
 	{"unmount",    		"%d,%s"						},
-	{"waitchild",    	"%p",						},
+	{"waitchild",    	"%p,%d,%u",					},
 	{"tell",    		"%d,%p"						},
 	{"sysconf",   		"%d"						},
 	{"getwork",    		"%W,%p,%p,%x"				},

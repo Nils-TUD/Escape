@@ -74,7 +74,7 @@ static void test_proc_clone() {
 		else {
 			test_assertTrue(pid > 0);
 			tprintf("Waiting for child\n");
-			Proc::waitChild(NULL,-1);
+			Proc::waitChild(NULL,-1,0);
 			tprintf("The process should be dead now\n");
 			test_assertTrue(Proc::getByPid(pid) == NULL);
 		}

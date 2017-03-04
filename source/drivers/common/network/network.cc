@@ -248,7 +248,7 @@ int main() {
 
 	while(1) {
 		sExitState st;
-		if(waitchild(&st,-1) == 0) {
+		if(waitchild(&st,-1,0) == 0) {
 			for(auto p = procs.begin(); p != procs.end(); ++p) {
 				if((*p)->pid == st.pid) {
 					print("NIC driver %d:%s died with exitcode %d (signal %d)",

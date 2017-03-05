@@ -104,10 +104,14 @@ int Syscalls::join(Thread *t,IntrptStackFrame *stack) {
 	tid_t tid = (tid_t)SYSC_ARG1(stack);
 
 	if(tid != 0) {
-		const Thread *tt = Thread::getById(tid);
+		const Thread *tt = Thread::getRef(tid);
+		if(tt == NULL)
+			SYSC_ERROR(stack,-EINVAL);
+
 		/* just threads from the own process */
-		if(EXPECT_FALSE(tt == NULL || tt->getTid() == t->getTid() ||
-				tt->getProc()->getPid() != t->getProc()->getPid()))
+		bool own = tt->getTid() == t->getTid() || tt->getProc()->getPid() != t->getProc()->getPid();
+		Thread::relRef(tt);
+		if(EXPECT_FALSE(!own))
 			SYSC_ERROR(stack,-EINVAL);
 	}
 

@@ -250,14 +250,20 @@ int main() {
 		sExitState st;
 		if(waitchild(&st,-1,0) == 0) {
 			for(auto p = procs.begin(); p != procs.end(); ++p) {
-				if((*p)->pid == st.pid) {
+				NICProc *np = *p;
+				if(np->pid == st.pid) {
 					print("NIC driver %d:%s died with exitcode %d (signal %d)",
-						(*p)->pid,(*p)->driver.c_str(),st.exitCode,st.signal);
+						np->pid,np->driver.c_str(),st.exitCode,st.signal);
 
-					net.linkRem(strchr((*p)->link.c_str() + 1,'/') + 1);
-					start(net,(*p)->bdf,(*p)->driver,(*p)->link);
+					try {
+						net.linkRem(strchr(np->link.c_str() + 1,'/') + 1);
+					}
+					catch(const std::exception &e) {
+						print(e.what());
+					}
+					start(net,np->bdf,np->driver,np->link);
 					procs.erase(p);
-					delete *p;
+					delete np;
 					break;
 				}
 			}

@@ -300,10 +300,10 @@ int VFSNode::rename(pid_t pid,const char *oldName,VFSNode *newDir,const char *ne
 	treeLock.up();
 
 	/* remove from old directory (we have a reference; so it won't be free'd) */
-	target->destroy();
+	target->remove(true);
 
 	/* append to new directory */
-	newDir->append(target);
+	target->append(newDir);
 
 	/* set new name; the old one has already been free'd */
 	target->name = namecpy;
@@ -583,14 +583,52 @@ void VFSNode::append(VFSNode *p) {
 	parent = p;
 }
 
-ushort VFSNode::doUnref(bool remove) {
+ushort VFSNode::remove(bool force) {
 	const char *nameptr = NULL;
+	ushort remRefs;
+
+	{
+		LockGuard<SpinLock> g1(&treeLock);
+		remRefs = refCount;
+		/* don't decrease the refs twice with remove */
+		if(!force || name) {
+			LockGuard<SpinLock> g2(&lock);
+			remRefs = --refCount;
+		}
+
+		/* take care that we don't destroy the node twice */
+		if(remRefs == 0)
+			invalidate();
+		if((remRefs == 0 || force) && name) {
+			/* remove from parent and release (attention: maybe its not yet in the tree) */
+			if(prev)
+				prev->next = next;
+			else if(parent)
+				parent->firstChild = next;
+			if(next)
+				next->prev = prev;
+
+			prev = NULL;
+			next = NULL;
+
+			/* free name (do that afterwards, unlocked) */
+			if(Cache::contains(name))
+				nameptr = name;
+			name = NULL;
+		}
+	}
+
+	if(nameptr)
+		Cache::free(const_cast<char*>(nameptr));
+	return remRefs;
+}
+
+ushort VFSNode::doUnref(bool force) {
 	/* first check whether we have the last ref */
 	ushort remRefs = refCount;
-	bool norefs = remRefs == 1;
 
 	/* no remove the child-nodes, if necessary. this is done unlocked which also means that */
-	if(norefs || remove) {
+	if(remRefs == 1 || force) {
 		VFSNode *child = firstChild;
 		while(child != NULL) {
 			VFSNode *tn = child->next;
@@ -602,42 +640,10 @@ ushort VFSNode::doUnref(bool remove) {
 		}
 	}
 
-	{
-		LockGuard<SpinLock> g1(&treeLock);
-		/* don't decrease the refs twice with remove */
-		if(!remove || name) {
-			LockGuard<SpinLock> g2(&lock);
-			remRefs = --refCount;
-			norefs = remRefs == 0;
-		}
+	remRefs = remove(force);
 
-		/* take care that we don't destroy the node twice */
-		if(norefs)
-			invalidate();
-		if((norefs || remove) && name) {
-			/* remove from parent and release (attention: maybe its not yet in the tree) */
-			if(prev)
-				prev->next = next;
-			else if(parent)
-				parent->firstChild = next;
-			if(next)
-				next->prev = prev;
-
-			prev = NULL;
-			next = NULL;
-			firstChild = NULL;
-
-			/* free name (do that afterwards, unlocked) */
-			if(Cache::contains(name))
-				nameptr = name;
-			name = NULL;
-		}
-	}
-
-	if(nameptr)
-		Cache::free(const_cast<char*>(nameptr));
 	/* if there are no references anymore, we can put the node on the freelist */
-	if(norefs) {
+	if(remRefs == 0) {
 		parent->unref();
 		delete this;
 	}

@@ -297,18 +297,18 @@ int VFSNode::rename(pid_t pid,const char *oldName,VFSNode *newDir,const char *ne
 		return target ? -EPERM : -ENOENT;
 	}
 	target->ref();
-	treeLock.up();
 
 	/* remove from old directory (we have a reference; so it won't be free'd) */
-	target->remove(true);
+	target->doRemove(true);
 
 	/* append to new directory */
-	target->append(newDir);
+	target->doAppend(newDir);
 
 	/* set new name; the old one has already been free'd */
 	target->name = namecpy;
 
 	release(target);
+	treeLock.up();
 	return 0;
 }
 
@@ -567,53 +567,46 @@ const VFSNode *VFSNode::findInDir(const char *ename,size_t enameLen,bool locked)
 	return res;
 }
 
-void VFSNode::append(VFSNode *p) {
+void VFSNode::doAppend(VFSNode *p) {
 	if(p != NULL) {
-		{
-			LockGuard<SpinLock> g(&treeLock);
-			prev = NULL;
-			next = p->firstChild;
-			if(next)
-				next->prev = this;
-			p->firstChild = this;
-		}
+		prev = NULL;
+		next = p->firstChild;
+		if(next)
+			next->prev = this;
+		p->firstChild = this;
 
 		p->ref();
 	}
 	parent = p;
 }
 
-ushort VFSNode::remove(bool force) {
+ushort VFSNode::doRemove(bool force) {
 	const char *nameptr = NULL;
-	ushort remRefs;
 
-	{
-		LockGuard<SpinLock> g1(&treeLock);
-		remRefs = refCount;
-		/* don't decrease the refs twice with remove */
-		if(!force || name)
-			remRefs = Atomic::fetch_and_add(&refCount,-1) - 1;
+	ushort remRefs = refCount;
+	/* don't decrease the refs twice with remove */
+	if(!force || name)
+		remRefs = Atomic::fetch_and_add(&refCount,-1) - 1;
 
-		/* take care that we don't destroy the node twice */
-		if(remRefs == 0)
-			invalidate();
-		if((remRefs == 0 || force) && name) {
-			/* remove from parent and release (attention: maybe its not yet in the tree) */
-			if(prev)
-				prev->next = next;
-			else if(parent)
-				parent->firstChild = next;
-			if(next)
-				next->prev = prev;
+	/* take care that we don't destroy the node twice */
+	if(remRefs == 0)
+		invalidate();
+	if((remRefs == 0 || force) && name) {
+		/* remove from parent and release (attention: maybe its not yet in the tree) */
+		if(prev)
+			prev->next = next;
+		else if(parent)
+			parent->firstChild = next;
+		if(next)
+			next->prev = prev;
 
-			prev = NULL;
-			next = NULL;
+		prev = NULL;
+		next = NULL;
 
-			/* free name (do that afterwards, unlocked) */
-			if(Cache::contains(name))
-				nameptr = name;
-			name = NULL;
-		}
+		/* free name (do that afterwards, unlocked) */
+		if(Cache::contains(name))
+			nameptr = name;
+		name = NULL;
 	}
 
 	if(nameptr)
@@ -625,7 +618,7 @@ ushort VFSNode::doUnref(bool force) {
 	/* first check whether we have the last ref */
 	ushort remRefs = refCount;
 
-	/* no remove the child-nodes, if necessary. this is done unlocked which also means that */
+	/* no remove the child-nodes, if necessary */
 	if(remRefs == 1 || force) {
 		VFSNode *child = firstChild;
 		while(child != NULL) {
@@ -638,11 +631,11 @@ ushort VFSNode::doUnref(bool force) {
 		}
 	}
 
-	remRefs = remove(force);
+	remRefs = doRemove(force);
 
 	/* if there are no references anymore, we can put the node on the freelist */
 	if(remRefs == 0) {
-		parent->unref();
+		parent->doUnref(false);
 		delete this;
 	}
 	return remRefs;

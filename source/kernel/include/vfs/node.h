@@ -448,6 +448,7 @@ public:
 	 * @return the remaining number of references
 	 */
 	ushort unref() {
+		LockGuard<SpinLock> guard(&treeLock);
 		return doUnref(false);
 	}
 
@@ -456,6 +457,7 @@ public:
 	 * VFS. They are only destroyed and released if there are no references anymore.
 	 */
 	void destroy() {
+		LockGuard<SpinLock> guard(&treeLock);
 		doUnref(true);
 	}
 
@@ -577,21 +579,19 @@ protected:
 	/**
 	 * Appends this node to <parent>.
 	 *
-	 * @param parent the parent-node (locked)
+	 * @param parent the parent-node
 	 */
-	void append(VFSNode *parent);
-	/**
-	 * Removes this node from its parent and makes it nameless.
-	 *
-	 * @param force whether a removal is forced
-	 * @return the remaining number of references
-	 */
-	ushort remove(bool force);
+	void append(VFSNode *parent) {
+		LockGuard<SpinLock> guard(&treeLock);
+		doAppend(parent);
+	}
 
 private:
 	static int createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,bool *created,mode_t mode);
 	static void doPrintTree(OStream &os,size_t level,const VFSNode *parent);
 	bool canRemove(pid_t pid,const VFSNode *node) const;
+	void doAppend(VFSNode *parent);
+	ushort doRemove(bool force);
 	ushort doUnref(bool force);
 
 protected:

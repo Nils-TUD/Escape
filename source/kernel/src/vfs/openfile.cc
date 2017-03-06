@@ -633,8 +633,8 @@ int OpenFile::getFree(pid_t pid,uint8_t mntperm,ushort flags,ino_t nodeNo,dev_t 
 	}
 
 	/* count references of virtual nodes */
-	n->increaseRefs();
 	e->node = const_cast<VFSNode*>(n);
+	e->node->ref();
 	e->owner = pid;
 	e->mntperm = mntperm;
 	e->flags = flags;

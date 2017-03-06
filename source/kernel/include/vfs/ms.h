@@ -51,7 +51,7 @@ public:
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
 	explicit VFSMS(pid_t pid,VFSNode *parent,char *name,mode_t mode,bool &success)
-		: VFSNode(pid,name,S_IFMS | (mode & MODE_PERM),success), _tree() {
+		: VFSNode(pid,name,S_IFMS | (mode & MODE_PERM),success), _lock(), _tree() {
 		if(!success)
 			return;
 
@@ -71,11 +71,11 @@ public:
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
 	explicit VFSMS(pid_t pid,const VFSMS &ms,VFSNode *parent,char *name,mode_t mode,bool &success)
-		: VFSNode(pid,name,S_IFMS | (mode & MODE_PERM),success), _tree() {
+		: VFSNode(pid,name,S_IFMS | (mode & MODE_PERM),success), _lock(), _tree() {
 		if(!success)
 			return;
 		{
-			LockGuard<SpinLock> guard(&ms.lock);
+			LockGuard<SpinLock> guard(&ms._lock);
 			if(_tree.replaceWith(ms._tree) != 0) {
 				success = false;
 				return;
@@ -162,5 +162,6 @@ private:
 	static void readCallback(VFSNode *node,size_t *dataSize,void **buffer);
 	static void printItem(OStream &os,MSTreeItem *item);
 
+	mutable SpinLock _lock;
 	KPathTree<OpenFile,MSTreeItem> _tree;
 };

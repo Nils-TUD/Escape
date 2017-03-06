@@ -66,7 +66,7 @@ size_t VFSNode::allocated;
 /* we have 2 refs at the beginning because we expect the creator to release the node if he's done
  * working with it */
 VFSNode::VFSNode(pid_t pid,char *n,uint m,bool &success)
-		: lock(), name(n), nameLen(), refCount(2), owner(pid), uid(), gid(), mode(m),
+		: name(n), nameLen(), refCount(2), owner(pid), uid(), gid(), mode(m),
 		  parent(), prev(), firstChild(), next() {
 	if(this == nullptr || name == NULL || nameLen > NAME_MAX) {
 		success = false;
@@ -274,7 +274,7 @@ int VFSNode::unlink(pid_t pid,const char *name) {
 		treeLock.up();
 		return n ? -EPERM : -ENOENT;
 	}
-	n->increaseRefs();
+	n->ref();
 	treeLock.up();
 
 	n->destroy();
@@ -296,7 +296,7 @@ int VFSNode::rename(pid_t pid,const char *oldName,VFSNode *newDir,const char *ne
 		treeLock.up();
 		return target ? -EPERM : -ENOENT;
 	}
-	target->increaseRefs();
+	target->ref();
 	treeLock.up();
 
 	/* remove from old directory (we have a reference; so it won't be free'd) */
@@ -355,7 +355,7 @@ int VFSNode::rmdir(pid_t pid,const char *name) {
 		treeLock.up();
 		return -ENOENT;
 	}
-	dir->increaseRefs();
+	dir->ref();
 	treeLock.up();
 
 	int res;
@@ -422,9 +422,9 @@ int VFSNode::request(const char *path,const char **end,VFSNode **node,bool *crea
 
 	/* root/current node requested? */
 	if(!*path) {
-		*node = const_cast<VFSNode*>(n->increaseRefs());
-		err = *node == NULL ? -ENOENT : 0;
-		return err;
+		*node = const_cast<VFSNode*>(n);
+		(*node)->ref();
+		return 0;
 	}
 
 	depth = 0;
@@ -501,7 +501,8 @@ int VFSNode::request(const char *path,const char **end,VFSNode **node,bool *crea
 			n = const_cast<VFSNode*>(static_cast<const VFSLink*>(n)->resolve());
 
 		/* virtual node */
-		*node = const_cast<VFSNode*>(n->increaseRefs());
+		*node = const_cast<VFSNode*>(n);
+		(*node)->ref();
 		if(*node == NULL)
 			err = -ENOENT;
 		dir->closeDir(true);
@@ -577,8 +578,7 @@ void VFSNode::append(VFSNode *p) {
 			p->firstChild = this;
 		}
 
-		LockGuard<SpinLock> g(&p->lock);
-		p->refCount++;
+		p->ref();
 	}
 	parent = p;
 }
@@ -591,10 +591,8 @@ ushort VFSNode::remove(bool force) {
 		LockGuard<SpinLock> g1(&treeLock);
 		remRefs = refCount;
 		/* don't decrease the refs twice with remove */
-		if(!force || name) {
-			LockGuard<SpinLock> g2(&lock);
-			remRefs = --refCount;
-		}
+		if(!force || name)
+			remRefs = Atomic::fetch_and_add(&refCount,-1) - 1;
 
 		/* take care that we don't destroy the node twice */
 		if(remRefs == 0)

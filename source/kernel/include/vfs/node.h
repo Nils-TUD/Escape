@@ -21,6 +21,7 @@
 
 #include <mem/dynarray.h>
 #include <sys/stat.h>
+#include <atomic.h>
 #include <common.h>
 #include <cppsupport.h>
 #include <errno.h>
@@ -125,7 +126,7 @@ public:
 	static VFSNode *request(ino_t nodeNo) {
 		VFSNode *n = get(nodeNo);
 		if(n)
-			n->increaseRefs();
+			n->ref();
 		return n;
 	}
 
@@ -438,8 +439,7 @@ public:
 	 * Increments the reference count of this node
 	 */
 	void ref() {
-		LockGuard<SpinLock> g(&lock);
-		refCount++;
+		Atomic::fetch_and_add(&refCount,+1);
 	}
 	/**
 	 * Decrements the references of this node including all child-nodes. Nodes that have no refs
@@ -588,13 +588,6 @@ protected:
 	 */
 	ushort remove(bool force);
 
-	const VFSNode *increaseRefs() const {
-		/* TODO use atomic ops */
-		LockGuard<SpinLock> g(&lock);
-		refCount++;
-		return this;
-	}
-
 private:
 	static int createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,bool *created,mode_t mode);
 	static void doPrintTree(OStream &os,size_t level,const VFSNode *parent);
@@ -602,7 +595,6 @@ private:
 	ushort doUnref(bool force);
 
 protected:
-	mutable SpinLock lock;
 	const char *name;
 	size_t nameLen;
 	/* number of open files for this node */

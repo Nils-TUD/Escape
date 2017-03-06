@@ -79,4 +79,5 @@ private:
 	/* currently used size */
 	off_t pos;
 	void *data;
+	SpinLock lock;
 };

@@ -33,7 +33,7 @@ VFSMS::MSTreeItem::MSTreeItem(const VFSMS::MSTreeItem &i)
 ino_t VFSMS::request(const char *path,const char **end,OpenFile **file) {
 	ino_t res = 0;
 	{
-		LockGuard<SpinLock> guard(&lock);
+		LockGuard<SpinLock> guard(&_lock);
 		MSTreeItem *match = _tree.find(path,end);
 		if(!match)
 			return -ENOENT;
@@ -50,12 +50,12 @@ void VFSMS::release(OpenFile *file) {
 
 int VFSMS::mount(Proc *,const char *path,OpenFile *file) {
 	file->incRefs();
-	LockGuard<SpinLock> guard(&lock);
+	LockGuard<SpinLock> guard(&_lock);
 	return _tree.insert(path,file);
 }
 
 int VFSMS::remount(Proc *p,const char *path,OpenFile *dir,uint flags) {
-	LockGuard<SpinLock> guard(&lock);
+	LockGuard<SpinLock> guard(&_lock);
 	const char *end;
 	MSTreeItem *match = _tree.find(path,&end);
 	if(!match)
@@ -104,7 +104,7 @@ int VFSMS::remount(Proc *p,const char *path,OpenFile *dir,uint flags) {
 int VFSMS::unmount(Proc *p,const char *path) {
 	OpenFile *file;
 	{
-		LockGuard<SpinLock> guard(&lock);
+		LockGuard<SpinLock> guard(&_lock);
 		/* release vfs node for moints of virtual filesystems */
 		const char *end;
 		MSTreeItem *match = _tree.find(path,&end);
@@ -148,7 +148,7 @@ void VFSMS::readCallback(VFSNode *node,size_t *dataSize,void **buffer) {
 }
 
 void VFSMS::print(OStream &os) const {
-	LockGuard<SpinLock> guard(&lock);
+	LockGuard<SpinLock> guard(&_lock);
 	os.writef("Mountspace %s:\n",getName());
 	_tree.print(os,printItem);
 }

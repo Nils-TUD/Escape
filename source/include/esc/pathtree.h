@@ -170,11 +170,12 @@ public:
 	 * @return 0 on success
 	 */
 	int replaceWith(const PathTree<T,ITEM> &src) {
-		ITEM *old = _root;
-		_root = cloneRec(src._root);
-		if(src._root && !_root)
+		ITEM *nroot = cloneRec(src._root);
+		if(src._root && !nroot)
 			return -ENOMEM;
-		destroyRec(old);
+		destroyRec(_root);
+		_root = nroot;
+		_root->_parent = _root;
 		return 0;
 	}
 

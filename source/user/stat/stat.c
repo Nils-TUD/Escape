@@ -109,12 +109,16 @@ static const char *getType(struct stat *info) {
 	if(S_ISDIR(info->st_mode))
 		return "Directory";
 	if(S_ISBLK(info->st_mode))
-		return "Block-Device";
+		return "Block Device";
 	if(S_ISCHR(info->st_mode))
-		return "Character-Device";
+		return "Character Device";
 	if(S_ISFS(info->st_mode))
-		return "Filesystem-Device";
+		return "Filesystem Device";
 	if(S_ISSERV(info->st_mode))
-		return "Service-Device";
+		return "Service Device";
+	if(S_ISMS(info->st_mode))
+		return "Mountspace";
+	if(S_ISIRQ(info->st_mode))
+		return "Interrupt";
 	return "Regular File";
 }

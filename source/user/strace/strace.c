@@ -34,7 +34,7 @@
 
 static void sigHdlr(int sig);
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [-f <file>] <program> [arguments...]\n",name);
+	fprintf(stderr,"Usage: %s [-o <file>] <program> [arguments...]\n",name);
 	exit(EXIT_FAILURE);
 }
 
@@ -60,7 +60,7 @@ int main(int argc,char **argv) {
 	/* determine output file */
 	int first = 1;
 	int trc = STDERR_FILENO;
-	if(strcmp(argv[1],"-f") == 0) {
+	if(strcmp(argv[1],"-o") == 0) {
 		trc = creat(argv[2],0644);
 		if(trc < 0)
 			error("Unable to open %s for writing",argv[2]);

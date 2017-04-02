@@ -34,7 +34,7 @@
 #include <util.h>
 #include <video.h>
 
-int ELF::doLoad(const char *path,int type,StartupInfo *info) {
+int ELF::doLoad(OpenFile *file,int type,StartupInfo *info) {
 	Thread *t = Thread::getRunning();
 	Proc *p = t->getProc();
 	size_t loadSeg = 0;
@@ -43,24 +43,19 @@ int ELF::doLoad(const char *path,int type,StartupInfo *info) {
 	char *interpName;
 	uintptr_t datPtr;
 
-	OpenFile *file;
-	res = VFS::openPath(p->getPid(),VFS_READ | VFS_EXEC,0,path,&file);
-	if(res < 0) {
-		Log::get().writef("[LOADER] Unable to open path '%s': %s\n",path,strerror(res));
-		return -ENOEXEC;
-	}
-
 	/* first read the header */
 	sElfEHeader eheader;
 	if((readRes = file->read(p->getPid(),&eheader,sizeof(sElfEHeader))) != sizeof(sElfEHeader)) {
-		Log::get().writef("[LOADER] Reading ELF-header of '%s' failed: %s\n",path,strerror(readRes));
+		Log::get().writef("[LOADER] Reading ELF-header of '%s' failed: %s\n",
+			file->getPath(),strerror(readRes));
 		goto failed;
 	}
 
 	/* check magic */
 	if(memcmp(eheader.e_ident,ELFMAG,4) != 0) {
 		Log::get().writef("[LOADER] Invalid magic-number '%02x%02x%02x%02x' in '%s'\n",
-				eheader.e_ident[0],eheader.e_ident[1],eheader.e_ident[2],eheader.e_ident[3],path);
+				eheader.e_ident[0],eheader.e_ident[1],eheader.e_ident[2],eheader.e_ident[3],
+				file->getPath());
 		goto failed;
 	}
 
@@ -82,7 +77,7 @@ int ELF::doLoad(const char *path,int type,StartupInfo *info) {
 		sElfPHeader pheader;
 		if((readRes = file->read(p->getPid(),&pheader,sizeof(sElfPHeader))) != sizeof(sElfPHeader)) {
 			Log::get().writef("[LOADER] Reading program-header %d of '%s' failed: %s\n",
-					j,path,strerror(readRes));
+					j,file->getPath(),strerror(readRes));
 			goto failed;
 		}
 
@@ -106,10 +101,15 @@ int ELF::doLoad(const char *path,int type,StartupInfo *info) {
 				Log::get().writef("[LOADER] Reading dynlinker name failed\n");
 				goto failedInterpName;
 			}
-			file->close(p->getPid());
+
 			/* now load him and stop loading the 'real' program */
-			res = doLoad(interpName,TYPE_INTERP,info);
+			OpenFile *interf;
+			res = VFS::openPath(p->getPid(),VFS_READ | VFS_EXEC,0,interpName,&interf);
 			Cache::free(interpName);
+			if(res < 0)
+				return res;
+			res = doLoad(interf,TYPE_INTERP,info);
+			interf->close(p->getPid());
 			return res;
 		}
 
@@ -120,22 +120,13 @@ int ELF::doLoad(const char *path,int type,StartupInfo *info) {
 		}
 	}
 
-	/* introduce a file-descriptor during finishing; this way we'll close the file when segfaulting */
-	int fd;
-	if((fd = FileDesc::assoc(p,file)) < 0)
+	if(finish(file,&eheader,info) < 0)
 		goto failed;
-	if(finish(file,&eheader,info) < 0) {
-		sassert(FileDesc::unassoc(p,fd) != NULL);
-		goto failed;
-	}
-	sassert(FileDesc::unassoc(p,fd) != NULL);
-	file->close(p->getPid());
 	return 0;
 
 failedInterpName:
 	Cache::free(interpName);
 failed:
-	file->close(p->getPid());
 	return -ENOEXEC;
 }
 

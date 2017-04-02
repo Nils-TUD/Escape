@@ -46,12 +46,18 @@ uintptr_t procstart(uintptr_t *usp) {
 	/* start init process */
 	if(Proc::clone(P_KERNEL) == 0) {
 		ELF::StartupInfo info;
+		Thread *t = Thread::getRunning();
+		pid_t pid = t->getProc()->getPid();
+
 		/* load initloader */
-		if(ELF::load("/sys/boot/initloader",&info) < 0)
+		OpenFile *file;
+		if(VFS::openPath(pid,VFS_EXEC | VFS_READ,0,"/sys/boot/initloader",&file) < 0)
+			Util::panic("Unable to open initloader");
+		if(ELF::load(file,&info) < 0)
 			Util::panic("Unable to load initloader");
+		file->close(pid);
 
 		/* give the process some stack pages */
-		Thread *t = Thread::getRunning();
 		if(!t->reserveFrames(INITIAL_STACK_PAGES))
 			Util::panic("Not enough mem for initloader-stack");
 		*usp = t->addInitialStack() + INITIAL_STACK_PAGES * PAGE_SIZE - WORDSIZE * 3;

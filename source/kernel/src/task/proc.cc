@@ -426,13 +426,13 @@ errorReqProc:
 	return res;
 }
 
-int ProcBase::exec(const char *path,USER const char *const *args,USER const char *const *env) {
+int ProcBase::exec(OpenFile *file,int fd,USER const char *const *args,USER const char *const *env) {
 	char *argBuffer;
 	ELF::StartupInfo info;
 	Thread *t = Thread::getRunning();
 	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
 	size_t argSize = EXEC_MAX_ARGSIZE;
-	int argc,envc,res,fd = -1;
+	int argc,envc,res;
 	if(!p)
 		return -ESRCH;
 	/* don't allow exec when the process should die */
@@ -483,24 +483,18 @@ int ProcBase::exec(const char *path,USER const char *const *args,USER const char
 	doRemoveRegions(p,false);
 
 	/* load program */
-	if(ELF::load(path,&info) < 0)
+	if(ELF::load(file,&info) < 0)
 		goto errorTerm;
 
-	/* if its the dynamic linker, we need to give it the file-descriptor for the program to load */
-	/* we need to do this here without lock, because VFS::openPath will perform a context-switch */
-	if(info.linkerEntry != info.progEntry) {
-		OpenFile *file;
-		if(VFS::openPath(p->pid,VFS_READ,0,path,&file) < 0)
-			goto errorTerm;
-		fd = FileDesc::assoc(p,file);
-		if(fd < 0) {
-			file->close(p->pid);
-			goto errorTerm;
-		}
+	/* if we have no dynamic linker, close the file descriptor */
+	if(info.linkerEntry == info.progEntry) {
+		FileDesc::unassoc(p,fd);
+		file->close(p->getPid());
+		fd = -1;
 	}
 
 	/* copy path so that we can identify the process */
-	p->setCommand(path,argc,argBuffer);
+	p->setCommand(file->getPath(),argc,argBuffer);
 	/* reset stats */
 	p->stats.input = 0;
 	p->stats.output = 0;

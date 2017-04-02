@@ -26,13 +26,25 @@
 #include <string.h>
 
 int execv(const char *path,const char **args) {
-	char apath[MAX_PATH_LEN];
-	return syscall3(SYSCALL_EXEC,(ulong)abspath(apath,sizeof(apath),path),(ulong)args,(ulong)environ);
+	return execvpe(path,args,(const char**)environ);
+}
+
+int fexecv(int fd,const char **args) {
+	return syscall3(SYSCALL_EXEC,fd,(ulong)args,(ulong)environ);
 }
 
 int execvpe(const char *path,const char **args,const char **env) {
 	char apath[MAX_PATH_LEN];
-	return syscall3(SYSCALL_EXEC,(ulong)abspath(apath,sizeof(apath),path),(ulong)args,(ulong)env);
+	int fd = open(abspath(apath,sizeof(apath),path),O_EXEC | O_READ);
+	if(fd < 0)
+		return fd;
+	int res = fexecvpe(fd,args,env);
+	close(fd);
+	return res;
+}
+
+int fexecvpe(int fd,const char **args,const char **env) {
+	return syscall3(SYSCALL_EXEC,fd,(ulong)args,(ulong)env);
 }
 
 int execvp(const char *file,const char **args) {

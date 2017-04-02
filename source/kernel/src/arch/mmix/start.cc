@@ -43,11 +43,16 @@ uintptr_t bspstart(BootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
 	t->discardFrames();
 
 	/* load initloader */
+	OpenFile *file;
+	pid_t pid = t->getProc()->getPid();
 	ELF::StartupInfo info;
-	if(ELF::load("/sys/boot/initloader",&info) < 0)
+	if(VFS::openPath(pid,VFS_EXEC | VFS_READ,0,"/sys/boot/initloader",&file) < 0)
+		Util::panic("Unable to open initloader");
+	if(ELF::load(file,&info) < 0)
 		Util::panic("Unable to load initloader");
-	if(UEnv::setupProc(0,0,NULL,0,&info,info.progEntry,-1) < 0)
+	if(!UEnv::setupProc(0,0,NULL,0,&info,info.progEntry,-1))
 		Util::panic("Unable to setup initloader");
+	file->close(pid);
 	*stackBegin = info.stackBegin;
 	*rss = DIR_MAP_AREA | (t->getKernelStack() * PAGE_SIZE);
 	return info.progEntry;

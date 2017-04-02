@@ -58,7 +58,7 @@ const struct Syscall syscalls[] = {
 	{"signal",   		"%d,%p"						},
 	{"acksignal",    	""							},
 	{"kill",    		"%d,%d"						},
-	{"exec",    		"%s,%p,%p"					},
+	{"exec",    		"%d,%p,%p"					},
 	{"fcntl",    		"%d,%u,%d"					},
 
 	/* 20 */

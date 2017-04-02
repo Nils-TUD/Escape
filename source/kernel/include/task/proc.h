@@ -269,12 +269,13 @@ public:
 	/**
 	 * Executes the given program, i.e. removes all regions except the stacks and loads the new one.
 	 *
-	 * @param path the path to the program
+	 * @param file the executable
+	 * @param fd the file descriptor for the executable
 	 * @param args the arguments
 	 * @param env the environment
 	 * @return 0 on success
 	 */
-	static int exec(const char *path,const char *const *args,USER const char *const *env);
+	static int exec(OpenFile *file,int fd,const char *const *args,USER const char *const *env);
 
 	/**
 	 * Waits until the thread with given thread-id or all other threads of the process are terminated.

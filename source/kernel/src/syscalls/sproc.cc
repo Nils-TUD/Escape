@@ -136,14 +136,17 @@ int Syscalls::waitchild(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	SYSC_RESULT(stack,res);
 }
 
-int Syscalls::exec(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	char pathSave[MAX_PATH_LEN + 1];
-	const char *path = (const char*)SYSC_ARG1(stack);
+int Syscalls::exec(Thread *t,IntrptStackFrame *stack) {
+	int fd = (int)SYSC_ARG1(stack);
 	const char *const *args = (const char *const *)SYSC_ARG2(stack);
 	const char *const *env = (const char *const *)SYSC_ARG3(stack);
-	if(EXPECT_FALSE(!copyPath(pathSave,sizeof(pathSave),path)))
-		SYSC_ERROR(stack,-EFAULT);
+	Proc *p = t->getProc();
 
-	int res = Proc::exec(pathSave,args,env);
+	ScopedFile file(p,fd);
+	if(!file)
+		SYSC_ERROR(stack,-EBADF);
+	if((file->getFlags() & (VFS_EXEC | VFS_READ)) != (VFS_EXEC | VFS_READ))
+		SYSC_ERROR(stack,-EACCES);
+	int res = Proc::exec(&*file,fd,args,env);
 	SYSC_RESULT(stack,res);
 }

@@ -43,18 +43,18 @@ public:
 	/**
 	 * Loads the program at given path from fs into the user-space
 	 *
-	 * @param path the path to the program
+	 * @param file the executable to load
 	 * @param info various information about the loaded program
 	 * @return 0 on success
 	 */
-	static int load(const char *path,StartupInfo *info) {
-		return doLoad(path,TYPE_PROG,info);
+	static int load(OpenFile *file,StartupInfo *info) {
+		return doLoad(file,TYPE_PROG,info);
 	}
 
 	/**
 	 * Architecture-specific finish-actions when loading from file. DO NOT call it directly!
 	 *
-	 * @param file the file
+	 * @param file the executable
 	 * @param eheader the elf-header
 	 * @param info the startup-info
 	 * @return 0 on success
@@ -62,7 +62,7 @@ public:
 	static int finish(OpenFile *file,const sElfEHeader *eheader,StartupInfo *info);
 
 private:
-	static int doLoad(const char *path,int type,StartupInfo *info);
+	static int doLoad(OpenFile *file,int type,StartupInfo *info);
 	static int addSegment(OpenFile *file,const sElfPHeader *pheader,size_t loadSegNo,int type,int mflags);
 };
 

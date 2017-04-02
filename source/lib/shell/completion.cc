@@ -196,7 +196,7 @@ sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,
 				/* append filename and get fileinfo */
 				strcpy(filePath + pathLen,cmd->name);
 				if(stat(filePath,&info) < 0)
-					goto failed;
+					continue;
 
 				/* alloc mem for cmd */
 				ncmd = (sShellCmd*)malloc(sizeof(sShellCmd));

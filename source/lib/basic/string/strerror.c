@@ -67,6 +67,8 @@ static const char *msgs[] = {
 	/* 42 (ENOTCONN) */			"Not connected",
 	/* 43 (ECONNRESET) */		"Connection reset by peer",
 	/* 44 (ENOTFOUND) */		"Not found",
+	/* 45 (ERANGE) */			"Result too large",
+	/* 46 (EDOM) */				"Math argument out of domain of function",
 };
 
 char *strerror(int errnum) {

@@ -41,7 +41,7 @@ public:
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
 	explicit VFSLink(pid_t pid,VFSNode *parent,char *name,const VFSNode *target,bool &success)
-			: VFSNode(pid,name,S_IFLNK | (target->getMode() & MODE_PERM),success), target(target) {
+			: VFSNode(pid,name,MODE_TYPE_HARDLINK | (target->getMode() & MODE_PERM),success), target(target) {
 		append(parent);
 	}
 

@@ -102,7 +102,7 @@ ssize_t VFSNode::open(pid_t pid,A_UNUSED const char *path,A_UNUSED ino_t root,ui
 
 const VFSNode *VFSNode::openDir(bool locked,bool *valid) const {
 	const VFSNode *p;
-	if(!S_ISLNK(mode))
+	if(!IS_HDLNK(mode))
 		p = this;
 	else
 		p = static_cast<const VFSLink*>(this)->resolve();
@@ -497,7 +497,7 @@ int VFSNode::request(const char *path,const char **end,VFSNode **node,bool *crea
 		}
 
 		/* resolve link */
-		if(!(flags & VFS_NOLINKRES) && S_ISLNK(n->mode))
+		if(!(flags & VFS_NOLINKRES) && IS_HDLNK(n->mode))
 			n = const_cast<VFSNode*>(static_cast<const VFSLink*>(n)->resolve());
 
 		/* virtual node */

@@ -259,8 +259,9 @@ int Ext2FileSystem::rmdir(fs::User *u,fs::OpenFile *dir,const char *name) {
 	if(cdir == NULL)
 		return -ENOBUFS;
 	if(!S_ISDIR(le16tocpu(cdir->inode.mode)))
-		return -ENOTDIR;
-	res = Ext2Dir::remove(this,u,cdir,name);
+		res = -ENOTDIR;
+	else
+		res = Ext2Dir::remove(this,u,cdir,name);
 	inodeCache.release(cdir);
 	return res;
 }

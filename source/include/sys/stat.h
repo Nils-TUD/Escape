@@ -167,13 +167,21 @@ A_CHECKRET int chown(const char *path,uid_t uid,gid_t gid);
  */
 A_CHECKRET int fchown(int fd,uid_t uid,gid_t gid);
 
+#define IS_FILE_TYPE(func,arg,check)	\
+	struct stat info;					\
+	if(func(arg,&info) < 0)				\
+		return false;					\
+	return check
+
 /**
  * Checks whether the given path points to a regular file
  *
  * @param path the path
  * @return true if its a file; false if not or an error occurred
  */
-bool isfile(const char *path);
+static inline bool isfile(const char *path) {
+	IS_FILE_TYPE(stat,path,S_ISREG(info.st_mode));
+}
 
 /**
  * Checks whether the given file descriptor points to a regular file
@@ -181,7 +189,9 @@ bool isfile(const char *path);
  * @param fd the file descriptor
  * @return true if its a file; false if not or an error occurred
  */
-bool fisfile(int fd);
+static inline bool fisfile(int fd) {
+	IS_FILE_TYPE(fstat,fd,S_ISREG(info.st_mode));
+}
 
 /**
  * Checks whether the given path points to a directory
@@ -189,7 +199,9 @@ bool fisfile(int fd);
  * @param path the path
  * @return true if its a directory; false if not or an error occurred
  */
-bool isdir(const char *path);
+static inline bool isdir(const char *path) {
+	IS_FILE_TYPE(stat,path,S_ISDIR(info.st_mode));
+}
 
 /**
  * Checks whether the given file descriptor points to a directory
@@ -197,7 +209,9 @@ bool isdir(const char *path);
  * @param fd the file descriptor
  * @return true if its a directory; false if not or an error occurred
  */
-bool fisdir(int fd);
+static inline bool fisdir(int fd) {
+	IS_FILE_TYPE(fstat,fd,S_ISDIR(info.st_mode));
+}
 
 /**
  * Checks whether the given path points to a file that behaves like a block-device, i.e. either
@@ -206,7 +220,9 @@ bool fisdir(int fd);
  * @param path the path
  * @return true if its a regular file or block device
  */
-bool isblock(const char *path);
+static inline bool isblock(const char *path) {
+	IS_FILE_TYPE(stat,path,S_ISREG(info.st_mode) || S_ISBLK(info.st_mode));
+}
 
 /**
  * Checks whether the given file descriptor points to a file that behaves like a block-device, i.e.
@@ -215,7 +231,11 @@ bool isblock(const char *path);
  * @param fd the file descriptor
  * @return true if its a regular file or block device
  */
-bool fisblock(int fd);
+static inline bool fisblock(int fd) {
+	IS_FILE_TYPE(fstat,fd,S_ISREG(info.st_mode) || S_ISBLK(info.st_mode));
+}
+
+#undef IS_FILE_TYPE
 
 #if defined(__cplusplus)
 }

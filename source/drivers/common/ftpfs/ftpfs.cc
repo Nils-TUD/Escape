@@ -91,7 +91,7 @@ public:
 	explicit FTPFileSystem(CtrlConRef &ctrl) : FileSystem<OpenFTPFile>(), _ctrlRef(ctrl) {
 	}
 
-	ino_t open(User *,const char *path,ino_t root,uint flags,mode_t,int fd,OpenFTPFile **file) override {
+	ino_t open(User *,const char *path,ssize_t *,ino_t root,uint flags,mode_t,int fd,OpenFTPFile **file) override {
 		/* TODO support root ino restriction */
 		if(root != 0)
 			return -ENOTSUP;

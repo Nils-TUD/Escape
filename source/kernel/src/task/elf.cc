@@ -104,7 +104,7 @@ int ELF::doLoad(OpenFile *file,int type,StartupInfo *info) {
 
 			/* now load him and stop loading the 'real' program */
 			OpenFile *interf;
-			res = VFS::openPath(p->getPid(),VFS_READ | VFS_EXEC,0,interpName,&interf);
+			res = VFS::openPath(p->getPid(),VFS_READ | VFS_EXEC,0,interpName,NULL,&interf);
 			Cache::free(interpName);
 			if(res < 0)
 				return res;

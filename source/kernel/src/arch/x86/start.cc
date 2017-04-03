@@ -76,7 +76,7 @@ uintptr_t smpstart(uintptr_t *usp) {
 
 		/* load initloader */
 		OpenFile *file;
-		if(VFS::openPath(pid,VFS_EXEC | VFS_READ,0,"/sys/boot/initloader",&file) < 0)
+		if(VFS::openPath(pid,VFS_EXEC | VFS_READ,0,"/sys/boot/initloader",NULL,&file) < 0)
 			Util::panic("Unable to open initloader");
 		if(ELF::load(file,&info) < 0)
 			Util::panic("Unable to load initloader");

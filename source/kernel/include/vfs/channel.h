@@ -144,7 +144,7 @@ public:
 	 */
 	int obtain(pid_t pid,OpenFile *chan,int arg);
 
-	virtual ssize_t open(pid_t pid,const char *path,ino_t root,uint flags,int msgid,mode_t mode);
+	virtual ssize_t open(pid_t pid,const char *path,ssize_t *sympos,ino_t root,uint flags,int msgid,mode_t mode);
 	virtual off_t seek(pid_t pid,off_t position,off_t offset,uint whence) const;
 	virtual ssize_t getSize(pid_t pid);
 	virtual ssize_t read(pid_t pid,OpenFile *file,void *buffer,off_t offset,size_t count);

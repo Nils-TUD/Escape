@@ -55,9 +55,6 @@ enum {
 
 class lsfile : public file {
 public:
-	lsfile(const string& p)
-		: file(p), _rsize(0) {
-	}
 	lsfile(const lsfile& f)
 		: file(f), _rsize(f._rsize) {
 	}
@@ -245,6 +242,24 @@ static DirList collectEntries(const char *path,size_t *widths,bool showPath) {
 	return list;
 }
 
+static void printLinkTarget(const lsfile &f) {
+	sout << " -> ";
+
+	char tmp[MAX_PATH_LEN];
+	int lnkfd = open(f.path().c_str(),O_RDONLY | O_NOFOLLOW);
+	if(lnkfd >= 0) {
+		ssize_t len = read(lnkfd,tmp,sizeof(tmp) - 1);
+		close(lnkfd);
+		if(len > 0) {
+			tmp[len] = '\0';
+			sout << tmp;
+			return;
+		}
+	}
+
+	sout << "??";
+}
+
 static void printDir(const std::string &path,const std::vector<lsfile*> &entries,size_t *widths,
 		uint cols,bool showPath) {
 	// display
@@ -280,7 +295,10 @@ static void printDir(const std::string &path,const std::vector<lsfile*> &entries
 			printColor(f);
 			if(showPath)
 				sout << path;
-			sout << f->name() << "\033[co]" << '\n';
+			sout << f->name() << "\033[co]";
+			if(S_ISLNK(f->mode()))
+				printLinkTarget(*f);
+			sout << '\n';
 		}
 		else {
 			/* if the entry does not fit on the line, use next */
@@ -306,6 +324,8 @@ static void printDir(const std::string &path,const std::vector<lsfile*> &entries
 static void printColor(const lsfile *f) {
 	if(f->is_dir())
 		sout << "\033[co;9]";
+	else if(S_ISLNK(f->mode()))
+		sout << "\033[co;11]";
 	else if(S_ISCHR(f->mode()) || S_ISBLK(f->mode()) || S_ISFS(f->mode()) || S_ISSERV(f->mode()))
 		sout << "\033[co;14]";
 	else if(f->mode() & (S_IXUSR | S_IXGRP | S_IXOTH))
@@ -328,7 +348,7 @@ static vector<lsfile*> getEntries(const string& path) {
 			vector<struct dirent> files = dir.list_files(flags & F_ALL);
 			for(auto it = files.begin(); it != files.end(); ++it) {
 				try {
-					res.push_back(buildFile(file(path,it->d_name)));
+					res.push_back(buildFile(file(path,std::string(it->d_name),false)));
 				}
 				catch(const exception &e) {
 					printe("Skipping '%s/%s': %s",path.c_str(),it->d_name,e.what());
@@ -364,7 +384,7 @@ static file::size_type getDirSize(const file& d) {
 	string path = d.path();
 	vector<struct dirent> files = d.list_files((flags & F_ALL) != 0);
 	for(auto it = files.begin(); it != files.end(); ++it) {
-		file f(path,it->d_name);
+		file f(path,std::string(it->d_name));
 		if(f.is_dir()) {
 			string name = f.name();
 			if(name != "." && name != "..")
@@ -413,6 +433,8 @@ static void printMode(file::mode_type mode) {
 		sout << 'm';
 	else if(S_ISIRQ(mode))
 		sout << 'i';
+	else if(S_ISLNK(mode))
+		sout << 'l';
 	else
 		sout << '-';
 

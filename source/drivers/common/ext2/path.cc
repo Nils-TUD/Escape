@@ -33,10 +33,12 @@
 #include "path.h"
 #include "rw.h"
 
-ino_t Ext2Path::resolve(Ext2FileSystem *e,fs::User *u,const char *path,ino_t root,uint flags,mode_t mode) {
+ino_t Ext2Path::resolve(Ext2FileSystem *e,fs::User *u,const char *path,ssize_t *sympos,ino_t root,
+		uint flags,mode_t mode) {
 	Ext2CInode *cnode = NULL;
 	ino_t res;
 	const char *p = path;
+	const char *lastpath = path;
 	int err;
 	ssize_t pos;
 
@@ -65,6 +67,7 @@ ino_t Ext2Path::resolve(Ext2FileSystem *e,fs::User *u,const char *path,ino_t roo
 			res = Ext2Dir::find(e,cnode,p,pos);
 
 		if(res >= 0) {
+			lastpath = p;
 			p += pos;
 			e->inodeCache.release(cnode);
 			cnode = e->inodeCache.request(res,IMODE_READ);
@@ -76,6 +79,9 @@ ino_t Ext2Path::resolve(Ext2FileSystem *e,fs::User *u,const char *path,ino_t roo
 				p++;
 			/* "/" at the end is optional */
 			if(!*p)
+				break;
+
+			if(S_ISLNK(le16tocpu(cnode->inode.mode)))
 				break;
 
 			/* move to childs of this node */
@@ -111,6 +117,11 @@ ino_t Ext2Path::resolve(Ext2FileSystem *e,fs::User *u,const char *path,ino_t roo
 			}
 		}
 	}
+
+	if(S_ISLNK(le16tocpu(cnode->inode.mode)) && (!(flags & O_NOFOLLOW) || *p))
+		*sympos = lastpath - path;
+	else
+		*sympos = -1;
 
 	res = cnode->inodeNo;
 	e->inodeCache.release(cnode);

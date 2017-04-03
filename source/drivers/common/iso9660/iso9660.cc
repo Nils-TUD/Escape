@@ -118,7 +118,8 @@ int ISO9660FileSystem::initPrimaryVol(ISO9660FileSystem *fs,const char *device) 
 	return 0;
 }
 
-ino_t ISO9660FileSystem::open(fs::User *u,const char *path,ino_t root,uint flags,mode_t,int fd,fs::OpenFile **file) {
+ino_t ISO9660FileSystem::open(fs::User *u,const char *path,ssize_t *,ino_t root,uint flags,mode_t,
+		int fd,fs::OpenFile **file) {
 	ino_t ino = ISO9660Dir::resolve(this,u,path,root,flags);
 	if(ino < 0)
 		return ino;

@@ -78,6 +78,11 @@ int Ext2File::remove(Ext2FileSystem *e,Ext2CInode *cnode) {
 int Ext2File::truncate(Ext2FileSystem *e,Ext2CInode *cnode,bool del) {
 	int res;
 	size_t i;
+
+	/* nothing to do for small symlinks */
+	if(S_ISLNK(le16tocpu(cnode->inode.mode)) && le32tocpu(cnode->inode.size) < 60)
+		return 0;
+
 	/* free direct blocks */
 	for(i = 0; i < EXT2_DIRBLOCK_COUNT; i++) {
 		if(le32tocpu(cnode->inode.dBlocks[i]) == 0)
@@ -173,6 +178,13 @@ ssize_t Ext2File::readIno(Ext2FileSystem *e,const Ext2CInode *cnode,void *buffer
 		if((int32_t)(offset + count) < 0 || (int32_t)(offset + count) >= inoSize)
 			count = inoSize - offset;
 
+		/* symbolic links are stored in the inode itself, if shorter than 60 bytes */
+		if(S_ISLNK(le16tocpu(cnode->inode.mode)) && inoSize < 60) {
+			size_t amount = esc::Util::min(count,(size_t)inoSize);
+			memcpy(buffer, (char*)cnode->inode.dBlocks + offset, amount);
+			return amount;
+		}
+
 		blockSize = e->blockSize();
 		startBlock = offset / blockSize;
 		offset %= blockSize;
@@ -230,39 +242,46 @@ ssize_t Ext2File::writeIno(Ext2FileSystem *e,Ext2CInode *cnode,const void *buffe
 	if((int32_t)offset > inoSize)
 		return 0;
 
-	blockSize = e->blockSize();
-	startBlock = offset / blockSize;
-	offset %= blockSize;
-	blockCount = (offset + count + blockSize - 1) / blockSize;
+	/* symbolic links are stored in the inode itself, if shorter than 60 bytes */
+	if(S_ISLNK(le16tocpu(cnode->inode.mode)) && count < 60) {
+		assert(offset == 0);
+		memcpy(cnode->inode.dBlocks, buffer, count);
+	}
+	else {
+		blockSize = e->blockSize();
+		startBlock = offset / blockSize;
+		offset %= blockSize;
+		blockCount = (offset + count + blockSize - 1) / blockSize;
 
-	leftBytes = count;
-	bufWork = (const uint8_t*)buffer;
-	for(i = 0; i < blockCount; i++) {
-		block_t block = Ext2INode::reqDataBlock(e,cnode,startBlock + i);
-		/* error (e.g. no free block) ? */
-		if(block == 0)
-			return -ENOSPC;
+		leftBytes = count;
+		bufWork = (const uint8_t*)buffer;
+		for(i = 0; i < blockCount; i++) {
+			block_t block = Ext2INode::reqDataBlock(e,cnode,startBlock + i);
+			/* error (e.g. no free block) ? */
+			if(block == 0)
+				return -ENOSPC;
 
-		c = esc::Util::min(leftBytes,blockSize - offset);
+			c = esc::Util::min(leftBytes,blockSize - offset);
 
-		/* if we're not writing a complete block, we have to read it from disk first */
-		if(offset != 0 || c != blockSize)
-			tmpBuffer = e->blockCache.request(block,BlockCache::WRITE);
-		else
-			tmpBuffer = e->blockCache.create(block);
-		if(tmpBuffer == NULL)
-			return -ENOBUFS;
-		/* we can write it to disk later :) */
-		memcpy((uint8_t*)tmpBuffer->buffer + offset,bufWork,c);
-		e->blockCache.markDirty(tmpBuffer);
-		e->blockCache.release(tmpBuffer);
+			/* if we're not writing a complete block, we have to read it from disk first */
+			if(offset != 0 || c != blockSize)
+				tmpBuffer = e->blockCache.request(block,BlockCache::WRITE);
+			else
+				tmpBuffer = e->blockCache.create(block);
+			if(tmpBuffer == NULL)
+				return -ENOBUFS;
+			/* we can write it to disk later :) */
+			memcpy((uint8_t*)tmpBuffer->buffer + offset,bufWork,c);
+			e->blockCache.markDirty(tmpBuffer);
+			e->blockCache.release(tmpBuffer);
 
-		bufWork += c;
-		/* we substract to much, but it matters only if we write an additional block. In this
-		 * case it is correct */
-		leftBytes -= blockSize - offset;
-		/* offset is always 0 for additional blocks */
-		offset = 0;
+			bufWork += c;
+			/* we substract to much, but it matters only if we write an additional block. In this
+			 * case it is correct */
+			leftBytes -= blockSize - offset;
+			/* offset is always 0 for additional blocks */
+			offset = 0;
+		}
 	}
 
 	/* finally, update the inode */

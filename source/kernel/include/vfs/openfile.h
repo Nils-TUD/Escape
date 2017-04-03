@@ -44,14 +44,17 @@ enum {
 	VFS_LONELY 		= 128,		/* disallow other accesses */
 	VFS_EXCL 		= 256,		/* fail if the file already exists */
 	VFS_NOCHAN 		= 512,		/* don't create a channel, but open the device itself */
-	VFS_DEVICE 		= 1024,		/* kernel-intern: whether the file was created for a device */
-	VFS_SIGNALS 	= 2048,		/* kernel-intern: allow signals during blocking */
-	VFS_BLOCK 		= 4096,		/* kernel-intern: force blocking */
-	VFS_NOLINKRES	= 8192,		/* kernel-intern: don't resolve link */
+	VFS_NOFOLLOW	= 1024,		/* don't resolve last symlink */
+	VFS_SYMLINK		= 2048,		/* kernel-intern: create symlink, if CREAT is specified */
+	VFS_DEVICE 		= 4096,		/* kernel-intern: whether the file was created for a device */
+	VFS_SIGNALS 	= 8192,		/* kernel-intern: allow signals during blocking */
+	VFS_BLOCK 		= 16384,	/* kernel-intern: force blocking */
+	VFS_NOLINKRES	= 32768,	/* kernel-intern: don't resolve link */
 
 	/* all flags that the user can use */
 	VFS_USER_FLAGS	= VFS_MSGS | VFS_WRITE | VFS_READ | VFS_CREATE | VFS_TRUNCATE |
-						VFS_APPEND | VFS_NOBLOCK | VFS_LONELY | VFS_EXCL | VFS_NOCHAN,
+						VFS_APPEND | VFS_NOBLOCK | VFS_LONELY | VFS_EXCL | VFS_NOCHAN |
+						VFS_NOFOLLOW,
 };
 
 class VFS;
@@ -283,6 +286,16 @@ public:
 	 * @return 0 on success
 	 */
 	int rmdir(pid_t pid,const char *name);
+
+	/**
+	 * Creates a symlink named <name> in this directory, pointing to <target>.
+	 *
+	 * @param pid the process-id
+	 * @param name the filename
+	 * @param target the target path
+	 * @return 0 on success
+	 */
+	int symlink(pid_t pid,const char *name,const char *target);
 
 	/**
 	 * Creates a device-node for the given process at <this>/<name> and opens a file for it.

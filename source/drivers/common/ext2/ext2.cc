@@ -109,14 +109,20 @@ error:
 	return ino;
 }
 
-ino_t Ext2FileSystem::open(fs::User *u,const char *path,ino_t root,uint flags,mode_t mode,int fd,fs::OpenFile **file) {
-	ino_t ino = Ext2Path::resolve(this,u,path,root,flags,mode);
+ino_t Ext2FileSystem::open(fs::User *u,const char *path,ssize_t *sympos,ino_t root,uint flags,
+		mode_t mode,int fd,fs::OpenFile **file) {
+	ino_t ino = Ext2Path::resolve(this,u,path,sympos,root,flags,mode);
 	if(ino < 0)
 		return ino;
 
 	int err;
 	/* check permissions */
 	Ext2CInode *cnode = inodeCache.request(ino,IMODE_READ);
+
+	/* opening a symlink, implicitly performs a read */
+	if(S_ISLNK(le16tocpu(cnode->inode.mode)))
+		flags = O_READ;
+
 	uint imode = 0;
 	if(flags & O_READ)
 		imode |= MODE_READ;
@@ -262,6 +268,24 @@ int Ext2FileSystem::rmdir(fs::User *u,fs::OpenFile *dir,const char *name) {
 		res = -ENOTDIR;
 	else
 		res = Ext2Dir::remove(this,u,cdir,name);
+	inodeCache.release(cdir);
+	return res;
+}
+
+int Ext2FileSystem::symlink(fs::User *u,fs::OpenFile *dir,const char *name,const char *target) {
+	int res;
+	Ext2CInode *cdir = inodeCache.request(dir->ino,IMODE_WRITE);
+	if(cdir == NULL)
+		return -ENOBUFS;
+
+	if(!S_ISDIR(le16tocpu(cdir->inode.mode)))
+		res = -ENOTDIR;
+	else {
+		ino_t ino;
+		res = Ext2File::create(this,u,cdir,name,&ino,S_IFLNK | LNK_DEF_MODE);
+		if(res == 0)
+			res = Ext2File::write(this,ino,target,0,strlen(target));
+	}
 	inodeCache.release(cdir);
 	return res;
 }

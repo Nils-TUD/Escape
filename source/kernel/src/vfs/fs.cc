@@ -168,3 +168,13 @@ int VFSFS::rmdir(pid_t pid,VFSChannel *chan,const char *name) {
 	ib << esc::FSRmdir::Request(user,esc::CString(name));
 	return communicateOverChan(pid,chan,esc::FSRmdir::MSG,ib);
 }
+
+int VFSFS::symlink(pid_t pid,VFSChannel *chan,const char *name,const char *target) {
+	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
+	esc::IPCBuf ib(buffer,sizeof(buffer));
+
+	const Proc *p = Proc::getByPid(pid);
+	fs::User user(p->getUid(),p->getGid(),p->getPid());
+	ib << esc::FSSymlink::Request(user,esc::CString(name),esc::CString(target));
+	return communicateOverChan(pid,chan,esc::FSSymlink::MSG,ib);
+}

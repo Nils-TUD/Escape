@@ -43,7 +43,7 @@ const struct Syscall syscalls[] = {
 	{"debugc",    		"%c"						},
 	{"fork",    		""							},
 	{"exit",    		"%d"						},
-	{"open",    		"%s,%O"						},
+	{"open",    		"%s,%O,%x,%p"				},
 	{"close",    		"%d"						},
 	{"read",    		"%d,%p,%x"					},
 	{"createdev",    	"%d,%s,%o,%D"				},
@@ -127,6 +127,7 @@ const struct Syscall syscalls[] = {
 	{"gettimeofday",	"%p"						},
 	{"utime",			"%d,%p"						},
 	{"truncate",		"%d,%u"						},
+	{"symlink",			"%s,%d,%s"					},
 #if defined(__x86__)
 	{"reqports",   		"%d,%d"						},
 	{"relports",    	"%d,%d"						},
@@ -168,6 +169,7 @@ static const char *fsMsgs[] = {
 	"FS_CHOWN",
 	"FS_UTIME",
 	"FS_TRUNCATE",
+	"FS_SYMLINK",
 };
 
 static const char *spkMsgs[] = {

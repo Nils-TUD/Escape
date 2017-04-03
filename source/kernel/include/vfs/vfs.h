@@ -109,10 +109,11 @@ public:
 	 * @param flags whether it is a virtual or real file and whether you want to read or write
 	 * @param mode the mode to set (if a file is created by this call)
 	 * @param path the path
+	 * @param sympos will be set to the position within <path>, if a symlink is found
 	 * @param file will be set to the opened file
 	 * @return 0 if successfull or < 0
 	 */
-	static int openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile **file);
+	static int openPath(pid_t pid,ushort flags,mode_t mode,const char *path,ssize_t *sympos,OpenFile **file);
 
 	/**
 	 * Opens the file with given number and given flags. That means it walks through the global

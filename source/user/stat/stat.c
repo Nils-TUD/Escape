@@ -66,7 +66,7 @@ static void printFileInfo(const char *path,bool useOpen) {
 	cleanpath(apath,MAX_PATH_LEN,path);
 
 	if(useOpen) {
-		int fd = open(apath,O_RDONLY);
+		int fd = open(apath,O_RDONLY | O_NOFOLLOW);
 		if(fd < 0) {
 			printe("open of '%s' for reading failed",apath);
 			return;
@@ -77,7 +77,7 @@ static void printFileInfo(const char *path,bool useOpen) {
 		}
 		close(fd);
 	}
-	else if(stat(apath,&info) < 0) {
+	else if(lstat(apath,&info) < 0) {
 		printe("stat of '%s' failed",apath);
 		return;
 	}
@@ -108,6 +108,8 @@ static void printDate(const char *title,time_t timestamp) {
 static const char *getType(struct stat *info) {
 	if(S_ISDIR(info->st_mode))
 		return "Directory";
+	if(S_ISLNK(info->st_mode))
+		return "Symbolic Link";
 	if(S_ISBLK(info->st_mode))
 		return "Block Device";
 	if(S_ISCHR(info->st_mode))

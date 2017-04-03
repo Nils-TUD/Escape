@@ -193,7 +193,7 @@ int VFS::hasAccess(pid_t pid,mode_t mode,uid_t uid,gid_t gid,ushort flags) {
 	return fs::Permissions::canAccess<Groups::contains>(&u,mode,uid,gid,perms);
 }
 
-int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile **file) {
+int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,ssize_t *sympos,OpenFile **file) {
 	OpenFile *fsFile;
 	const char *begin;
 	int err;
@@ -223,9 +223,15 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 		if(err < 0)
 			goto errorMnt;
 		node = rres.node;
+		if(rres.sympos != -1 && sympos) {
+			flags = VFS_READ;
+			*sympos = (begin - path) + rres.sympos;
+			sympos = NULL;
+		}
 		if((err = hasAccess(pid,node,flags)) < 0)
 			goto error;
 
+		begin = rres.end;
 		openmsg = MSG_FILE_OPEN;
 	}
 	/* otherwise use the device-node of the fs */
@@ -249,9 +255,14 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 	}
 
 	/* give the node a chance to react on it */
-	err = node->open(pid,begin,root,flags,openmsg,mode);
+	err = node->open(pid,begin,sympos,root,flags,openmsg,mode);
 	if(err < 0)
 		goto error;
+	/* symlink found? */
+	if(sympos && *sympos != -1) {
+		*sympos += begin - path;
+		flags = VFS_READ;
+	}
 
 	/* open file */
 	if(openmsg == MSG_FS_OPEN)

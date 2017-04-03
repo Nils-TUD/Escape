@@ -24,13 +24,13 @@
 #include <string.h>
 
 namespace esc {
-	file::file(const std::string& p)
+	file::file(const std::string& p,bool follow)
 		: _info(), _parent(), _name() {
-		init(p,"");
+		init(p,"",follow);
 	}
-	file::file(const std::string& p,const std::string& n)
+	file::file(const std::string& p,const std::string& n,bool follow)
 		: _info(), _parent(), _name() {
-		init(p,n);
+		init(p,n,follow);
 	}
 	file::file(const file& f)
 		: _info(f._info), _parent(f._parent), _name(f._name) {
@@ -62,7 +62,7 @@ namespace esc {
 		return v;
 	}
 
-	void file::init(const std::string& p,const std::string& n) {
+	void file::init(const std::string& p,const std::string& n,bool follow) {
 		char apath[MAX_PATH_LEN];
 		size_t len = cleanpath(apath,sizeof(apath),p.c_str());
 		if(n.empty()) {
@@ -80,8 +80,8 @@ namespace esc {
 		else
 			_name = n;
 		_parent = apath;
-		int res = stat(path().c_str(),&_info);
+		int res = follow ? stat(path().c_str(),&_info) : lstat(path().c_str(),&_info);
 		if(res < 0)
-			throw default_error("stat failed",res);
+			throw default_error("lstat failed",res);
 	}
 }

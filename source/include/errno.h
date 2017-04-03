@@ -68,6 +68,7 @@
 #define ENOTFOUND					44	/* Not found */
 #define ERANGE						45	/* Result too large (POSIX.1, C99) */
 #define EDOM						46	/* Math argument out of domain of function (POSIX.1, C99) */
+#define ELOOP						47  /* Too many levels of symbolic links */
 
 #if defined(__cplusplus)
 extern "C" {

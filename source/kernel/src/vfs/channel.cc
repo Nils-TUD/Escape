@@ -81,7 +81,7 @@ int VFSChannel::isSupported(int op) const {
 	return 0;
 }
 
-ssize_t VFSChannel::open(pid_t pid,const char *path,ino_t root,uint flags,int msgid,mode_t mode) {
+ssize_t VFSChannel::open(pid_t pid,const char *path,ssize_t *sympos,ino_t root,uint flags,int msgid,mode_t mode) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 	ssize_t res;
@@ -130,7 +130,9 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,ino_t root,uint flags,int ms
 			res = r.err;
 			goto error;
 		}
-		return r.res;
+		if(sympos)
+			*sympos = r.res.sympos;
+		return r.res.ino;
 	}
 
 error:

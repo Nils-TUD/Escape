@@ -48,6 +48,7 @@ enum {
 	MSG_FS_CHOWN					= 112,
 	MSG_FS_UTIME					= 113,
 	MSG_FS_TRUNCATE					= 114,
+	MSG_FS_SYMLINK					= 115,
 
 	/* speaker */
 	MSG_SPEAKER_BEEP				= 200,	/* performs a beep */

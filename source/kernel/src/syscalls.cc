@@ -122,6 +122,7 @@ const Syscalls::handler_func Syscalls::syscalls[] = {
 	gettimeofday,
 	utime,
 	truncate,
+	symlink,
 #if defined(__x86__)
 	reqports,
 	relports,

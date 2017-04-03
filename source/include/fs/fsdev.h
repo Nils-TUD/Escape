@@ -64,6 +64,7 @@ public:
 		this->set(MSG_FS_CHOWN,std::make_memfun(this,&FSDevice::chown));
 		this->set(MSG_FS_UTIME,std::make_memfun(this,&FSDevice::utime));
 		this->set(MSG_FS_TRUNCATE,std::make_memfun(this,&FSDevice::truncate));
+		this->set(MSG_FS_SYMLINK,std::make_memfun(this,&FSDevice::symlink));
 	}
 
 	virtual ~FSDevice() {
@@ -107,10 +108,15 @@ public:
 		is >> r;
 
 		F *file;
-		ino_t no = _fs->open(&r.u,path,r.root,r.flags,S_IFREG | (r.mode & MODE_PERM),is.fd(),&file);
-		if(no >= 0)
+		esc::FileOpen::Result res;
+		mode_t mode = S_IFREG | (r.mode & MODE_PERM);
+		res.ino = _fs->open(&r.u,path,&res.sympos,r.root,r.flags,mode,is.fd(),&file);
+		if(res.ino >= 0) {
 			this->add(is.fd(),file);
-		is << esc::FileOpen::Response::result(no) << esc::Reply();
+			is << esc::FileOpen::Response::success(res) << esc::Reply();
+		}
+		else
+			is << esc::FileOpen::Response::error(res.ino) << esc::Reply();
 	}
 
 	void read(esc::IPCStream &is) {
@@ -220,6 +226,18 @@ public:
 
 		int res = _fs->rmdir(&r.u,file,r.name.str());
 		is << esc::FSRmdir::Response(res) << esc::Reply();
+	}
+
+	void symlink(esc::IPCStream &is) {
+		char target[MAX_PATH_LEN];
+		char name[MAX_PATH_LEN];
+		esc::FSSymlink::Request r(name,sizeof(name),target,sizeof(target));
+		is >> r;
+
+		F *file = (*this)[is.fd()];
+
+		int res = _fs->symlink(&r.u,file,r.name.str(),r.target.str());
+		is << esc::FSSymlink::Response(res) << esc::Reply();
 	}
 
 	void chmod(esc::IPCStream &is) {

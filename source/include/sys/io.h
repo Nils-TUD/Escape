@@ -44,6 +44,7 @@ enum {
 	O_LONELY				= 1 << 7,	/* disallow other accesses */
 	O_EXCL					= 1 << 8,	/* fail if the file already exists */
 	O_NOCHAN				= 1 << 9, 	/* don't create a channel, but open the device itself */
+	O_NOFOLLOW				= 1 << 10,	/* don't resolve last symlink */
 };
 
 /* file descriptors for stdin, stdout and stderr */
@@ -445,6 +446,25 @@ A_CHECKRET int rmdir(const char *path);
  * @return 0 on success
  */
 A_CHECKRET int frmdir(int fd,const char *name);
+
+/**
+ * Creates a symlink at <linkpath>, pointing to <target>.
+ *
+ * @param target the link target
+ * @param linkpath the path where to create the link
+ * @return 0 on success
+ */
+A_CHECKRET int symlink(const char *target,const char *linkpath);
+
+/**
+ * Creates a symlink at <fd>/<name>, pointing to <target>.
+ *
+ * @param target the link target
+ * @param fd the file descriptor for the directory to create the symlink in
+ * @param name the symlink name
+ * @return 0 on success
+ */
+A_CHECKRET int fsymlink(const char *target,int fd,const char *name);
 
 /**
  * Writes all dirty objects of the affected filesystem to disk

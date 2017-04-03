@@ -43,17 +43,19 @@ namespace esc {
 		 * Builds a file-object for given path
 		 *
 		 * @param path the path (has not to be absolute)
+		 * @param follow whether to follow the last symlink
 		 * @throws default_error if stat fails
 		 */
-		file(const std::string& path);
+		file(const std::string& path,bool follow = true);
 		/**
 		 * Builds a file-object for <name> in <parent>
 		 *
 		 * @param parent the parent-path (has not to be absolute)
 		 * @param name the filename
+		 * @param follow whether to follow the last symlink
 		 * @throws default_error if stat fails
 		 */
-		file(const std::string& parent,const std::string& name);
+		file(const std::string& parent,const std::string& name,bool follow = true);
 		/**
 		 * Copy-constructor
 		 */
@@ -178,9 +180,10 @@ namespace esc {
 		 *
 		 * @param parent the parent-path
 		 * @param name the filename
+		 * @param follow whether to follow the last symlink
 		 * @throws default_error if stat fails
 		 */
-		void init(const std::string& parent,const std::string& name);
+		void init(const std::string& parent,const std::string& name,bool follow);
 
 	private:
 		struct stat _info;

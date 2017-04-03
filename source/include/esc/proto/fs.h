@@ -197,6 +197,36 @@ struct FSRmdir {
 	typedef ErrorResponse Response;
 };
 
+struct FSSymlink {
+	static const msgid_t MSG = MSG_FS_SYMLINK;
+
+	struct Request {
+		explicit Request() {
+		}
+		explicit Request(char *nbuf,size_t nsize,char *tbuf,size_t tsize)
+			: u(), name(nbuf,nsize), target(tbuf,tsize) {
+		}
+		explicit Request(const fs::User &_u,const CString &_name, const CString &_target)
+			: u(_u), name(_name), target(_target) {
+		}
+
+		friend IPCBuf &operator<<(IPCBuf &is,const Request &r) {
+			return is << r.u << r.name << r.target;
+		}
+		friend IPCStream &operator<<(IPCStream &is,const Request &r) {
+			return is << r.u << r.name << r.target;
+		}
+		friend IPCStream &operator>>(IPCStream &is,Request &r) {
+			return is >> r.u >> r.name >> r.target;
+		}
+
+		fs::User u;
+		CString name;
+		CString target;
+	};
+	typedef ErrorResponse Response;
+};
+
 struct FSChmod {
 	static const msgid_t MSG = MSG_FS_CHMOD;
 

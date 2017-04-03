@@ -56,7 +56,19 @@ struct FileOpen {
 		mode_t mode;
 	};
 
-	typedef ValueResponse<ino_t> Response;
+	struct Result {
+		explicit Result() : ino(), sympos(-1) {
+		}
+		Result(ino_t _ino) : ino(_ino), sympos(-1) {
+		}
+		explicit Result(ino_t _ino,size_t _sympos) : ino(_ino), sympos(_sympos) {
+		}
+
+		ino_t ino;
+		ssize_t sympos;
+	};
+
+	typedef ValueResponse<Result> Response;
 };
 
 /**

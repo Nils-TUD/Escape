@@ -46,7 +46,7 @@ uintptr_t bspstart(BootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
 	OpenFile *file;
 	pid_t pid = t->getProc()->getPid();
 	ELF::StartupInfo info;
-	if(VFS::openPath(pid,VFS_EXEC | VFS_READ,0,"/sys/boot/initloader",&file) < 0)
+	if(VFS::openPath(pid,VFS_EXEC | VFS_READ,0,"/sys/boot/initloader",NULL,&file) < 0)
 		Util::panic("Unable to open initloader");
 	if(ELF::load(file,&info) < 0)
 		Util::panic("Unable to load initloader");

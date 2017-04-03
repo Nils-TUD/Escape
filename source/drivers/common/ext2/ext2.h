@@ -55,7 +55,7 @@ public:
 	explicit Ext2FileSystem(const char *device);
 	virtual ~Ext2FileSystem();
 
-	ino_t open(fs::User *u,const char *path,ino_t root,uint flags,mode_t mode,int fd,
+	ino_t open(fs::User *u,const char *path,ssize_t *pos,ino_t root,uint flags,mode_t mode,int fd,
 		fs::OpenFile **file) override;
 	void close(fs::OpenFile *file) override;
 	ino_t find(fs::User *u,fs::OpenFile *dir,const char *name);
@@ -68,6 +68,7 @@ public:
 	int unlink(fs::User *u,fs::OpenFile *dir,const char *name) override;
 	int mkdir(fs::User *u,fs::OpenFile *dir,const char *name,mode_t mode) override;
 	int rmdir(fs::User *u,fs::OpenFile *dir,const char *name) override;
+	int symlink(fs::User *u,fs::OpenFile *dir,const char *name,const char *target) override;
 	int rename(fs::User *u,fs::OpenFile *oldDir,const char *oldName,fs::OpenFile *newDir,
 		const char *newName) override;
 	int chmod(fs::User *u,fs::OpenFile *file,mode_t mode) override;

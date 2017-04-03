@@ -47,7 +47,7 @@ void Util::panicArch() {
 void Util::switchToVGA() {
 	pid_t pid = Proc::getRunning();
 	OpenFile *file;
-	if(VFS::openPath(pid,VFS_MSGS | VFS_NOBLOCK,0,"/dev/vga",&file) == 0) {
+	if(VFS::openPath(pid,VFS_MSGS | VFS_NOBLOCK,0,"/dev/vga",NULL,&file) == 0) {
 		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 		esc::IPCBuf ib(buffer,sizeof(buffer));
 		ib << 3 << 1 << true;

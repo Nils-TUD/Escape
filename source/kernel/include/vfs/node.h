@@ -84,6 +84,8 @@ public:
 		const char *end;
 		/* true if a file has been created */
 		bool created;
+		/* the position of a symlink, if found */
+		ssize_t sympos;
 	};
 
 	/**
@@ -432,6 +434,16 @@ public:
 	int rmdir(pid_t pid,const char *name);
 
 	/**
+	 * Creates a symlink named <name> in this directory, pointing to <target>.
+	 *
+	 * @param pid the process-id
+	 * @param name the filename
+	 * @param target the target path
+	 * @return 0 on success
+	 */
+	int symlink(pid_t pid,const char *name,const char *target);
+
+	/**
 	 * Creates a device-node for the given process at <this>/<name>
 	 *
 	 * @param pid the process-id
@@ -486,12 +498,13 @@ public:
 	 *
 	 * @param pid the process-id
 	 * @param path the path (behind the mountpoint)
+	 * @param sympos will be set to the position within the path if a symlink is encountered
 	 * @param root the root inode
 	 * @param flags the open-flags
 	 * @param msgid the message-id to use (only important for channel)
 	 * @param mode the mode to set
 	 */
-	virtual ssize_t open(pid_t pid,const char *path,ino_t root,uint flags,int msgid,mode_t mode);
+	virtual ssize_t open(pid_t pid,const char *path,ssize_t *sympos,ino_t root,uint flags,int msgid,mode_t mode);
 
 	/**
 	 * @param pid the process-id

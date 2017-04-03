@@ -28,6 +28,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX_SYMLINK_DEPTH	8
+
 static const char *splitPath(char *tmp,char *apath,const char *path,char **name) {
 	/* copy it to the stack first, because abspath might return the third argument, which has to
 	 * be writable, because dirfile needs to change it */
@@ -36,14 +38,67 @@ static const char *splitPath(char *tmp,char *apath,const char *path,char **name)
 	return dirfile(fullpath,name);
 }
 
+static int openRec(const char *path,uint flags,mode_t mode,int depth) {
+	ssize_t pos = -1;
+	int fd = syscall4(SYSCALL_OPEN,(ulong)path,flags,mode,(ulong)&pos);
+	if(pos != -1) {
+		/* prevent endless recursion */
+		if(depth == 0) {
+			close(fd);
+			return -ELOOP;
+		}
+
+		path += pos;
+
+		/* read symlink path */
+		char symbuf[MAX_PATH_LEN],*sympath;
+		if((size_t)pos + 1 >= sizeof(symbuf)) {
+			close(fd);
+			return -ENOMEM;
+		}
+		/* leave room for the path at the beginning and the 0-termination */
+		ssize_t len = read(fd,symbuf + pos,sizeof(symbuf) - (pos + 1));
+		close(fd);
+		if(len < 0)
+			return len;
+
+		if(symbuf[pos] == '/') {
+			/* start at absolute path */
+			sympath = symbuf + pos;
+		}
+		else {
+			/* copy the beginning again and start there */
+			memcpy(symbuf,path - pos,pos);
+			sympath = symbuf;
+		}
+
+		/* skip symlink in path */
+		while(*path == '/')
+			path++;
+		while(*path && *path != '/')
+			path++;
+
+		/* append remaining path */
+		if(*path && pos + (size_t)len + 1 < sizeof(symbuf)) {
+			symbuf[pos + len] = '/';
+			strnzcpy(symbuf + pos + len + 1,path,sizeof(symbuf) - (pos + len + 1));
+		}
+		else
+			symbuf[pos + len] = '\0';
+		return openRec(sympath,flags,mode,depth - 1);
+	}
+	return fd;
+}
+
 int open(const char *path,uint flags,...) {
 	va_list ap;
 	va_start(ap, flags);
 	mode_t mode = va_arg(ap, int);
 	va_end(ap);
 
-	char apath[MAX_PATH_LEN];
-	return syscall3(SYSCALL_OPEN,(ulong)abspath(apath,sizeof(apath),path),flags,mode);
+	char buf[MAX_PATH_LEN];
+	char *apath = abspath(buf,sizeof(buf),path);
+	return openRec(apath,flags,mode,MAX_SYMLINK_DEPTH);
 }
 
 int truncate(const char *path,off_t length) {
@@ -162,6 +217,24 @@ int rmdir(const char *path) {
 
 int frmdir(int fd,const char *name) {
 	return syscall2(SYSCALL_RMDIR,fd,(ulong)name);
+}
+
+int symlink(const char *target,const char *linkpath) {
+	char *name, apath[MAX_PATH_LEN];
+	char tmp[MAX_PATH_LEN];
+	const char *dirPath = splitPath(tmp,apath,linkpath,&name);
+
+	int fd = open(dirPath,O_WRITE);
+	if(fd < 0)
+		return fd;
+	int res = fsymlink(target,fd,name);
+	close(fd);
+	errno = res;
+	return res;
+}
+
+int fsymlink(const char *target,int fd,const char *name) {
+	return syscall3(SYSCALL_SYMLINK,(ulong)target,fd,(ulong)name);
 }
 
 int pipe(int *readFd,int *writeFd) {

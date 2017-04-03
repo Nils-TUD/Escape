@@ -21,8 +21,8 @@
 #include <sys/stat.h>
 #include <sys/io.h>
 
-int stat(const char *path,struct stat *info) {
-	int fd = open(path,O_NOCHAN);
+static int doStat(const char *path,struct stat *info,uint flags) {
+	int fd = open(path,flags);
 	if(fd < 0)
 		return fd;
 	int res = fstat(fd,info);
@@ -31,8 +31,16 @@ int stat(const char *path,struct stat *info) {
 	return res;
 }
 
+int stat(const char *path,struct stat *info) {
+	return doStat(path,info,O_NOCHAN);
+}
+
 int fstat(int fd,struct stat *info) {
 	return syscall2(SYSCALL_FSTAT,fd,(ulong)info);
+}
+
+int lstat(const char *path,struct stat *info) {
+	return doStat(path,info,O_NOCHAN | O_NOFOLLOW);
 }
 
 off_t filesize(int fd) {

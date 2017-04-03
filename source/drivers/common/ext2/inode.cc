@@ -83,6 +83,8 @@ int Ext2INode::chmod(Ext2FileSystem *e,User *u,ino_t inodeNo,mode_t mode) {
 
 	if(!Permissions::canChmod(u,le16tocpu(cnode->inode.uid)))
 		return -EPERM;
+	if(S_ISLNK(le16tocpu(cnode->inode.mode)))
+		return -ENOTSUP;
 
 	oldMode = le16tocpu(cnode->inode.mode);
 	cnode->inode.mode = cputole16((oldMode & ~EXT2_S_PERMS) | (mode & EXT2_S_PERMS));
@@ -102,6 +104,8 @@ int Ext2INode::chown(Ext2FileSystem *e,User *u,ino_t inodeNo,uid_t uid,gid_t gid
 	oldGid = le16tocpu(cnode->inode.gid);
 	if(!Permissions::canChown(u,oldUid,oldGid,uid,gid))
 		return -EPERM;
+	if(S_ISLNK(le16tocpu(cnode->inode.mode)))
+		return -ENOTSUP;
 
 	if(uid != (uid_t)-1)
 		cnode->inode.uid = cputole16(uid);

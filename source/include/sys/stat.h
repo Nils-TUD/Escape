@@ -73,6 +73,9 @@
 								S_IRUSR | S_IWUSR | S_IXUSR | \
 								S_IRGRP | S_IXGRP | \
 								S_IROTH | S_IXOTH)
+#define LNK_DEF_MODE		(S_IFLNK | S_IRUSR | S_IXUSR | \
+								S_IRGRP | S_IXGRP | \
+								S_IROTH | S_IXOTH)
 
 struct stat {
 	dev_t st_dev;     		/* ID of device containing file */
@@ -111,6 +114,16 @@ A_CHECKRET int stat(const char *path,struct stat *info);
  * @return 0 on success
  */
 A_CHECKRET int fstat(int fd,struct stat *info);
+
+/**
+ * lstat() is identical to stat(), except that if <path> is a symbolic link, it returns information
+ * about the symbolic link instead of resolving it.
+ *
+ * @param path the path of the file
+ * @param info will be filled
+ * @return 0 on success
+ */
+A_CHECKRET int lstat(const char *path,struct stat *info);
 
 /**
  * Retrieves only the size of the file referenced by the given file-descriptor. This is only a
@@ -174,13 +187,16 @@ A_CHECKRET int fchown(int fd,uid_t uid,gid_t gid);
 	return check
 
 /**
- * Checks whether the given path points to a regular file
+ * Checks whether the given path points to a regular file. isfile uses stat, lisfile uses lstat.
  *
  * @param path the path
  * @return true if its a file; false if not or an error occurred
  */
 static inline bool isfile(const char *path) {
 	IS_FILE_TYPE(stat,path,S_ISREG(info.st_mode));
+}
+static inline bool lisfile(const char *path) {
+	IS_FILE_TYPE(lstat,path,S_ISREG(info.st_mode));
 }
 
 /**
@@ -194,13 +210,16 @@ static inline bool fisfile(int fd) {
 }
 
 /**
- * Checks whether the given path points to a directory
+ * Checks whether the given path points to a directory. isdir uses stat, lisdir uses lstat.
  *
  * @param path the path
  * @return true if its a directory; false if not or an error occurred
  */
 static inline bool isdir(const char *path) {
 	IS_FILE_TYPE(stat,path,S_ISDIR(info.st_mode));
+}
+static inline bool lisdir(const char *path) {
+	IS_FILE_TYPE(lstat,path,S_ISDIR(info.st_mode));
 }
 
 /**
@@ -215,13 +234,16 @@ static inline bool fisdir(int fd) {
 
 /**
  * Checks whether the given path points to a file that behaves like a block-device, i.e. either
- * a regular file or a block device.
+ * a regular file or a block device. isblock uses stat, lisblock uses lstat.
  *
  * @param path the path
  * @return true if its a regular file or block device
  */
 static inline bool isblock(const char *path) {
 	IS_FILE_TYPE(stat,path,S_ISREG(info.st_mode) || S_ISBLK(info.st_mode));
+}
+static inline bool lisblock(const char *path) {
+	IS_FILE_TYPE(lstat,path,S_ISREG(info.st_mode) || S_ISBLK(info.st_mode));
 }
 
 /**

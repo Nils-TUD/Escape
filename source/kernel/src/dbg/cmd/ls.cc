@@ -47,7 +47,7 @@ int cons_cmd_ls(OStream &os,size_t argc,char **argv) {
 
 	/* redirect prints */
 	OpenFile *file;
-	int res = VFS::openPath(pid,VFS_READ,0,argv[1],&file);
+	int res = VFS::openPath(pid,VFS_READ,0,argv[1],NULL,&file);
 	if(res < 0)
 		return res;
 	struct dirent e;

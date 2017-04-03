@@ -146,4 +146,15 @@ public:
 	 * @return 0 on success
 	 */
 	static int rmdir(pid_t pid,VFSChannel *chan,const char *name);
+
+	/**
+	 * Creates a symlink named <name> in the directory denoted by <chan>, pointing to <target>.
+	 *
+	 * @param pid the process-id
+	 * @param chan the channel for the file to the fs instance
+	 * @param name the filename
+	 * @param target the target path
+	 * @return 0 on success
+	 */
+	static int symlink(pid_t pid,VFSChannel *chan,const char *name,const char *target);
 };

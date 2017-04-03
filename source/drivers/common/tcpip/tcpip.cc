@@ -98,7 +98,10 @@ public:
 			}
 		}
 
-		is << esc::FileOpen::Response::result(res) << esc::Reply();
+		if(res < 0)
+			is << esc::FileOpen::Response::error(res) << esc::Reply();
+		else
+			is << esc::FileOpen::Response::success(res) << esc::Reply();
 	}
 
 	void connect(esc::IPCStream &is) {

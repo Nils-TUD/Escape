@@ -225,6 +225,20 @@ int OpenFile::rmdir(pid_t pid,const char *name) {
 	return err;
 }
 
+int OpenFile::symlink(pid_t pid,const char *name,const char *target) {
+	if(!(flags & VFS_WRITE))
+		return -EACCES;
+
+	int err = -EINVAL;
+	if(devNo == VFS_DEV_NO)
+		err = node->symlink(pid,name,target);
+	else if(IS_CHANNEL(node->getMode())) {
+		VFSChannel *chan = static_cast<VFSChannel*>(node);
+		err = VFSFS::symlink(pid,chan,name,target);
+	}
+	return err;
+}
+
 int OpenFile::createdev(pid_t pid,const char *name,mode_t mode,uint type,uint ops,OpenFile **file) {
 	if(devNo != VFS_DEV_NO)
 		return -ENOTSUP;

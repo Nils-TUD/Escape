@@ -27,7 +27,7 @@
 #include <string.h>
 
 static void removeRec(const char *path,bool rec) {
-	if(isdir(path)) {
+	if(lisdir(path)) {
 		if(!rec) {
 			printe("Omitting directory '%s'",path);
 			return;

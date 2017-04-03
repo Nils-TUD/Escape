@@ -92,8 +92,8 @@ bool VFSNode::isDeletable() const {
 	return getOwner() != KERNEL_PID;
 }
 
-ssize_t VFSNode::open(pid_t pid,A_UNUSED const char *path,A_UNUSED ino_t root,uint flags,
-	A_UNUSED int msgid,A_UNUSED mode_t mode) {
+ssize_t VFSNode::open(pid_t pid,A_UNUSED const char *path,ssize_t *,A_UNUSED ino_t root,uint flags,
+		A_UNUSED int msgid,A_UNUSED mode_t mode) {
 	int err;
 	if((err = VFS::hasAccess(pid,this,flags)) < 0)
 		return err;
@@ -182,6 +182,9 @@ int VFSNode::chmod(pid_t pid,mode_t m) {
 		fs::User u(p->getUid(),p->getGid(),p->getPid());
 		if(!fs::Permissions::canChmod(&u,uid))
 			res = -EPERM;
+		/* chmod is forbidden for symlinks */
+		else if(S_ISLNK(mode))
+			res = -ENOTSUP;
 		Proc::relRef(p);
 	}
 	if(res == 0)
@@ -196,6 +199,9 @@ int VFSNode::chown(pid_t pid,uid_t nuid,gid_t ngid) {
 		fs::User u(p->getUid(),p->getGid(),p->getPid());
 		if(!fs::Permissions::canChown<Groups::contains>(&u,uid,gid,nuid,ngid))
 			res = -EPERM;
+		/* chown is forbidden for symlinks */
+		else if(S_ISLNK(mode))
+			res = -ENOTSUP;
 		Proc::relRef(p);
 	}
 
@@ -379,6 +385,25 @@ error:
 	return res;
 }
 
+int VFSNode::symlink(pid_t pid,const char *name,const char *target) {
+	/* ensure its a directory */
+	if(!S_ISDIR(mode))
+		return -ENOTDIR;
+
+	/* check whether the device does already exist */
+	if(findInDir(name,strlen(name)) != NULL)
+		return -EEXIST;
+
+	/* create link */
+	VFSNode *link;
+	int res = createFile(pid,name,this,&link,VFS_SYMLINK,LNK_DEF_MODE);
+	if(res < 0)
+		return res;
+	/* write target path */
+	link->write(pid,NULL,target,0,strlen(target));
+	return res;
+}
+
 int VFSNode::createdev(pid_t pid,const char *name,mode_t mode,uint type,uint ops,VFSNode **node) {
 	/* ensure its a directory */
 	if(!S_ISDIR(this->mode))
@@ -404,7 +429,7 @@ int VFSNode::createdev(pid_t pid,const char *name,mode_t mode,uint type,uint ops
 
 int VFSNode::request(const char *path,VFSNode **node,uint flags,mode_t mode) {
 	RequestResult res;
-	int err = request(path,*node,&res,flags,mode);
+	int err = request(path,*node,&res,flags | VFS_NOFOLLOW,mode);
 	if(err < 0)
 		return err;
 	*node = res.node;
@@ -416,11 +441,13 @@ int VFSNode::request(const char *path,VFSNode *node,RequestResult *res,uint flag
 	const Thread *t = Thread::getRunning();
 	/* at the beginning, t might be NULL */
 	pid_t pid = t ? t->getProc()->getPid() : KERNEL_PID;
+	const char *opath = path,*lastpath = path;
 	int pos = 0,err,depth,lastdepth;
 	bool valid;
 	if(n == NULL)
 		n = get(0);
 
+	res->sympos = -1;
 	res->created = false;
 	res->node = NULL;
 
@@ -460,6 +487,7 @@ int VFSNode::request(const char *path,VFSNode *node,RequestResult *res,uint flag
 			}
 
 			if((int)n->nameLen == pos && strncmp(n->name,path,pos) == 0) {
+				lastpath = path;
 				path += pos;
 				/* finished? */
 				if(!*path)
@@ -472,7 +500,7 @@ int VFSNode::request(const char *path,VFSNode *node,RequestResult *res,uint flag
 				if(!*path)
 					break;
 
-				if(IS_DEVICE(n->mode))
+				if(IS_DEVICE(n->mode) || S_ISLNK(n->mode))
 					break;
 
 				/* move to childs of this node */
@@ -516,6 +544,8 @@ int VFSNode::request(const char *path,VFSNode *node,RequestResult *res,uint flag
 		res->node->ref();
 		if(res->node == NULL)
 			err = -ENOENT;
+		else if(S_ISLNK(n->mode) && (!(flags & VFS_NOFOLLOW) || *path))
+			res->sympos = lastpath - opath;
 		dir->closeDir(true);
 	}
 	res->end = path;
@@ -696,7 +726,10 @@ int VFSNode::createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,
 	memcpy(nameCpy,path,nameLen + 1);
 
 	/* now create the node and pass the node-number back */
-	*child = createObj<VFSFile>(pid,dir,nameCpy,mode);
+	if(flags & VFS_SYMLINK)
+		*child = createObj<VFSFile>(pid,dir,nameCpy,S_IFLNK | LNK_DEF_MODE);
+	else
+		*child = createObj<VFSFile>(pid,dir,nameCpy,S_IFREG | (mode & MODE_PERM));
 	if(*child == NULL) {
 		Cache::free(nameCpy);
 		return -ENOMEM;

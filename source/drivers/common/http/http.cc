@@ -88,8 +88,10 @@ public:
 			// here to prevent that we get a request for this channel and bind it in the thread-
 			// function to ensure that the thread gets already arrived messages
 			::bindto(is.fd(),res);
+			is << FileOpen::Response::success(res) << Reply();
 		}
-		is << FileOpen::Response::result(res >= 0 ? 0 : res) << Reply();
+		else
+			is << FileOpen::Response::error(res) << Reply();
 	}
 
 	void filesize(IPCStream &is) {

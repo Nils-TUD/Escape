@@ -39,7 +39,7 @@ public:
 	virtual ~FileSystem() {
 	}
 
-	virtual ino_t open(User *u,const char *path,ino_t root,uint flags,mode_t mode,int fd,F **) = 0;
+	virtual ino_t open(User *u,const char *path,ssize_t *pos,ino_t root,uint flags,mode_t mode,int fd,F **) = 0;
 
 	virtual void close(F *file) = 0;
 
@@ -61,6 +61,9 @@ public:
 		return -ENOTSUP;
 	}
 	virtual int rmdir(User *,F *,const char *) {
+		return -ENOTSUP;
+	}
+	virtual int symlink(User *,F *,const char *,const char *) {
 		return -ENOTSUP;
 	}
 	virtual int rename(User *,F *,const char *,F *,const char *) {

@@ -135,7 +135,7 @@ void Boot::createModFiles() {
 	if(res < 0)
 		Util::panic("Unable to resolve /sys/boot");
 
-	VFSNode *args = createObj<VFSFile>(KERNEL_PID,node,strdup("arguments"),S_IRUSR | S_IRGRP | S_IROTH);
+	VFSNode *args = createObj<VFSFile>(KERNEL_PID,node,strdup("arguments"),S_IFREG | S_IRUSR | S_IRGRP | S_IROTH);
 	if(!args)
 		Util::panic("Unable to create /sys/boot/arguments");
 

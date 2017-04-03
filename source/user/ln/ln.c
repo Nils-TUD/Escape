@@ -23,17 +23,24 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s <target> <linkName>\n",name);
+	fprintf(stderr,"Usage: %s [-s] <target> <linkName>\n",name);
 	exit(EXIT_FAILURE);
 }
 
 int main(int argc,char *argv[]) {
-	if(argc != 3 || getopt_ishelp(argc,argv))
+	if(argc < 3 || getopt_ishelp(argc,argv))
 		usage(argv[0]);
 
-	if(link(argv[1],argv[2]) < 0)
-		error("Unable to create the link '%s' to '%s'",argv[1],argv[2]);
+	if(strcmp(argv[1],"-s") == 0) {
+		if(symlink(argv[2],argv[3]) < 0)
+			error("Unable to create the symlink '%s' to '%s'",argv[3],argv[2]);
+	}
+	else {
+		if(link(argv[1],argv[2]) < 0)
+			error("Unable to create the link '%s' to '%s'",argv[1],argv[2]);
+	}
 	return EXIT_SUCCESS;
 }

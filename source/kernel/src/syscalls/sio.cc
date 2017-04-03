@@ -39,8 +39,11 @@ int Syscalls::open(Thread *t,IntrptStackFrame *stack) {
 	const char *path = (const char*)SYSC_ARG1(stack);
 	uint flags = (uint)SYSC_ARG2(stack);
 	mode_t mode = (mode_t)SYSC_ARG3(stack);
+	ssize_t *sympos = (ssize_t*)SYSC_ARG4(stack);
 	pid_t pid = t->getProc()->getPid();
 	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
+		SYSC_ERROR(stack,-EFAULT);
+	if(!PageDir::isInUserSpace((uintptr_t)sympos,sizeof(size_t)))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* check flags */
@@ -50,7 +53,8 @@ int Syscalls::open(Thread *t,IntrptStackFrame *stack) {
 
 	/* open the path */
 	OpenFile *file;
-	int res = VFS::openPath(pid,flags,mode,abspath,&file);
+	ssize_t ksympos = -1;
+	int res = VFS::openPath(pid,flags,mode,abspath,&ksympos,&file);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 
@@ -60,6 +64,7 @@ int Syscalls::open(Thread *t,IntrptStackFrame *stack) {
 		file->close(pid);
 		SYSC_ERROR(stack,fd);
 	}
+	UserAccess::write(sympos,&ksympos,sizeof(ksympos));
 	SYSC_SUCCESS(stack,fd);
 }
 
@@ -452,5 +457,23 @@ int Syscalls::rmdir(Thread *t,IntrptStackFrame *stack) {
 
 	ScopedFile file(p,fd);
 	int res = EXPECT_TRUE(file) ? file->rmdir(p->getPid(),filename) : -EBADF;
+	SYSC_RESULT(stack,res);
+}
+
+int Syscalls::symlink(Thread *t,IntrptStackFrame *stack) {
+	char ktarget[MAX_PATH_LEN + 1];
+	char kname[MAX_PATH_LEN + 1];
+	const char *target = (const char*)SYSC_ARG1(stack);
+	int dir = (int)SYSC_ARG2(stack);
+	const char *name = (const char*)SYSC_ARG3(stack);
+	Proc *p = t->getProc();
+
+	if(EXPECT_FALSE(!copyPath(ktarget,sizeof(ktarget),target)))
+		SYSC_ERROR(stack,-EFAULT);
+	if(EXPECT_FALSE(!copyPath(kname,sizeof(kname),name)))
+		SYSC_ERROR(stack,-EFAULT);
+
+	ScopedFile file(p,dir);
+	int res = EXPECT_TRUE(file) ? file->symlink(p->getPid(),kname,ktarget) : -EBADF;
 	SYSC_RESULT(stack,res);
 }

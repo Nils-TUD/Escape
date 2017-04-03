@@ -115,7 +115,7 @@ void VFS::mountAll(Proc *p) {
 
 static int updateMSLink(Proc *p,VFSMS *ms) {
 	VFSNode *node = VFSNode::get(p->getThreadsDir());
-	int res = VFSNode::request("../ms",NULL,&node,NULL,VFS_READ | VFS_NOLINKRES,0);
+	int res = VFSNode::request("../ms",&node,VFS_READ | VFS_NOLINKRES,0);
 	if(res < 0)
 		return res;
 	static_cast<VFSLink*>(node)->setTarget(ms);
@@ -132,7 +132,7 @@ int VFS::cloneMS(Proc *p,const VFSMS *src,const char *name) {
 
 	// check if the file exists
 	VFSNode *tmp = msNode;
-	if(VFSNode::request(copy,NULL,&tmp,NULL,VFS_READ,0) == 0) {
+	if(VFSNode::request(copy,&tmp,VFS_READ,0) == 0) {
 		VFSNode::release(tmp);
 		Cache::free(copy);
 		return -EEXIST;
@@ -214,14 +214,15 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,OpenFile *
 	VFSNode *node;
 	msgid_t openmsg;
 	if(!IS_CHANNEL(fsFile->getNode()->getMode())) {
-		const char *vpath = begin;
 		if(root == 0)
 			node = fsFile->getNode();
 		else
 			node = VFSNode::get(root);
-		err = VFSNode::request(vpath,&begin,&node,NULL,flags,mode);
+		VFSNode::RequestResult rres;
+		err = VFSNode::request(begin,node,&rres,flags,mode);
 		if(err < 0)
 			goto errorMnt;
+		node = rres.node;
 		if((err = hasAccess(pid,node,flags)) < 0)
 			goto error;
 

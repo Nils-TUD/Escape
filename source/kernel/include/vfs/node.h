@@ -77,6 +77,15 @@ class VFSNode : public CacheAllocatable {
 	friend class OpenFile;
 
 public:
+	struct RequestResult {
+		/* the resulting node */
+		VFSNode *node;
+		/* the position in the string, where it stopped */
+		const char *end;
+		/* true if a file has been created */
+		bool created;
+	};
+
 	/**
 	 * Initializes the nodes
 	 */
@@ -133,22 +142,31 @@ public:
 	}
 
 	/**
+	 * Convenience wrapper for the more complicated request method. It passes <node> as the starting
+	 * point and sets <node> to the resulting node on success.
+	 *
+	 * @param path the path to resolve
+	 * @param node the starting node (NULL = root) and resulting node
+	 * @param flags the flags (VFS_*) with which to resolve the path (create file,...)
+	 * @param mode the mode to set (if a file is created)
+	 * @return 0 if successfull or the error-code
+	 */
+	static int request(const char *path,VFSNode **node,uint flags,mode_t mode);
+
+	/**
 	 * Resolves the given path to a VFS-node and requests it, i.e. increments the references.
 	 * This way, you can be sure that if 0 is returned, the node is not destroyed until
 	 * you call release(). On the other hand, it might get detached from the tree if you don't
 	 * prevent that by acquiring the tree-lock.
 	 *
 	 * @param path the path to resolve
-	 * @param end if not NULL, is set to the position where the function stopped
-	 * @param node the node where to start and it will be set to the resulting node
-	 * @param created will be set to true if the node didn't exist and has been created (may
-	 * 	be NULL if you don't care about it)
+	 * @param node the starting node (NULL = root)
+	 * @param res will be filled with the result
 	 * @param flags the flags (VFS_*) with which to resolve the path (create file,...)
 	 * @param mode the mode to set (if a file is created)
 	 * @return 0 if successfull or the error-code
 	 */
-	static int request(const char *path,const char **end,VFSNode **node,bool *created,
-		uint flags,mode_t mode);
+	static int request(const char *path,VFSNode *node,RequestResult *res,uint flags,mode_t mode);
 
 	/**
 	 * Releases the given node, i.e. unlocks it.
@@ -589,7 +607,7 @@ protected:
 	}
 
 private:
-	static int createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,bool *created,mode_t mode);
+	static int createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,uint flags,mode_t mode);
 	static void doPrintTree(OStream &os,size_t level,const VFSNode *parent);
 	bool canRemove(pid_t pid,const VFSNode *node) const;
 	void doAppend(VFSNode *parent);

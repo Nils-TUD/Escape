@@ -75,7 +75,7 @@ static void test_vfs_node_resolvePath() {
 static bool test_vfs_node_resolvePathCpy(const char *a,const char *b) {
 	int err;
 	VFSNode *node = NULL;
-	if((err = VFSNode::request(a,NULL,&node,NULL,VFS_READ,0)) != 0) {
+	if((err = VFSNode::request(a,&node,VFS_READ,0)) != 0) {
 		test_caseFailed("Unable to resolve the path %s",a);
 		return false;
 	}
@@ -91,17 +91,17 @@ static void test_vfs_node_getPath() {
 	test_caseStart("Testing vfs_node_getPath()");
 
 	node = NULL;
-	VFSNode::request("/sys",NULL,&node,NULL,VFS_READ,0);
+	VFSNode::request("/sys",&node,VFS_READ,0);
 	test_assertStr(node->getPath(),(char*)"/sys");
 	VFSNode::release(node);
 
 	node = NULL;
-	VFSNode::request("/sys/proc",NULL,&node,NULL,VFS_READ,0);
+	VFSNode::request("/sys/proc",&node,VFS_READ,0);
 	test_assertStr(node->getPath(),(char*)"/sys/proc");
 	VFSNode::release(node);
 
 	node = NULL;
-	VFSNode::request("/sys/proc/0",NULL,&node,NULL,VFS_READ,0);
+	VFSNode::request("/sys/proc/0",&node,VFS_READ,0);
 	test_assertStr(node->getPath(),(char*)"/sys/proc/0");
 	VFSNode::release(node);
 
@@ -170,7 +170,7 @@ static void test_vfs_node_dir_refs() {
 	f1->close(pid);
 
 	n = NULL;
-	test_assertInt(VFSNode::request("/sys/foobar",NULL,&n,NULL,0,0),0);
+	test_assertInt(VFSNode::request("/sys/foobar",&n,0,0),0);
 	/* foobar itself, "." and "..", "test", "myfile1", "myfile2" and the request of "foobar" = 7 */
 	test_assertSize(n->getRefCount(),7);
 	VFSNode::release(n);

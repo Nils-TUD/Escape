@@ -402,19 +402,27 @@ int VFSNode::createdev(pid_t pid,const char *name,mode_t mode,uint type,uint ops
 	return 0;
 }
 
-int VFSNode::request(const char *path,const char **end,VFSNode **node,bool *created,
-		uint flags,mode_t mode) {
-	const VFSNode *dir,*n = *node;
+int VFSNode::request(const char *path,VFSNode **node,uint flags,mode_t mode) {
+	RequestResult res;
+	int err = request(path,*node,&res,flags,mode);
+	if(err < 0)
+		return err;
+	*node = res.node;
+	return err;
+}
+
+int VFSNode::request(const char *path,VFSNode *node,RequestResult *res,uint flags,mode_t mode) {
+	const VFSNode *dir,*n = node;
 	const Thread *t = Thread::getRunning();
 	/* at the beginning, t might be NULL */
 	pid_t pid = t ? t->getProc()->getPid() : KERNEL_PID;
 	int pos = 0,err,depth,lastdepth;
 	bool valid;
-	if(created)
-		*created = false;
 	if(n == NULL)
 		n = get(0);
-	*node = NULL;
+
+	res->created = false;
+	res->node = NULL;
 
 	/* skip slashes */
 	while(*path == '/')
@@ -422,8 +430,8 @@ int VFSNode::request(const char *path,const char **end,VFSNode **node,bool *crea
 
 	/* root/current node requested? */
 	if(!*path) {
-		*node = const_cast<VFSNode*>(n);
-		(*node)->ref();
+		res->node = const_cast<VFSNode*>(n);
+		res->node->ref();
 		return 0;
 	}
 
@@ -485,8 +493,11 @@ int VFSNode::request(const char *path,const char **end,VFSNode **node,bool *crea
 	if(n == NULL) {
 		dir->closeDir(true);
 		/* should we create a default-file? */
-		if((flags & VFS_CREATE) && S_ISDIR(dir->mode))
-			err = createFile(pid,path,const_cast<VFSNode*>(dir),node,created,mode);
+		if((flags & VFS_CREATE) && S_ISDIR(dir->mode)) {
+			err = createFile(pid,path,const_cast<VFSNode*>(dir),&res->node,flags,mode);
+			if(err == 0)
+				res->created = true;
+		}
 		else
 			err = -ENOENT;
 	}
@@ -501,14 +512,13 @@ int VFSNode::request(const char *path,const char **end,VFSNode **node,bool *crea
 			n = const_cast<VFSNode*>(static_cast<const VFSLink*>(n)->resolve());
 
 		/* virtual node */
-		*node = const_cast<VFSNode*>(n);
-		(*node)->ref();
-		if(*node == NULL)
+		res->node = const_cast<VFSNode*>(n);
+		res->node->ref();
+		if(res->node == NULL)
 			err = -ENOENT;
 		dir->closeDir(true);
 	}
-	if(end)
-		*end = path;
+	res->end = path;
 	return err;
 
 done:
@@ -662,7 +672,7 @@ char *VFSNode::generateId(pid_t pid) {
 	return name;
 }
 
-int VFSNode::createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,bool *created,mode_t mode) {
+int VFSNode::createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,uint flags,mode_t mode) {
 	size_t nameLen;
 	int err;
 	/* can we create files in this directory? */
@@ -691,8 +701,6 @@ int VFSNode::createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,
 		Cache::free(nameCpy);
 		return -ENOMEM;
 	}
-	if(created)
-		*created = true;
 	return 0;
 }
 

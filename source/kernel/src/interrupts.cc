@@ -31,7 +31,7 @@ esc::ISList<Semaphore*> InterruptsBase::userIrqs[IRQ_SEM_COUNT];
 
 void InterruptsBase::initVFS() {
 	VFSNode *node = NULL;
-	sassert(VFSNode::request("/sys/irq",NULL,&node,NULL,VFS_READ,0) == 0);
+	sassert(VFSNode::request("/sys/irq",&node,VFS_READ,0) == 0);
 	for(int i = 0; i < IRQ_COUNT; ++i) {
 		VFSNode *irq = createObj<VFSIRQ>(KERNEL_PID,node,i,0550);
 		irq->chown(KERNEL_PID,ROOT_UID,GROUP_DRIVER);

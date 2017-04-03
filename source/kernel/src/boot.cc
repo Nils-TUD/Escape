@@ -131,7 +131,7 @@ static char *filename(const char *path) {
 
 void Boot::createModFiles() {
 	VFSNode *node = NULL;
-	int res = VFSNode::request("/sys/boot",NULL,&node,NULL,VFS_WRITE,0);
+	int res = VFSNode::request("/sys/boot",&node,VFS_WRITE,0);
 	if(res < 0)
 		Util::panic("Unable to resolve /sys/boot");
 

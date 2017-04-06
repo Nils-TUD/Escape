@@ -98,6 +98,7 @@ help() {
 	echo "                             mode optimizations are disabled, debug infos are"
 	echo "                             available and assertions are active. In release"
 	echo "                             mode all that is disabled. The default is release."
+	echo "    ESC_LINKTYPE:            the link type (static or dynamic)."
 	echo "    ESC_SERVER:              the host and directory of your tftp-server which"
 	echo "                             is used for network booting. The default is"
 	echo "                             localhost:/var/lib/tftpboot."

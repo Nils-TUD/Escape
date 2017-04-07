@@ -175,7 +175,8 @@ public:
 			return -ENOMEM;
 		destroyRec(_root);
 		_root = nroot;
-		_root->_parent = _root;
+		if(_root)
+			_root->_parent = _root;
 		return 0;
 	}
 

@@ -32,14 +32,14 @@ static void usage(const char *name) {
 	fprintf(stderr,"\n");
 	fprintf(stderr,"    -p <perms>: set the permissions to <perms>, which is a combination\n");
 	fprintf(stderr,"                of the letters r, w and x (rwx by default).\n");
-	fprintf(stderr,"    --ms <ms>:  By default, the current mountspace (/sys/proc/self/ms)\n");
+	fprintf(stderr,"    --ms <ms>:  By default, the current mountspace (/sys/pid/self/ms)\n");
 	fprintf(stderr,"                will be used. This can be overwritten by specifying\n");
 	fprintf(stderr,"                --ms <ms>.\n");
 	exit(EXIT_FAILURE);
 }
 
 int main(int argc,char *argv[]) {
-	const char *mspath = "/sys/proc/self/ms";
+	const char *mspath = "/sys/pid/self/ms";
 	const char *perms = "rwx";
 
 	int opt;

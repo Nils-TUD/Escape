@@ -49,7 +49,10 @@ public:
 	 * @return true if given node is a child of the /sys/proc node
 	 */
 	static bool isProcDir(VFSNode *node) {
-		return node->getParent() == procsNode;
+		VFSNode *n = node;
+		while(n && n != procsNode)
+			n = n->getParent();
+		return n == procsNode;
 	}
 
 	/**
@@ -173,6 +176,15 @@ public:
 	static void chownProcess(pid_t pid,uid_t uid,gid_t gid);
 
 	/**
+	 * Moves the given process to the given parent.
+	 *
+	 * @param pid the process id
+	 * @param oldppid the old parent process id
+	 * @param newppid the new parent process id
+	 */
+	static void moveProcess(pid_t pid,pid_t oldppid,pid_t newppid);
+
+	/**
 	 * Removes all occurrences of the given process from VFS
 	 *
 	 * @param pid the process-id
@@ -206,6 +218,7 @@ private:
 	static bool hasData(VFSNode *node);
 	static bool hasWork(VFSNode *node);
 
+	static VFSNode *pidsNode;
 	static VFSNode *procsNode;
 	static VFSNode *devNode;
 	static VFSNode *tmpNode;

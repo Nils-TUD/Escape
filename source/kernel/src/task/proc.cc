@@ -98,7 +98,7 @@ void ProcBase::relRef(const Proc *p) {
 
 ProcBase::ProcBase()
 	: flags(), pid(), parentPid(), uid(), gid(),
-	  priority(MAX_PRIO), refs(1), entryPoint(), virtmem(static_cast<Proc*>(this)), groups(),
+	  priority(MAX_PRIO), depth(), refs(1), entryPoint(), virtmem(static_cast<Proc*>(this)), groups(),
 	  fileDescs(), fileDescsSize(), sems(), semsSize(), msnode(), threadsDir(), stats(),
 	  sigRetAddr(), command(), threads(), locks(), mutexes() {
 	stats.exitSignal = SIG_COUNT;
@@ -112,6 +112,8 @@ void ProcBase::init() {
 
 	p->uid = ROOT_UID;
 	p->gid = ROOT_GID;
+
+	p->depth = 0;
 
 	/* create boot mountspace */
 	p->msnode = createObj<VFSMS>(p->getPid(),VFS::getMSDir(),(char*)"boot",0644);
@@ -247,6 +249,12 @@ int ProcBase::clone(uint8_t flags) {
 		res = -EINVAL;
 		goto errorCur;
 	}
+	/* limit the process hierarchy depth because we represent them hierarchically in the VFS. this
+	 * leads to some problems like symlink length, recursion in VFSInfo, ... */
+	if(cur->depth >= MAX_PROC_DEPTH) {
+		res = -EPROCDEPTH;
+		goto errorCur;
+	}
 
 	p = new Proc();
 	if(!p) {
@@ -255,6 +263,7 @@ int ProcBase::clone(uint8_t flags) {
 	}
 
 	/* set basic attributes */
+	p->depth = cur->depth + 1;
 	p->parentPid = cur->pid;
 	p->uid = cur->uid;
 	p->gid = cur->gid;
@@ -698,6 +707,7 @@ void ProcBase::kill(pid_t pid) {
 		LockGuard<Mutex> g2(&procLock);
 		for(auto cp = procs.begin(); cp != procs.end(); ++cp) {
 			if(cp->parentPid == p->pid) {
+				VFS::moveProcess(cp->pid,cp->parentPid,INIT_PID);
 				cp->parentPid = INIT_PID;
 				/* if this process has already died, the parent can't wait for it since its dying
 				 * right now. therefore notify init of it */

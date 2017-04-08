@@ -40,7 +40,7 @@ static uint64_t start;
 
 static void printRegions(void) {
 	char buffer[PROCINFO_BUF_SIZE];
-	int fd = open("/sys/proc/self/map",O_RDONLY);
+	int fd = open("/sys/pid/self/map",O_RDONLY);
 	if(fd >= 0) {
 		ssize_t count;
 		while((count = IGNSIGS(read(fd,buffer,sizeof(buffer) - 1))) > 0) {
@@ -67,7 +67,7 @@ void printStackTrace(void) {
 const char *getProcName(void) {
 	static char name[64];
 	char buffer[PROCINFO_BUF_SIZE];
-	int fd = open("/sys/proc/self/info",O_RDONLY);
+	int fd = open("/sys/pid/self/info",O_RDONLY);
 	if(fd >= 0) {
 		if(IGNSIGS(read(fd,buffer,PROCINFO_BUF_SIZE - 1)) < 0) {
 			close(fd);

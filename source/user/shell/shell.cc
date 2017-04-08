@@ -65,7 +65,7 @@ int main(int argc,char **argv) {
 	if(gid < 0)
 		printe("Unable to get id of ui group");
 	else {
-		int fd = open("/sys/proc/self",O_NOCHAN);
+		int fd = open("/sys/pid/self",O_NOCHAN);
 		if(fd < 0)
 			printe("Unable to open own proc directory");
 		else {

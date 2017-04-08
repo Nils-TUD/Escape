@@ -41,6 +41,7 @@
 #define MAX_PROC_COUNT		8192
 #define MAX_FD_COUNT		1024
 #define MAX_SEM_COUNT		256
+#define MAX_PROC_DEPTH		32
 
 /* for marking unused */
 #define INVALID_PID			(MAX_PROC_COUNT + 1)
@@ -582,6 +583,8 @@ private:
 	gid_t gid;
 	/* the minimum priority of all threads; is used for new childs and threads */
 	uint8_t priority;
+	/* the depth in the process hierarchy */
+	uint8_t depth;
 	/* the number of references to this process */
 	mutable ushort refs;
 	/* the entrypoint of the binary */

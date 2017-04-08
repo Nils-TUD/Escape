@@ -28,7 +28,7 @@ using namespace esc;
 namespace info {
 	std::vector<process*> process::get_list(bool own,uid_t uid,bool fullcmd) {
 		std::vector<process*> procs;
-		file dir("/sys/proc");
+		file dir("/sys/pid");
 		std::vector<struct dirent> files = dir.list_files(false);
 		for(auto it = files.begin(); it != files.end(); ++it) {
 			/* skip "self" */
@@ -48,7 +48,7 @@ namespace info {
 	process* process::get_proc(pid_t pid,bool own,uid_t uid,bool fullcmd) {
 		char name[12];
 		itoa(name,sizeof(name),pid);
-		std::string ppath = std::string("/sys/proc/") + name + "/info";
+		std::string ppath = std::string("/sys/pid/") + name + "/info";
 		FStream is(ppath.c_str(),"r");
 		if(!is)
 			return NULL;

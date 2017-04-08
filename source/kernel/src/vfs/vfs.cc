@@ -36,7 +36,6 @@
 #include <vfs/link.h>
 #include <vfs/node.h>
 #include <vfs/openfile.h>
-#include <vfs/selflink.h>
 #include <vfs/vfs.h>
 #include <assert.h>
 #include <common.h>
@@ -46,6 +45,7 @@
 #include <util.h>
 #include <video.h>
 
+VFSNode *VFS::pidsNode;
 VFSNode *VFS::procsNode;
 VFSNode *VFS::devNode;
 VFSNode *VFS::tmpNode;
@@ -61,8 +61,9 @@ void VFS::init() {
 	 *   |   |- dev
 	 *   |   |- irq
 	 *   |   |- ms
-	 *   |   \- proc
+	 *   |   |- pid
 	 *   |       \- self
+	 *   |   \- proc
 	 *   |- dev
 	 *   \- tmp
 	 */
@@ -71,7 +72,8 @@ void VFS::init() {
 	sys->chown(KERNEL_PID,ROOT_UID,GROUP_DRIVER);
 	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"boot",DIR_DEF_MODE));
 	procsNode = createObj<VFSDir>(KERNEL_PID,sys,(char*)"proc",DIR_DEF_MODE);
-	VFSNode::release(createObj<VFSSelfLink>(KERNEL_PID,procsNode,(char*)"self"));
+	pidsNode = createObj<VFSDir>(KERNEL_PID,sys,(char*)"pid",DIR_DEF_MODE);
+	VFSNode::release(createObj<VFSInfo::SelfLinkFile>(KERNEL_PID,pidsNode,(char*)"self",LNK_DEF_MODE));
 	VFSNode *dev = createObj<VFSDir>(KERNEL_PID,sys,(char*)"dev",S_IFDIR | 0775);
 	dev->chown(KERNEL_PID,ROOT_UID,GROUP_DRIVER);
 	VFSNode::release(dev);
@@ -85,6 +87,7 @@ void VFS::init() {
 	VFSNode::release(devNode);
 	tmpNode = createObj<VFSDir>(KERNEL_PID,root,(char*)"tmp",S_IFDIR | S_ISSTICKY | 0777);
 	VFSNode::release(tmpNode);
+	VFSNode::release(pidsNode);
 	VFSNode::release(procsNode);
 	VFSNode::release(sys);
 	VFSNode::release(root);
@@ -347,7 +350,6 @@ void VFS::closeFileDesc(pid_t pid,int fd) {
 }
 
 ino_t VFS::createProcess(pid_t pid,VFSNode *ms) {
-	VFSNode *proc = procsNode,*dir,*nn;
 	int res = -ENOMEM;
 	Proc *p = Proc::getByPid(pid);
 	assert(p != NULL);
@@ -357,6 +359,22 @@ ino_t VFS::createProcess(pid_t pid,VFSNode *ms) {
 	if(name == NULL)
 		return -ENOMEM;
 	itoa(name,12,pid);
+
+	VFSNode *proc,*dir,*nn;
+	ino_t threadsIno;
+
+	/* put it in parent's proc directory */
+	if(p->getParentPid() != p->getPid()) {
+		Proc *pp = Proc::getRef(p->getParentPid());
+		if(!pp) {
+			res = -ENOENT;
+			goto errorName;
+		}
+		proc = VFSNode::get(pp->getThreadsDir())->getParent();
+		Proc::relRef(pp);
+	}
+	else
+		proc = procsNode;
 
 	/* create dir */
 	dir = createObj<VFSDir>(KERNEL_PID,proc,name,DIR_DEF_MODE);
@@ -408,10 +426,30 @@ ino_t VFS::createProcess(pid_t pid,VFSNode *ms) {
 		goto errorDir;
 	VFSNode::release(nn);
 
-	VFSNode::release(dir);
 	/* note that it is ok to use the number and don't care about references since the kernel owns
 	 * the nodes and thus, nobody can destroy them */
-	return nn->getNo();
+	threadsIno = nn->getNo();
+
+	/* create link in /sys/pid */
+	{
+		char *namecpy = strdup(name);
+		if(!namecpy) {
+			Cache::free(name);
+			goto errorDir;
+		}
+		nn = createObj<VFSInfo::PidLinkFile>(KERNEL_PID,pidsNode,namecpy,S_IFLNK | LNK_DEF_MODE);
+		if(nn == NULL) {
+			Cache::free(namecpy);
+			goto errorDir;
+		}
+		VFSNode::release(nn);
+	}
+
+	VFSNode::release(dir);
+
+	/* note that it is ok to use the number and don't care about references since the kernel owns
+	 * the nodes and thus, nobody can destroy them */
+	return threadsIno;
 
 errorDir:
 	VFSNode::release(dir);
@@ -429,11 +467,37 @@ void VFS::chownProcess(pid_t pid,uid_t uid,gid_t gid) {
 	node->getParent()->chown(KERNEL_PID,uid,gid);
 }
 
+void VFS::moveProcess(pid_t pid,pid_t oldppid,pid_t newppid) {
+	char name[12];
+	itoa(name,sizeof(name),pid);
+
+	Proc *opp = Proc::getRef(oldppid);
+	if(!opp)
+		return;
+
+	VFSNode *src = VFSNode::get(opp->getThreadsDir())->getParent();
+
+	Proc *npp = Proc::getRef(newppid);
+	if(!npp) {
+		Proc::relRef(opp);
+		return;
+	}
+	VFSNode *dst = VFSNode::get(npp->getThreadsDir())->getParent();
+
+	src->rename(KERNEL_PID,name,dst,name);
+	Proc::relRef(npp);
+	Proc::relRef(opp);
+}
+
 void VFS::removeProcess(pid_t pid) {
 	/* remove from /sys/proc */
 	const Proc *p = Proc::getByPid(pid);
 	VFSNode *node = VFSNode::get(p->getThreadsDir());
 	node->getParent()->destroy();
+
+	char name[12];
+	itoa(name,sizeof(name),pid);
+	pidsNode->unlink(KERNEL_PID,name);
 }
 
 ino_t VFS::createThread(tid_t tid) {

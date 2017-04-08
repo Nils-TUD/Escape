@@ -28,13 +28,13 @@
 
 static void usage(const char *name) {
 	fprintf(stderr,"Usage: %s [--ms <ms>] <path>\n",name);
-	fprintf(stderr,"    By default, the current mountspace (/sys/proc/self/ms) will\n");
+	fprintf(stderr,"    By default, the current mountspace (/sys/pid/self/ms) will\n");
 	fprintf(stderr,"    be used. This can be overwritten by specifying --ms <ms>.\n");
 	exit(EXIT_FAILURE);
 }
 
 int main(int argc,char *argv[]) {
-	char *mspath = (char*)"/sys/proc/self/ms";
+	char *mspath = (char*)"/sys/pid/self/ms";
 
 	int opt;
 	const struct option longopts[] = {

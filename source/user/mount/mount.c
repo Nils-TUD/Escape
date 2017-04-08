@@ -45,7 +45,7 @@ static void usage(const char *name) {
 	fprintf(stderr,"\n");
 	fprintf(stderr,"    -p <perms>: set the permissions to <perms>, which is a combination\n");
 	fprintf(stderr,"                of the letters r, w and x (rwx by default).\n");
-	fprintf(stderr,"    --ms <ms>:  By default, the current mountspace (/sys/proc/self/ms)\n");
+	fprintf(stderr,"    --ms <ms>:  By default, the current mountspace (/sys/pid/self/ms)\n");
 	fprintf(stderr,"                will be used. This can be overwritten by specifying\n");
 	fprintf(stderr,"                --ms <ms>.\n");
 	exit(EXIT_FAILURE);
@@ -66,7 +66,7 @@ int main(int argc,char *argv[]) {
 	char fsname[MAX_PATH_LEN];
 	char fsdev[MAX_PATH_LEN];
 	char devpath[MAX_PATH_LEN];
-	char *mspath = (char*)"/sys/proc/self/ms";
+	char *mspath = (char*)"/sys/pid/self/ms";
 	char *perms = (char*)"rwx";
 
 	int opt;

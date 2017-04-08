@@ -28,7 +28,7 @@ using namespace esc;
 namespace info {
 	std::vector<thread*> thread::get_list() {
 		std::vector<thread*> threads;
-		file dir("/sys/proc");
+		file dir("/sys/pid");
 		std::vector<struct dirent> files = dir.list_files(false);
 		for(auto it = files.begin(); it != files.end(); ++it) {
 			/* skip "self" */
@@ -36,7 +36,7 @@ namespace info {
 				continue;
 
 			try {
-				std::string threadDir(std::string("/sys/proc/") + it->d_name + "/threads");
+				std::string threadDir(std::string("/sys/pid/") + it->d_name + "/threads");
 				file tdir(threadDir);
 				std::vector<struct dirent> tfiles = tdir.list_files(false);
 				for(auto tit = tfiles.begin(); tit != tfiles.end(); ++tit) {
@@ -59,7 +59,7 @@ namespace info {
 		char tname[12], pname[12];
 		itoa(tname,sizeof(tname),tid);
 		itoa(pname,sizeof(pname),pid);
-		std::string tpath = std::string("/sys/proc/") + pname + "/threads/" + tname + "/info";
+		std::string tpath = std::string("/sys/pid/") + pname + "/threads/" + tname + "/info";
 		FStream tis(tpath.c_str(),"r");
 		if(!tis)
 			return NULL;

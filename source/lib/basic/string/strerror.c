@@ -70,6 +70,7 @@ static const char *msgs[] = {
 	/* 45 (ERANGE) */			"Result too large",
 	/* 46 (EDOM) */				"Math argument out of domain of function",
 	/* 47 (ELOOP) */			"Too many levels of symbolic links",
+	/* 48 (EPROCDEPTH) */		"Process hierarchy too deep",
 };
 
 char *strerror(int errnum) {

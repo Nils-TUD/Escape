@@ -262,6 +262,8 @@ errorName:
 }
 
 bool VFSNode::canRemove(pid_t pid,const VFSNode *node) const {
+	if(pid == KERNEL_PID)
+		return true;
 	if(!node->isDeletable())
 		return false;
 

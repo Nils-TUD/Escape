@@ -290,6 +290,44 @@ void VFSInfo::virtMemReadCallback(VFSNode *node,size_t *dataSize,void **buffer) 
 	*dataSize = os.getLength();
 }
 
+void VFSInfo::selfLinkReadCallback(VFSNode *,size_t *dataSize,void **buffer) {
+	Proc *p = Proc::getByPid(Proc::getRunning());
+	OStringStream os;
+	os.writef("%d",p->getPid());
+	*buffer = os.keepString();
+	*dataSize = os.getLength();
+}
+
+static void buildProcPath(OStringStream &os,Proc *p) {
+	if(p->getPid() != 0) {
+		Proc *pp = Proc::getRef(p->getParentPid());
+		if(pp)
+			buildProcPath(os,pp);
+		Proc::relRef(pp);
+	}
+	os.writef("%d/",p->getPid());
+}
+
+void VFSInfo::pidLinkReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
+	VFSNode::acquireTree();
+	pid_t pid = node->isAlive() ? atoi(node->name) : INVALID_PID;
+	VFSNode::releaseTree();
+	if(pid == INVALID_PID)
+		return;
+
+	Proc *p = Proc::getRef(pid);
+	if(!p)
+		return;
+
+	OStringStream os;
+	os.writef("../proc/");
+	buildProcPath(os,p);
+	Proc::relRef(p);
+
+	*buffer = os.keepString();
+	*dataSize = os.getLength();
+}
+
 Proc *VFSInfo::getProc(VFSNode *node,size_t *dataSize,void **buffer) {
 	Proc *p = NULL;
 	VFSNode::acquireTree();

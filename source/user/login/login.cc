@@ -106,9 +106,9 @@ int main(void) {
 	snprintf(mspath,sizeof(mspath),"/sys/ms/%s",un);
 	int ms = open(mspath,O_RDONLY);
 	if(ms < 0) {
-		ms = open("/sys/proc/self/ms",O_RDONLY);
+		ms = open("/sys/pid/self/ms",O_RDONLY);
 		if(ms < 0)
-			exitmsg("Unable to open /sys/proc/self/ms for reading");
+			exitmsg("Unable to open /sys/pid/self/ms for reading");
 		if(clonems(ms,un) < 0)
 			exitmsg("Unable to clone mountspace");
 	}

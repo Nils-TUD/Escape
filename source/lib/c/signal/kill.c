@@ -25,7 +25,7 @@
 
 int kill(pid_t pid,int signal) {
 	char path[MAX_PATH_LEN];
-	snprintf(path,sizeof(path),"/sys/proc/%d",pid);
+	snprintf(path,sizeof(path),"/sys/pid/%d",pid);
 	int fd = open(path,O_WRONLY);
 	if(fd < 0)
 		return fd;

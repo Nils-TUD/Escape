@@ -39,18 +39,15 @@ extern "C" {
 #endif
 
 /**
- * Builds an absolute path from the given one. If it is not absolute (starts not with "/") CWD will
- * be taken to build the absolute path. The path will not end with a slash, except for "/".
- * If <dst> is not large enough the function stops and returns the number of yet written chars.
- * In contrast to abspath(), cleanpath() will walk through the path and remove duplicate slashes,
- * and occurences of "." and ".." in the corresponding way.
+ * Builds a canonical path from the given one, i.e., resolves all symlinks, makes it absolute and
+ * removes duplicate slashes, "." and "..".
  *
  * @param dst where to write to
  * @param dstSize the size of the space <dst> points to
  * @param src your relative path
- * @return the number of written chars (without null-termination)
+ * @return the number of written chars (without null-termination) or a negative error code
  */
-size_t cleanpath(char *dst,size_t dstSize,const char *src);
+ssize_t cleanpath(char *dst,size_t dstSize,const char *src);
 
 /**
  * Builds an absolute path from <path>, if necessary.

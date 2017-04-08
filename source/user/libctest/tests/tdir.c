@@ -81,33 +81,33 @@ static void test_cleanpath(void) {
 	test_assertUInt(count,SSTRLEN("/"));
 	test_assertStr(path,"/");
 
-	count = cleanpath(path,MAX_PATH_LEN + 1,"/bin/bla");
-	test_assertUInt(count,SSTRLEN("/bin/bla"));
-	test_assertStr(path,"/bin/bla");
+	count = cleanpath(path,MAX_PATH_LEN + 1,"/bin/ls");
+	test_assertUInt(count,SSTRLEN("/bin/ls"));
+	test_assertStr(path,"/bin/ls");
 
-	count = cleanpath(path,MAX_PATH_LEN + 1,"/../bin/../.././bla");
-	test_assertUInt(count,SSTRLEN("/bla"));
-	test_assertStr(path,"/bla");
+	count = cleanpath(path,MAX_PATH_LEN + 1,"/../bin/../.././home");
+	test_assertUInt(count,SSTRLEN("/home"));
+	test_assertStr(path,"/home");
 
-	count = cleanpath(path,MAX_PATH_LEN + 1,"bin/..///.././bla");
-	test_assertUInt(count,SSTRLEN("/bla"));
-	test_assertStr(path,"/bla");
+	count = cleanpath(path,MAX_PATH_LEN + 1,"bin/..///.././home");
+	test_assertUInt(count,SSTRLEN("/home"));
+	test_assertStr(path,"/home");
 
-	count = cleanpath(path,MAX_PATH_LEN + 1,"bin/./bla");
-	test_assertUInt(count,SSTRLEN("/bin/bla"));
-	test_assertStr(path,"/bin/bla");
+	count = cleanpath(path,MAX_PATH_LEN + 1,"bin/./ls");
+	test_assertUInt(count,SSTRLEN("/bin/ls"));
+	test_assertStr(path,"/bin/ls");
 
 	setenv("CWD","/home");
 
-	count = cleanpath(path,MAX_PATH_LEN + 1,"bin/./bla");
-	test_assertUInt(count,SSTRLEN("/home/bin/bla"));
-	test_assertStr(path,"/home/bin/bla");
+	count = cleanpath(path,MAX_PATH_LEN + 1,"hrniels/./scripts");
+	test_assertUInt(count,SSTRLEN("/home/hrniels/scripts"));
+	test_assertStr(path,"/home/hrniels/scripts");
 
 	setenv("CWD","/home/");
 
-	count = cleanpath(path,MAX_PATH_LEN + 1,"bin/./bla");
-	test_assertUInt(count,SSTRLEN("/home/bin/bla"));
-	test_assertStr(path,"/home/bin/bla");
+	count = cleanpath(path,MAX_PATH_LEN + 1,"hrniels/./scripts");
+	test_assertUInt(count,SSTRLEN("/home/hrniels/scripts"));
+	test_assertStr(path,"/home/hrniels/scripts");
 
 	count = cleanpath(path,MAX_PATH_LEN + 1,"..");
 	test_assertUInt(count,SSTRLEN("/"));
@@ -125,15 +125,15 @@ static void test_cleanpath(void) {
 	if(count > 3)
 		test_caseFailed("Copied too much");
 
-	count = cleanpath(path,8,"/bin/bla");
+	count = cleanpath(path,8,"/bin/ls");
 	if(count > 8)
 		test_caseFailed("Copied too much");
 
-	count = cleanpath(path,8,"/bin/../bla");
+	count = cleanpath(path,8,"/bin/../home");
 	if(count > 8)
 		test_caseFailed("Copied too much");
 
-	count = cleanpath(path,8,"///../bin/bla");
+	count = cleanpath(path,8,"///../bin/ls");
 	if(count > 8)
 		test_caseFailed("Copied too much");
 

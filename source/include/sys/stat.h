@@ -187,6 +187,25 @@ A_CHECKRET int fchown(int fd,uid_t uid,gid_t gid);
 	return check
 
 /**
+ * Checks whether the given path points to a symbol link.
+ *
+ * @param path the path
+ * @return true if its a link; false if not or an error occurred
+ */
+static inline bool islink(const char *path) {
+	IS_FILE_TYPE(lstat,path,S_ISLNK(info.st_mode));
+}
+/**
+ * Checks whether the given file descriptor points to a symbol link.
+ *
+ * @param fd the file descriptor
+ * @return true if its a link; false if not or an error occurred
+ */
+static inline bool fislink(int fd) {
+	IS_FILE_TYPE(fstat,fd,S_ISLNK(info.st_mode));
+}
+
+/**
  * Checks whether the given path points to a regular file. isfile uses stat, lisfile uses lstat.
  *
  * @param path the path

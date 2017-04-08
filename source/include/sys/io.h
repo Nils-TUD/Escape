@@ -467,6 +467,16 @@ A_CHECKRET int symlink(const char *target,const char *linkpath);
 A_CHECKRET int fsymlink(const char *target,int fd,const char *name);
 
 /**
+ * Resolves the given path and stores the symlink-free path into <buf>.
+ *
+ * @param path the path to resolve
+ * @param buf the destination
+ * @param size the size of <buf>
+ * @return the number of bytes placed in <buf> or a negative error code
+ */
+A_CHECKRET ssize_t readlink(const char *path,char *buf,size_t size);
+
+/**
  * Writes all dirty objects of the affected filesystem to disk
  *
  * @param fd the file-descriptor to some file on that fs

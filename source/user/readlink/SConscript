@@ -1,0 +1,2 @@
+Import('env')
+env.EscapeCProg('bin', target = 'readlink', source = env.Glob('*.c'))

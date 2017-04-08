@@ -63,7 +63,8 @@ int main(int argc,char *argv[]) {
 static void printFileInfo(const char *path,bool useOpen) {
 	struct stat info;
 	char apath[MAX_PATH_LEN];
-	cleanpath(apath,MAX_PATH_LEN,path);
+	if(cleanpath(apath,MAX_PATH_LEN,path) < 0)
+		error("cleanpath for '%s' failed",path);
 
 	if(useOpen) {
 		int fd = open(apath,O_RDONLY | O_NOFOLLOW);

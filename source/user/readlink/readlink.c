@@ -24,30 +24,43 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
-#include "../cmds.h"
+static void usage(const char *name) {
+	fprintf(stderr,"Usage: %s [-f] <path> ...\n",name);
+	exit(EXIT_FAILURE);
+}
 
-int shell_cmdCd(int argc,char **argv) {
-	char path[MAX_PATH_LEN];
-	if(argc != 2 || getopt_ishelp(argc,argv)) {
-		fprintf(stderr,"Usage: cd <dir>\n");
-		return EXIT_FAILURE;
+int main(int argc,char *argv[]) {
+	bool follow = false;
+
+	int opt;
+	while((opt = getopt(argc,argv,"f")) != -1) {
+		switch(opt) {
+			case 'f': follow = true; break;
+			default:
+				usage(argv[0]);
+		}
 	}
+	if(optind >= argc)
+		usage(argv[0]);
 
-	ssize_t len;
-	if((len = cleanpath(path,sizeof(path),argv[1])) < 0) {
-		fprintf(stderr,"cleanpath for '%s' failed: %s\n",argv[1],strerror(len));
-		return EXIT_FAILURE;
+	for(int i = optind; i < argc; ++i) {
+		char tmp[MAX_PATH_LEN];
+		if(follow) {
+			if(cleanpath(tmp,sizeof(tmp),argv[i]) < 0) {
+				printe("readlink for '%s' failed",argv[i]);
+				continue;
+			}
+			puts(tmp);
+		}
+		else {
+			if(!islink(argv[i]))
+				printe("'%s' is no symbolic link",argv[i]);
+			else if(readlink(argv[i],tmp,sizeof(tmp)) < 0)
+				printe("readlink for '%s' failed",argv[i]);
+			else
+				puts(tmp);
+		}
 	}
-
-	/* check if it is a directory */
-	if(!isdir(path)) {
-		fprintf(stderr,"%s is no directory\n",path);
-		return EXIT_FAILURE;
-	}
-
-	/* finally change dir */
-	setenv("CWD",path);
 	return EXIT_SUCCESS;
 }

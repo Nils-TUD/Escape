@@ -64,7 +64,10 @@ namespace esc {
 
 	void file::init(const std::string& p,const std::string& n,bool follow) {
 		char apath[MAX_PATH_LEN];
-		size_t len = cleanpath(apath,sizeof(apath),p.c_str());
+		ssize_t len = cleanpath(apath,sizeof(apath),p.c_str());
+		if(len < 0)
+			throw default_error("cleanpath failed",len);
+
 		if(n.empty()) {
 			char *pos = strrchr(apath,'/');
 			if(len == 1)
@@ -80,6 +83,7 @@ namespace esc {
 		else
 			_name = n;
 		_parent = apath;
+
 		int res = follow ? stat(path().c_str(),&_info) : lstat(path().c_str(),&_info);
 		if(res < 0)
 			throw default_error("lstat failed",res);

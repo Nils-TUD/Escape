@@ -23,9 +23,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-size_t cleanpath(char *dst,size_t dstSize,const char *src) {
+ssize_t cleanpath(char *dst,size_t dstSize,const char *src) {
 	char tmp[MAX_PATH_LEN];
-	char *p = abspath(tmp,sizeof(tmp),src);
+	ssize_t len = readlink(src,tmp,sizeof(tmp));
+	if(len < 0)
+		return len;
+	char *p = tmp;
 	while(*p == '/')
 		p++;
 

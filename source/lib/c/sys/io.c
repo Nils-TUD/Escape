@@ -38,7 +38,7 @@ static const char *splitPath(char *tmp,char *apath,const char *path,char **name)
 	return dirfile(fullpath,name);
 }
 
-static int openRec(const char *path,uint flags,mode_t mode,int depth) {
+static int openRec(const char *path,uint flags,mode_t mode,int depth,char *buf,size_t bufsz) {
 	ssize_t pos = -1;
 	int fd = syscall4(SYSCALL_OPEN,(ulong)path,flags,mode,(ulong)&pos);
 	if(pos != -1) {
@@ -85,8 +85,10 @@ static int openRec(const char *path,uint flags,mode_t mode,int depth) {
 		}
 		else
 			symbuf[pos + len] = '\0';
-		return openRec(sympath,flags,mode,depth - 1);
+		return openRec(sympath,flags,mode,depth - 1,buf,bufsz);
 	}
+	if(buf && fd >= 0)
+		strnzcpy(buf,path,bufsz);
 	return fd;
 }
 
@@ -98,7 +100,18 @@ int open(const char *path,uint flags,...) {
 
 	char buf[MAX_PATH_LEN];
 	char *apath = abspath(buf,sizeof(buf),path);
-	return openRec(apath,flags,mode,MAX_SYMLINK_DEPTH);
+	return openRec(apath,flags,mode,MAX_SYMLINK_DEPTH,NULL,0);
+}
+
+ssize_t readlink(const char *path,char *buf,size_t size) {
+	char tmp[MAX_PATH_LEN];
+	char *apath = abspath(tmp,sizeof(tmp),path);
+	int fd = openRec(apath,O_NOCHAN,0,MAX_SYMLINK_DEPTH,buf,size);
+	if(fd >= 0) {
+		close(fd);
+		return strlen(buf);
+	}
+	return fd;
 }
 
 int truncate(const char *path,off_t length) {

@@ -131,9 +131,9 @@ ino_t ISO9660Dir::find(ISO9660FileSystem *h,size_t extLoc,size_t extSize,const c
 bool ISO9660Dir::match(const char *user,const char *disk,size_t userLen,size_t diskLen) {
 	size_t rpos;
 	if(*disk == ISO_FILENAME_THIS)
-		return userLen == 1 && strcmp(user,".") == 0;
+		return userLen == 1 && strncmp(user,".",1) == 0;
 	if(*disk == ISO_FILENAME_PARENT)
-		return userLen == 2 && strcmp(user,"..") == 0;
+		return userLen == 2 && strncmp(user,"..",2) == 0;
 	/* don't compare volume sequence no */
 	rpos = esc::Util::min(diskLen,(size_t)strchri(disk,';'));
 	if(disk[rpos] != ';')

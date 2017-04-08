@@ -115,13 +115,7 @@ sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,
 	paths[2] = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
 	if(paths[2] == NULL)
 		goto failed;
-	{
-		size_t p2count = cleanpath(paths[2],MAX_PATH_LEN + 1,str);
-		if(p2count > 1) {
-			paths[2][p2count] = '/';
-			paths[2][p2count + 1] = '\0';
-		}
-	}
+	strnzcpy(paths[2],str,MAX_PATH_LEN);
 
 	if(length > 0 && *(str + length - 1) != '/') {
 		/* and try the upper directory, too */
@@ -149,17 +143,6 @@ sShellCmd **compl_get(sEnv *e,char *str,size_t length,size_t max,bool searchCmd,
 		paths[0] = NULL;
 	}
 
-	/* we don't want to look in a directory twice */
-	if(paths[1] && paths[0] && searchPath && strcmp(paths[0],paths[1]) == 0)
-		paths[1] = NULL;
-	else if(paths[2] && paths[0] && searchPath && strcmp(paths[0],paths[2]) == 0) {
-		free(paths[2]);
-		paths[2] = NULL;
-	}
-	if(paths[1] && paths[2] && strcmp(paths[1],paths[2]) == 0) {
-		free(paths[2]);
-		paths[2] = NULL;
-	}
 	/* don't match stuff in PATH? */
 	if(!searchPath)
 		paths[0] = NULL;

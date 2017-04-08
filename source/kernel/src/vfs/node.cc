@@ -313,7 +313,7 @@ int VFSNode::rename(pid_t pid,const char *oldName,VFSNode *newDir,const char *ne
 	/* set new name; the old one has already been free'd */
 	target->name = namecpy;
 
-	release(target);
+	target->doUnref(false);
 	treeLock.up();
 	return 0;
 }

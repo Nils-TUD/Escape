@@ -68,13 +68,13 @@ static void test_insert() {
 
 		i = mytree.find("/../..",&end);
 		test_assertTrue(i != NULL);
-		test_assertStr(end,"");
+		test_assertStr(end,"../..");
 		test_assertStr(i->getName(),"/");
 		test_assertPtr(i->getData(),(void*)0x11);
 
 		i = mytree.find("/./.",&end);
 		test_assertTrue(i != NULL);
-		test_assertStr(end,"");
+		test_assertStr(end,"./.");
 		test_assertStr(i->getName(),"/");
 		test_assertPtr(i->getData(),(void*)0x11);
 	}
@@ -121,10 +121,46 @@ static void test_insert() {
 	{
 		esc::PathTree<void> mytree;
 		test_assertInt(mytree.insert("/",(void*)0x11),0);
-		test_assertInt(mytree.insert("///foo//",(void*)0x22),0);
-		test_assertInt(mytree.insert("/foo/././test/../test",(void*)0x33),0);
+		test_assertInt(mytree.insert("/foo",(void*)0x12),0);
+		test_assertInt(mytree.insert("/foo/bar/baz",(void*)0x14),0);
+
+		i = mytree.find("/foo/bar/baz/..",&end);
+		test_assertTrue(i != NULL);
+		test_assertStr(end,"bar/baz/..");
+		test_assertStr(i->getName(),"foo");
+		test_assertPtr(i->getData(),(void*)0x12);
+
+		i = mytree.find("/foo/bar/baz/test/../..",&end);
+		test_assertTrue(i != NULL);
+		test_assertStr(end,"bar/baz/test/../..");
+		test_assertStr(i->getName(),"foo");
+		test_assertPtr(i->getData(),(void*)0x12);
+
+		i = mytree.find("/foo/bar/../..",&end);
+		test_assertTrue(i != NULL);
+		test_assertStr(end,"foo/bar/../..");
+		test_assertStr(i->getName(),"/");
+		test_assertPtr(i->getData(),(void*)0x11);
+	}
+	test_assertTrue(heapspace() >= before);
+
+	before = heapspace();
+	{
+		esc::PathTree<void> mytree;
+		test_assertInt(mytree.insert("/",(void*)0x11),0);
+
+		// paths have to be canonical for insertion
+		test_assertInt(mytree.insert("///foo//",(void*)0x22),-EINVAL);
+		test_assertInt(mytree.insert("/foo//",(void*)0x22),-EINVAL);
+		test_assertInt(mytree.insert("/.",(void*)0x22),-EINVAL);
+		test_assertInt(mytree.insert("/..",(void*)0x22),-EINVAL);
+		test_assertInt(mytree.insert("//",(void*)0x22),-EINVAL);
+		test_assertInt(mytree.insert("/foo/../bar",(void*)0x22),-EINVAL);
+
+		test_assertInt(mytree.insert("/foo",(void*)0x22),0);
+		test_assertInt(mytree.insert("/foo/test",(void*)0x33),0);
 		test_assertInt(mytree.insert("/bar",(void*)0x44),0);
-		test_assertInt(mytree.insert("/bar/foo/hier/test/../../../../bar/foo/hier/test",(void*)0x55),0);
+		test_assertInt(mytree.insert("/bar/foo/hier/test",(void*)0x55),0);
 		test_assertInt(mytree.insert("/bar/foo/hier/test",(void*)0x66),-EEXIST);
 		test_assertInt(mytree.insert("/",(void*)0x66),-EEXIST);
 		test_assertInt(mytree.insert("/bar",(void*)0x66),-EEXIST);
@@ -191,10 +227,10 @@ static void test_clone() {
 	{
 		esc::PathTree<void> mytree;
 		test_assertInt(mytree.insert("/",(void*)0x11),0);
-		test_assertInt(mytree.insert("///foo//",(void*)0x22),0);
-		test_assertInt(mytree.insert("/foo/././test/../test",(void*)0x33),0);
+		test_assertInt(mytree.insert("/foo",(void*)0x22),0);
+		test_assertInt(mytree.insert("/foo/test",(void*)0x33),0);
 		test_assertInt(mytree.insert("/bar",(void*)0x44),0);
-		test_assertInt(mytree.insert("/bar/foo/hier/test/../../../../bar/foo/hier/test",(void*)0x55),0);
+		test_assertInt(mytree.insert("/bar/foo/hier/test",(void*)0x55),0);
 		test_assertInt(mytree.insert("/bar/foo",(void*)0x66),0);
 
 		esc::PathTree<void> mytree2;
@@ -301,10 +337,10 @@ static void test_remove() {
 		before = heapspace();;
 		esc::PathTree<void> mytree;
 		test_assertInt(mytree.insert("/",(void*)0x11),0);
-		test_assertInt(mytree.insert("///foo//",(void*)0x22),0);
-		test_assertInt(mytree.insert("/foo/././test/../test",(void*)0x33),0);
+		test_assertInt(mytree.insert("/foo",(void*)0x22),0);
+		test_assertInt(mytree.insert("/foo/test",(void*)0x33),0);
 		test_assertInt(mytree.insert("/bar",(void*)0x44),0);
-		test_assertInt(mytree.insert("/bar/foo/hier/test/../../../../bar/foo/hier/test",(void*)0x55),0);
+		test_assertInt(mytree.insert("/bar/foo/hier/test",(void*)0x55),0);
 		test_assertInt(mytree.insert("/bar/foo/hier/test",(void*)0x66),-EEXIST);
 		test_assertInt(mytree.insert("/",(void*)0x66),-EEXIST);
 		test_assertInt(mytree.insert("/bar",(void*)0x66),-EEXIST);
@@ -314,7 +350,7 @@ static void test_remove() {
 		test_assertPtr(mytree.find("/bar")->getData(),(void*)0x11);
 		test_assertPtr(mytree.find("/bar/foo")->getData(),(void*)0x66);
 
-		test_assertPtr(mytree.remove("/bar/foo//"),(void*)0x66);
+		test_assertPtr(mytree.remove("/bar/foo/"),(void*)0x66);
 		test_assertPtr(mytree.find("/bar/foo")->getData(),(void*)0x11);
 
 		test_assertPtr(mytree.remove("/"),(void*)0x11);

@@ -189,9 +189,7 @@ public:
 	 * @return 0 on success
 	 */
 	int insert(const char *path,T *data) {
-		const char *pathend = path;
-		ITEM *last;
-		find(pathend,last,false);
+		ITEM *last = _root;
 		/* is root missing? */
 		if(!last) {
 			ITEM *i = createItem("/",1);
@@ -203,16 +201,27 @@ public:
 			last = i;
 		}
 
-		/* create the missing path elements */
-		while(*pathend) {
-			size_t len = toNext(pathend,last);
-			if(!len)
+		/* create the missing path elements, assuming a canonical path */
+		while(*path) {
+			if(*path != '/')
+				return -EINVAL;
+			path++;
+			if(*path == '\0')
 				break;
+			if(*path == '/')
+				return -EINVAL;
+
+			/* "." and ".." are not permitted */
+			size_t pos = strchri(path,'/');
+			if(pos == 1 && path[0] == '.')
+				return -EINVAL;
+			if(pos == 2 && path[0] == '.' && path[1] == '.')
+				return -EINVAL;
 
 			/* make sure that it doesn't exist already (think of "test/../test") */
-			ITEM *i = findAt(last,pathend,len);
+			ITEM *i = findAt(last,path,pos);
 			if(!i) {
-				i = createItem(pathend,len);
+				i = createItem(path,pos);
 				if(!i) {
 					/* we might already have created intermediate nodes. but for simplicity we keep
 					 * them, since we're still in a consistent state */
@@ -224,7 +233,7 @@ public:
 			}
 
 			last = i;
-			pathend += len;
+			path += pos;
 		}
 		if(last->_data != NULL)
 			return -EEXIST;
@@ -243,8 +252,7 @@ public:
 	 * @return the last "matching" item, i.e. the last item with data.
 	 */
 	ITEM *find(const char *path,const char **end = NULL) {
-		ITEM *last;
-		ITEM *match = find(path,last,true);
+		ITEM *match = doFind(path);
 		if(end)
 			*end = path;
 		return match;
@@ -257,79 +265,116 @@ public:
 	 * @return the data of the removed path or NULL if not found
 	 */
 	T *remove(const char *path) {
-		T *res = NULL;
-		ITEM *last;
-		ITEM *match = find(path,last,false);
-		if(last && match == last && !*path) {
-			res = match->getData();
-			last->_data = NULL;
-			/* delete now unnecessary nodes (that don't have data and childs) */
-			while(last->_data == NULL && last->_child == NULL) {
-				/* remove from parent */
-				if(last->_parent != last) {
-					ITEM *n = static_cast<ITEM*>(last->_parent->_child);
-					/* find prev */
-					ITEM *p = NULL;
-					while(n) {
-						if(n == last)
-							break;
-						p = n;
-						n = static_cast<ITEM*>(n->_next);
-					}
-					assert(n == last);
-					/* remove from list */
-					if(p)
-						p->_next = static_cast<ITEM*>(n->_next);
-					else
-						last->_parent->_child = static_cast<ITEM*>(n->_next);
+		/* find the path; assuming a canonical path */
+		ITEM *last = _root;
+		while(*path) {
+			if(*path != '/')
+				return NULL;
+			path++;
+			if(*path == '\0')
+				break;
+			if(*path == '/')
+				return NULL;
+
+			/* "." and ".." are not permitted */
+			size_t pos = strchri(path,'/');
+			if(pos == 1 && path[0] == '.')
+				return NULL;
+			if(pos == 2 && path[0] == '.' && path[1] == '.')
+				return NULL;
+
+			last = findAt(last,path,pos);
+			if(!last)
+				return NULL;
+			path += pos;
+		}
+
+		/* remember and remove data */
+		T* res = last->getData();
+		last->_data = NULL;
+
+		/* delete now unnecessary nodes (that don't have data and childs) */
+		while(last->_data == NULL && last->_child == NULL) {
+			/* remove from parent */
+			if(last->_parent != last) {
+				ITEM *n = static_cast<ITEM*>(last->_parent->_child);
+				/* find prev */
+				ITEM *p = NULL;
+				while(n) {
+					if(n == last)
+						break;
+					p = n;
+					n = static_cast<ITEM*>(n->_next);
 				}
+				assert(n == last);
+				/* remove from list */
+				if(p)
+					p->_next = static_cast<ITEM*>(n->_next);
 				else
-					_root = NULL;
-				/* delete and go to next */
-				ITEM *next = static_cast<ITEM*>(last->_parent);
-				delete last;
-				/* stop at root */
-				if(next == last)
-					break;
-				last = next;
+					last->_parent->_child = static_cast<ITEM*>(n->_next);
 			}
+			else
+				_root = NULL;
+			/* delete and go to next */
+			ITEM *next = static_cast<ITEM*>(last->_parent);
+			delete last;
+			/* stop at root */
+			if(next == last)
+				break;
+			last = next;
 		}
 		return res;
 	}
 
 protected:
-	ITEM *find(const char *&path,ITEM *&last,bool pathToMatch) {
-		ITEM *n = _root;
-		ITEM *match = n && n->_data ? n : NULL;
-		const char *mpath = path;
-		last = NULL;
-		while(n) {
-			last = n;
-			size_t len = toNext(path,n);
-			if(!len) {
-				// in this case, the path is either empty or contains only "." and "..". we don't want
-				// to have that in the remaining path, so directory return the match
-				if(last == match)
-					return match;
-				break;
-			}
+	ITEM *doFind(const char *&path) {
+		struct {
+			const char *path;
+			ITEM *match;
+		} stack[16];
 
-			last = n;
-			n = findAt(n,path,len);
-			if(n) {
-				path += len;
-				if(n->_data) {
-					match = n;
-					mpath = path;
-				}
+		ITEM *n = _root;
+		stack[0].match = n && n->_data ? n : NULL;
+		stack[0].path = path;
+		size_t spos = 1;
+
+		int depth = 0;
+		while(n) {
+			int back = 0;
+			size_t len = toNext(path,back,depth);
+			while(n->_parent != n && back-- > 0) {
+				if(n->_data)
+					spos--;
+				n = static_cast<ITEM*>(n->_parent);
 			}
+			if(!len)
+				break;
+
+			if(depth == 1) {
+				ITEM *last = n;
+				n = findAt(n,path,len);
+				path += len;
+				if(n) {
+					if(n->_data) {
+						stack[spos].match = n;
+						stack[spos].path = path;
+						spos++;
+						if(spos >= ARRAY_SIZE(stack))
+							return NULL;
+					}
+					depth = 0;
+				}
+				else
+					n = last;
+			}
+			else
+				path += len;
 		}
-		if(match && pathToMatch) {
-			while(*mpath == '/')
-				mpath++;
-			path = mpath;
-		}
-		return match;
+
+		path = stack[spos - 1].path;
+		while(*path == '/')
+			path++;
+		return stack[spos - 1].match;
 	}
 
 	ITEM *cloneRec(ITEM *src) {
@@ -393,12 +438,12 @@ protected:
 		return i;
 	}
 
-	static size_t toNext(const char *&path,ITEM *&n) {
+	static size_t toNext(const char *&path,int &back,int &depth) {
 		while(1) {
 			while(*path == '/')
 				path++;
 			if(!*path)
-				break;
+				return 0;
 
 			size_t pos = strchri(path,'/');
 			assert(pos > 0);
@@ -408,12 +453,16 @@ protected:
 			}
 			if(pos == 2 && path[0] == '.' && path[1] == '.') {
 				path += 2;
-				n = static_cast<ITEM*>(n->_parent);
+				if(depth > 0)
+					depth--;
+				else
+					back++;
 				continue;
 			}
+			depth++;
 			return pos;
 		}
-		return 0;
+		A_UNREACHED;
 	}
 
 	ITEM *_root;

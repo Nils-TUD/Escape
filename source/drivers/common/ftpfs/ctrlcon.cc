@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <esc/stream/std.h>
 #include <esc/vthrow.h>
 #include <sys/common.h>
 
@@ -83,7 +84,7 @@ void CtrlCon::connect() {
 }
 
 void CtrlCon::sendCommand(const char *cmd,const char *arg) {
-	PRINT(std::cerr << "[" << (void*)this << "] xmit: " << cmd << " " << arg << std::endl);
+	PRINT(esc::serr << "[" << (void*)this << "] xmit: " << cmd << " " << arg << esc::endl);
 	*_ios << cmd << " " << arg << "\r\n";
 	_ios->flush();
 }
@@ -93,7 +94,7 @@ char *CtrlCon::readLine() {
 	if(_ios->bad())
 		VTHROWE("Unable to read line",-ECONNRESET);
 
-	PRINT(std::cerr << "[" << (void*)this << "] recv: " << linebuf << std::endl);
+	PRINT(esc::serr << "[" << (void*)this << "] recv: " << linebuf << esc::endl);
 	return linebuf;
 }
 
@@ -115,7 +116,7 @@ const char *CtrlCon::execute(Cmd cmd,const char *arg,bool noThrow) {
 		reply = readReply();
 	}
 	catch(const std::exception &e) {
-		PRINT(std::cerr << "Command '" << c->name << " " << arg << "' failed: " << e.what() << std::endl);
+		PRINT(esc::serr << "Command '" << c->name << " " << arg << "' failed: " << e.what() << esc::endl);
 		try {
 			delete _sock;
 			connect();

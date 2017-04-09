@@ -23,12 +23,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-ssize_t cleanpath(char *dst,size_t dstSize,const char *src) {
-	char tmp[MAX_PATH_LEN];
-	ssize_t len = readlink(src,tmp,sizeof(tmp));
-	if(len < 0)
-		return len;
-	char *p = tmp;
+static ssize_t buildpath(char *dst,size_t dstSize,const char *src) {
+	const char *p = src;
 	while(*p == '/')
 		p++;
 
@@ -86,4 +82,16 @@ ssize_t cleanpath(char *dst,size_t dstSize,const char *src) {
 	}
 	*pathtemp = '\0';
 	return count;
+}
+
+ssize_t canonpath(char *dst,size_t dstSize,const char *src) {
+	char tmp[MAX_PATH_LEN];
+	ssize_t len = readlink(src,tmp,sizeof(tmp));
+	if(len < 0)
+		return len;
+	return buildpath(dst,dstSize,tmp);
+}
+
+size_t cleanpath(char *dst,size_t dstSize,const char *src) {
+	return buildpath(dst,dstSize,src);
 }

@@ -47,7 +47,17 @@ extern "C" {
  * @param src your relative path
  * @return the number of written chars (without null-termination) or a negative error code
  */
-ssize_t cleanpath(char *dst,size_t dstSize,const char *src);
+ssize_t canonpath(char *dst,size_t dstSize,const char *src);
+
+/**
+ * Removes duplicate slashes, "." and "..". Assumes that the path contains no symbol links.
+ *
+ * @param dst where to write to
+ * @param dstSize the size of the space <dst> points to
+ * @param src your path
+ * @return the number of written chars (without null-termination)
+ */
+size_t cleanpath(char *dst,size_t dstSize,const char *src);
 
 /**
  * Builds an absolute path from <path>, if necessary.

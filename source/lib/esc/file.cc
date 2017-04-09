@@ -64,9 +64,9 @@ namespace esc {
 
 	void file::init(const std::string& p,const std::string& n,uint flags) {
 		char apath[MAX_PATH_LEN];
-		ssize_t len = cleanpath(apath,sizeof(apath),p.c_str());
+		ssize_t len = canonpath(apath,sizeof(apath),p.c_str());
 		if(len < 0)
-			throw default_error("cleanpath failed",len);
+			throw default_error("canonpath failed",len);
 
 		if(n.empty()) {
 			char *pos = strrchr(apath,'/');

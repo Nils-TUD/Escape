@@ -157,8 +157,8 @@ int main(int argc,char **argv) {
 		usage(argv[0]);
 
 	char clean[MAX_PATH_LEN];
-	if(cleanpath(clean,sizeof(clean),path) < 0)
-		error("cleanpath for '%s' failed",path);
+	if(canonpath(clean,sizeof(clean),path) < 0)
+		error("canonpath for '%s' failed",path);
 	listDir(clean);
 	return 0;
 }

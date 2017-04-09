@@ -36,8 +36,8 @@ int shell_cmdCd(int argc,char **argv) {
 	}
 
 	ssize_t len;
-	if((len = cleanpath(path,sizeof(path),argv[1])) < 0) {
-		fprintf(stderr,"cleanpath for '%s' failed: %s\n",argv[1],strerror(len));
+	if((len = canonpath(path,sizeof(path),argv[1])) < 0) {
+		fprintf(stderr,"canonpath for '%s' failed: %s\n",argv[1],strerror(len));
 		return EXIT_FAILURE;
 	}
 

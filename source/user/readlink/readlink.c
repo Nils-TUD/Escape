@@ -47,7 +47,7 @@ int main(int argc,char *argv[]) {
 	for(int i = optind; i < argc; ++i) {
 		char tmp[MAX_PATH_LEN];
 		if(follow) {
-			if(cleanpath(tmp,sizeof(tmp),argv[i]) < 0) {
+			if(canonpath(tmp,sizeof(tmp),argv[i]) < 0) {
 				printe("readlink for '%s' failed",argv[i]);
 				continue;
 			}

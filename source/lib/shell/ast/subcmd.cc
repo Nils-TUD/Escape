@@ -154,7 +154,7 @@ static char **ast_expandPathname(char **buf,size_t *bufSize,size_t *i,char *path
 				search = last;
 			}
 			/* get all files in that directory */
-			ssize_t count = cleanpath(apath,sizeof(apath),path);
+			ssize_t count = canonpath(apath,sizeof(apath),path);
 			if(count < 0)
 				continue;
 			if(count > 1) {

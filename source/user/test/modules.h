@@ -46,6 +46,7 @@ extern int mod_pagefaults(int,char**);
 extern int mod_matmult(int,char**);
 extern int mod_rwlock(int,char**);
 extern int mod_mutex(int,char**);
+extern int mod_zombies(int,char**);
 
 #if defined(__cplusplus)
 }

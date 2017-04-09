@@ -77,11 +77,12 @@ int main(int argc,char **argv) {
 		}
 	}
 
-	/* give vterm our pid */
 	esc::VTerm vterm(STDOUT_FILENO);
-	vterm.setShellPid(getpid());
 
 	while(1) {
+		/* give vterm our pid (before every command in case we spawned a shell or similar) */
+		vterm.setShellPid(getpid());
+
 		size_t width = vterm.getMode().cols;
 		/* create buffer (history will free it) */
 		buffer = (char*)malloc((width + 1) * sizeof(char));

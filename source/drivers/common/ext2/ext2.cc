@@ -76,11 +76,16 @@ bool Ext2FileSystem::Ext2BlockCache::writeBlocks(const void *buffer,size_t start
 	return Ext2RW::writeBlocks(_fs,buffer,start,blockCount);
 }
 
-Ext2FileSystem::Ext2FileSystem(const char *device)
-		: fd(::open(device,O_RDWR)), sb(this), bgs(this),
-		  inodeCache(this), blockCache(this) {
+static int open_device(const char *path) {
+	int fd = ::open(path,O_RDWR);
 	if(fd < 0)
-		VTHROWE("Unable to open device '" << device << "'",fd);
+		VTHROWE("Unable to open device '" << path << "'",fd);
+	return fd;
+}
+
+Ext2FileSystem::Ext2FileSystem(const char *device)
+		: fd(open_device(device)), sb(this), bgs(this),
+		  inodeCache(this), blockCache(this) {
 }
 
 Ext2FileSystem::~Ext2FileSystem() {

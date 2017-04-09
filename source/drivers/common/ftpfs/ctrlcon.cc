@@ -102,7 +102,8 @@ const char *CtrlCon::readReply() {
 	while(1) {
 		char *line = readLine();
 		size_t len = strlen(line);
-		if(len > 3 && line[3] != '-')
+		if((len == 3 || (len > 3 && line[3] != '-')) &&
+			isdigit(line[0]) && isdigit(line[1]) && isdigit(line[2]))
 			return line;
 	}
 }

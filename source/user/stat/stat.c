@@ -62,28 +62,25 @@ int main(int argc,char *argv[]) {
 
 static void printFileInfo(const char *path,bool useOpen) {
 	struct stat info;
-	char apath[MAX_PATH_LEN];
-	if(cleanpath(apath,MAX_PATH_LEN,path) < 0)
-		error("cleanpath for '%s' failed",path);
 
 	if(useOpen) {
-		int fd = open(apath,O_RDONLY | O_NOFOLLOW);
+		int fd = open(path,O_RDONLY | O_NOFOLLOW);
 		if(fd < 0) {
-			printe("open of '%s' for reading failed",apath);
+			printe("open of '%s' for reading failed",path);
 			return;
 		}
 		if(fstat(fd,&info) < 0) {
-			printe("fstat of '%s' failed",apath);
+			printe("fstat of '%s' failed",path);
 			return;
 		}
 		close(fd);
 	}
-	else if(lstat(apath,&info) < 0) {
-		printe("stat of '%s' failed",apath);
+	else if(lstat(path,&info) < 0) {
+		printe("stat of '%s' failed",path);
 		return;
 	}
 
-	printf("'%s' points to:\n",apath);
+	printf("'%s' points to:\n",path);
 	printf("%-15s%d\n","Inode:",info.st_ino);
 	printf("%-15s%d\n","Device:",info.st_dev);
 	printf("%-15s%s\n","Type:",getType(&info));

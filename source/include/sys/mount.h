@@ -27,11 +27,28 @@ extern "C" {
 #endif
 
 /**
+ * Each process has its own mountspace. It can be cloned and new mountspaces can be joined. The
+ * mountspace defines the filesystem tree, that the user sees, given by mointpoints that make file
+ * systems available at specific points in the tree. Mountpoints can also reduce permissions for
+ * a subtree via remount.
+ *
+ * On Escape, symbolic links need special attention:
+ * 1) if you have a symbolic link in a subtree (A), where you have less permissions than in the
+ *    subtree the symbolic link points to (B), you might not be able to resolve the symlink because
+ *    of missing permissions in A, making the permissions in B irrelevant. This is because the
+ *    mountspace does not know about symbolic links and thus assumes that you stay in A.
+ *    If you have sufficient permissions to resolve the symlink, the permissions of B apply.
+ * 2) if you want to walk back from the destination of a symbolic link, you should resolve the
+ *    symbolic link first and walk back in a second step. Otherwise, you might end up at the wrong
+ *    place. This is a good idea anyway, because it makes it clear that you expect a symbol link.
+ */
+
+/**
  * Mounts the device denoted by <fs> at <path> into given mountspace
  *
  * @param ms the mountspace to mount the fs into
  * @param fs the file-descriptor to the filesystem that should be mounted
- * @param path the path to mount at
+ * @param path the path to mount at (has to be canonical!)
  * @return 0 on success
  */
 A_CHECKRET int mount(int ms,int fs,const char *path);
@@ -41,7 +58,7 @@ A_CHECKRET int mount(int ms,int fs,const char *path);
  *
  * @param ms the mountspace to mount the fs into
  * @param dir the file descriptor to the directory to remount
- * @param path the path to mount it at
+ * @param path the path to mount it at (has to be canonical!)
  * @param perm the permissions (O_RDONLY | O_WRONLY | O_EXEC) to use; only downgrading is allowed
  * @return 0 on success
  */
@@ -51,7 +68,7 @@ A_CHECKRET int remount(int ms,int dir,const char *path,uint perm);
  * Unmounts the device mounted at <path> from given mountspace
  *
  * @param ms the mountspace
- * @param path the path
+ * @param path the path (has to be canonical!)
  * @return 0 on success
  */
 A_CHECKRET int unmount(int ms,const char *path);

@@ -348,7 +348,7 @@ static vector<lsfile*> getEntries(const string& path) {
 			vector<struct dirent> files = dir.list_files(flags & F_ALL);
 			for(auto it = files.begin(); it != files.end(); ++it) {
 				try {
-					res.push_back(buildFile(file(path,std::string(it->d_name),false)));
+					res.push_back(buildFile(file(path,std::string(it->d_name),O_NOCHAN | O_NOFOLLOW)));
 				}
 				catch(const exception &e) {
 					printe("Skipping '%s/%s': %s",path.c_str(),it->d_name,e.what());

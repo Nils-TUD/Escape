@@ -43,19 +43,19 @@ namespace esc {
 		 * Builds a file-object for given path
 		 *
 		 * @param path the path (has not to be absolute)
-		 * @param follow whether to follow the last symlink
+		 * @param flags the flags to use for getting the file info
 		 * @throws default_error if stat fails
 		 */
-		file(const std::string& path,bool follow = true);
+		file(const std::string& path,uint flags = O_NOCHAN);
 		/**
 		 * Builds a file-object for <name> in <parent>
 		 *
 		 * @param parent the parent-path (has not to be absolute)
 		 * @param name the filename
-		 * @param follow whether to follow the last symlink
+		 * @param flags the flags to use for getting the file info
 		 * @throws default_error if stat fails
 		 */
-		file(const std::string& parent,const std::string& name,bool follow = true);
+		file(const std::string& parent,const std::string& name,uint flags = O_NOCHAN);
 		/**
 		 * Copy-constructor
 		 */
@@ -102,6 +102,18 @@ namespace esc {
 		 */
 		size_type size() const {
 			return _info.st_size;
+		}
+		/**
+		 * @return the number of blocks the file occupies
+		 */
+		size_type blocks() const {
+			return _info.st_blocks;
+		}
+		/**
+		 * @return the preferred block size for I/O
+		 */
+		size_type block_size() const {
+			return _info.st_blksize;
 		}
 
 		/**
@@ -175,15 +187,7 @@ namespace esc {
 		}
 
 	private:
-		/**
-		 * Inits _info and _path
-		 *
-		 * @param parent the parent-path
-		 * @param name the filename
-		 * @param follow whether to follow the last symlink
-		 * @throws default_error if stat fails
-		 */
-		void init(const std::string& parent,const std::string& name,bool follow);
+		void init(const std::string& parent,const std::string& name,uint flags);
 
 	private:
 		struct stat _info;

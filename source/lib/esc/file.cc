@@ -24,13 +24,13 @@
 #include <string.h>
 
 namespace esc {
-	file::file(const std::string& p,bool follow)
+	file::file(const std::string& p,uint flags)
 		: _info(), _parent(), _name() {
-		init(p,"",follow);
+		init(p,"",flags);
 	}
-	file::file(const std::string& p,const std::string& n,bool follow)
+	file::file(const std::string& p,const std::string& n,uint flags)
 		: _info(), _parent(), _name() {
-		init(p,n,follow);
+		init(p,n,flags);
 	}
 	file::file(const file& f)
 		: _info(f._info), _parent(f._parent), _name(f._name) {
@@ -62,7 +62,7 @@ namespace esc {
 		return v;
 	}
 
-	void file::init(const std::string& p,const std::string& n,bool follow) {
+	void file::init(const std::string& p,const std::string& n,uint flags) {
 		char apath[MAX_PATH_LEN];
 		ssize_t len = cleanpath(apath,sizeof(apath),p.c_str());
 		if(len < 0)
@@ -84,8 +84,12 @@ namespace esc {
 			_name = n;
 		_parent = apath;
 
-		int res = follow ? stat(path().c_str(),&_info) : lstat(path().c_str(),&_info);
+		int fd = open(path().c_str(),flags);
+		if(fd < 0)
+			throw default_error("open failed",fd);
+		int res = fstat(fd,&_info);
+		close(fd);
 		if(res < 0)
-			throw default_error("lstat failed",res);
+			throw default_error("fstat failed",res);
 	}
 }

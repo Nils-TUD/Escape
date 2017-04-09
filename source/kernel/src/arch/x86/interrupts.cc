@@ -156,7 +156,10 @@ int InterruptsBase::installHandler(int irq,const char *name) {
 }
 
 void InterruptsBase::uninstallHandler(int irq) {
-	intrptList[irq + Interrupts::IRQ_MASTER_BASE].handler = NULL;
+	if(irq == 1)
+		intrptList[irq + Interrupts::IRQ_MASTER_BASE].handler = Interrupts::irqKeyboard;
+	else
+		intrptList[irq + Interrupts::IRQ_MASTER_BASE].handler = NULL;
 }
 
 void InterruptsBase::getMSIAttr(int irq,uint64_t *msiaddr,uint32_t *msival) {
@@ -317,8 +320,12 @@ void Interrupts::irqKeyboard(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	/* react on F12 presses during boot-phase until the keyboard driver has installed the default
 	 * irq routine for keyboard interrupts. */
 	Keyboard::Event ev;
-	if(Keyboard::get(&ev,Keyboard::EVENT_PRESS,false) && ev.keycode == VK_F12)
+	if(Keyboard::get(&ev,Keyboard::EVENT_PRESS,false) && ev.keycode == VK_F12) {
+		/* this is normally done by the uimanager. but if the keyboard driver does not exist or is
+		 * dead, we need to do that here */
+		Util::switchToVGA();
 		Console::start(NULL);
+	}
 
 	eoi(stack->intrptNo);
 }

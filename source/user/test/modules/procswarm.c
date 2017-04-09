@@ -30,7 +30,7 @@ int mod_procswarm(int argc,char *argv[]) {
 	if(argc > 2)
 		count = atoi(argv[2]);
 	for(i = 0; i < count; i++) {
-		if(fork() > 0)
+		if(fork() == 0)
 			break;
 	}
 

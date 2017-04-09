@@ -624,7 +624,7 @@ private:
 	static void doPrintTree(OStream &os,size_t level,const VFSNode *parent);
 	bool canRemove(pid_t pid,const VFSNode *node) const;
 	void doAppend(VFSNode *parent);
-	ushort doRemove(bool force);
+	void doRemove(bool force);
 	ushort doUnref(bool force);
 
 protected:

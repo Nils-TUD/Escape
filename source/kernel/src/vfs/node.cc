@@ -306,8 +306,9 @@ int VFSNode::rename(pid_t pid,const char *oldName,VFSNode *newDir,const char *ne
 	}
 	target->ref();
 
-	/* remove from old directory (we have a reference; so it won't be free'd) */
+	/* remove from old directory */
 	target->doRemove(true);
+	doUnref(false);
 
 	/* append to new directory */
 	target->doAppend(newDir);
@@ -622,18 +623,13 @@ void VFSNode::doAppend(VFSNode *p) {
 	parent = p;
 }
 
-ushort VFSNode::doRemove(bool force) {
+void VFSNode::doRemove(bool force) {
 	const char *nameptr = NULL;
 
-	ushort remRefs = refCount;
-	/* don't decrease the refs twice with remove */
-	if(!force || name)
-		remRefs = Atomic::fetch_and_add(&refCount,-1) - 1;
-
 	/* take care that we don't destroy the node twice */
-	if(remRefs == 0)
+	if(refCount == 0)
 		invalidate();
-	if((remRefs == 0 || force) && name) {
+	if((refCount == 0 || force) && name) {
 		/* remove from parent and release (attention: maybe its not yet in the tree) */
 		if(prev)
 			prev->next = next;
@@ -653,7 +649,6 @@ ushort VFSNode::doRemove(bool force) {
 
 	if(nameptr)
 		Cache::free(const_cast<char*>(nameptr));
-	return remRefs;
 }
 
 ushort VFSNode::doUnref(bool force) {
@@ -673,7 +668,11 @@ ushort VFSNode::doUnref(bool force) {
 		}
 	}
 
-	remRefs = doRemove(force);
+	/* don't decrease the refs twice with remove */
+	if(!force || name)
+		remRefs = Atomic::fetch_and_add(&refCount,-1) - 1;
+
+	doRemove(force);
 
 	/* if there are no references anymore, we can put the node on the freelist */
 	if(remRefs == 0) {

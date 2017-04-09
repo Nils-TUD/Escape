@@ -39,23 +39,6 @@
 
 VFSDir::VFSDir(pid_t pid,VFSNode *p,char *n,mode_t m,bool &success)
 		: VFSNode(pid,n,DIR_DEF_MODE | (m & MODE_PERM),success) {
-	VFSNode *l;
-	if(!success)
-		return;
-
-	if(!(l = new VFSLink(pid,this,(char*)".",this,success))) {
-		success = false;
-		return;
-	}
-	VFSNode::release(l);
-	/* the root-node has no parent */
-	VFSNode *target = p == NULL ? this : p;
-	if(!(l = new VFSLink(pid,this,(char*)"..",target,success))) {
-		success = false;
-		return;
-	}
-	VFSNode::release(l);
-
 	append(p);
 }
 
@@ -86,6 +69,16 @@ ssize_t VFSDir::getSize(A_UNUSED pid_t pid) {
 	return byteCount;
 }
 
+void VFSDir::add(VFSDirEntry *&dirEntry,ino_t ino,const char *name,size_t len) {
+	/* unfortunatly, we have to convert the endianess here, because readdir() expects
+	 * that its encoded in little endian */
+	dirEntry->nodeNo = cputole32(ino);
+	dirEntry->nameLen = cputole16(len);
+	dirEntry->recLen = cputole16(sizeof(VFSDirEntry) + len);
+	memcpy(dirEntry + 1,name,len);
+	dirEntry = (VFSDirEntry*)((uint8_t*)dirEntry + sizeof(VFSDirEntry) + len);
+}
+
 ssize_t VFSDir::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buffer,
 		off_t offset,size_t count) {
 	VFSDirEntry *fsBytes = NULL;
@@ -96,13 +89,13 @@ ssize_t VFSDir::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buffe
 	bool valid;
 	first = n = openDir(true,&valid);
 	if(valid) {
+		/* "." and ".." */
+		byteCount += sizeof(VFSDirEntry) * 2 + 1 + 2;
 		/* count the number of bytes in the virtual directory */
 		/* note that we do that here because using the fs service involves context-switches,
 		 * which may lead to a deadlock if we hold the node-lock during that time */
 		while(n != NULL) {
-			if(parent != NULL || ((n->nameLen != 1 || strcmp(n->name,".") != 0)
-					&& (n->nameLen != 2 || strcmp(n->name,"..") != 0)))
-				byteCount += sizeof(VFSDirEntry) + n->nameLen;
+			byteCount += sizeof(VFSDirEntry) + n->nameLen;
 			n = n->next;
 		}
 
@@ -112,21 +105,12 @@ ssize_t VFSDir::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buffe
 			byteCount = 0;
 		else {
 			VFSDirEntry *dirEntry = fsBytes;
+			/* add "." and ".." */
+			add(dirEntry,getNo(),".",1);
+			add(dirEntry,getParent()->getNo(),"..",2);
 			n = first;
 			while(n != NULL) {
-				if(parent == NULL && ((n->nameLen == 1 && strcmp(n->name,".") == 0) ||
-						(n->nameLen == 2 && strcmp(n->name,"..") == 0))) {
-					n = n->next;
-					continue;
-				}
-				size_t len = n->nameLen;
-				/* unfortunatly, we have to convert the endianess here, because readdir() expects
-				 * that its encoded in little endian */
-				dirEntry->nodeNo = cputole32(n->getNo());
-				dirEntry->nameLen = cputole16(len);
-				dirEntry->recLen = cputole16(sizeof(VFSDirEntry) + len);
-				memcpy(dirEntry + 1,n->name,len);
-				dirEntry = (VFSDirEntry*)((uint8_t*)dirEntry + sizeof(VFSDirEntry) + len);
+				add(dirEntry,n->getNo(),n->name,n->nameLen);
 				n = n->next;
 			}
 		}

@@ -46,4 +46,7 @@ public:
 	virtual off_t seek(pid_t pid,off_t position,off_t offset,uint whence) const;
 	virtual ssize_t getSize(pid_t pid);
 	virtual ssize_t read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset,size_t count);
+
+private:
+	static void add(VFSDirEntry *&dirEntry,ino_t ino,const char *name,size_t len);
 };

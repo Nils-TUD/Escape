@@ -465,6 +465,7 @@ int VFSNode::request(const char *path,VFSNode *node,RequestResult *res,uint flag
 		return 0;
 	}
 
+	bool link = false;
 	depth = 0;
 	lastdepth = -1;
 	dir = n;
@@ -487,9 +488,20 @@ int VFSNode::request(const char *path,VFSNode *node,RequestResult *res,uint flag
 					pos++;
 				}
 				lastdepth = depth;
+
+				/* handle "." and ".." */
+				link = false;
+				if((pos == 1 && path[0] == '.') ||
+				   (pos == 2 && path[0] == '.' && path[1] == '.')) {
+					if(pos == 1)
+						n = dir;
+					else
+						n = dir->parent == NULL ? dir : dir->parent;
+					link = true;
+				}
 			}
 
-			if((int)n->nameLen == pos && strncmp(n->name,path,pos) == 0) {
+			if(link || ((int)n->nameLen == pos && strncmp(n->name,path,pos) == 0)) {
 				lastpath = path;
 				path += pos;
 				/* finished? */

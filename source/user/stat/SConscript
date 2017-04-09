@@ -1,2 +1,2 @@
 Import('env')
-env.EscapeCProg('bin', target = 'stat', source = env.Glob('*.c'))
+env.EscapeCXXProg('bin', target = 'stat', source = env.Glob('*.cc'), LIBS = ['usergroup'])

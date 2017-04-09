@@ -92,4 +92,51 @@ namespace esc {
 		if(res < 0)
 			throw default_error("fstat failed",res);
 	}
+
+	static void printPerm(esc::OStream &os,file::mode_type mode,file::mode_type fl,char c) {
+		if((mode & fl) != 0)
+			os << c;
+		else
+			os << '-';
+	}
+
+	void file::printMode(esc::OStream &os,mode_t mode) {
+		char exec = 'x';
+		if(S_ISCHR(mode) || S_ISBLK(mode) || S_ISFS(mode) || S_ISSERV(mode))
+			exec = 'm';
+		else if(S_ISIRQ(mode))
+			exec = 'i';
+
+		if(S_ISDIR(mode))
+			os << 'd';
+		else if(S_ISCHR(mode))
+			os << 'c';
+		else if(S_ISBLK(mode))
+			os << 'b';
+		else if(S_ISFS(mode))
+			os << 'f';
+		else if(S_ISSERV(mode))
+			os << 's';
+		else if(S_ISMS(mode))
+			os << 'm';
+		else if(S_ISIRQ(mode))
+			os << 'i';
+		else if(S_ISLNK(mode))
+			os << 'l';
+		else
+			os << '-';
+
+		printPerm(os,mode,S_IRUSR,'r');
+		printPerm(os,mode,S_IWUSR,'w');
+		printPerm(os,mode,S_IXUSR,exec);
+		printPerm(os,mode,S_IRGRP,'r');
+		printPerm(os,mode,S_IWGRP,'w');
+		printPerm(os,mode,S_IXGRP,exec);
+		printPerm(os,mode,S_IROTH,'r');
+		printPerm(os,mode,S_IWOTH,'w');
+		if(S_ISDIR(mode) && (mode & S_ISSTICKY))
+			os << ((mode & S_IXOTH) ? 't' : 'T');
+		else
+			printPerm(os,mode,S_IXOTH,exec);
+	}
 }

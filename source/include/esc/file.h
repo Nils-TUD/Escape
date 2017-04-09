@@ -40,6 +40,14 @@ namespace esc {
 
 	public:
 		/**
+		 * Prints the mode in human-readable form (e.g., drwx-w-rw) to the given ostream.
+		 *
+		 * @param os the output stream
+		 * @param mode the mode
+		 */
+		static void printMode(esc::OStream &os,mode_t mode);
+
+		/**
 		 * Builds a file-object for given path
 		 *
 		 * @param path the path (has not to be absolute)

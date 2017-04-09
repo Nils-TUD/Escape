@@ -95,8 +95,6 @@ static vector<lsfile*> getEntries(const string& path);
 static lsfile* buildFile(const file& f);
 static file::size_type getDirSize(const file& d);
 static void printSize(size_t size,size_t width);
-static void printMode(file::mode_type mode);
-static void printPerm(file::mode_type mode,file::mode_type fl,char c);
 
 static void usage(const char *name) {
 	serr << "Usage: " << name << " [-liasNn] [<path>...]\n";
@@ -269,7 +267,8 @@ static void printDir(const std::string &path,const std::vector<lsfile*> &entries
 		if(flags & F_LONG) {
 			if(flags & F_INODE)
 				sout << fmt(f->inode(),widths[W_INODE]) << ' ';
-			printMode(f->mode());
+			file::printMode(sout,f->mode());
+			sout << ' ';
 			sout << fmt(f->links(),widths[W_LINKCOUNT]) << ' ';
 
 			sNamedItem *u = (~flags & F_NUMERIC) ? usergroup_getById(userList,f->uid()) : nullptr;
@@ -410,52 +409,4 @@ static void printSize(size_t size,size_t width) {
 	}
 	else
 		sout << fmt(size,width);
-}
-
-static void printMode(file::mode_type mode) {
-	char exec = 'x';
-	if(S_ISCHR(mode) || S_ISBLK(mode) || S_ISFS(mode) || S_ISSERV(mode))
-		exec = 'm';
-	else if(S_ISIRQ(mode))
-		exec = 'i';
-
-	if(S_ISDIR(mode))
-		sout << 'd';
-	else if(S_ISCHR(mode))
-		sout << 'c';
-	else if(S_ISBLK(mode))
-		sout << 'b';
-	else if(S_ISFS(mode))
-		sout << 'f';
-	else if(S_ISSERV(mode))
-		sout << 's';
-	else if(S_ISMS(mode))
-		sout << 'm';
-	else if(S_ISIRQ(mode))
-		sout << 'i';
-	else if(S_ISLNK(mode))
-		sout << 'l';
-	else
-		sout << '-';
-
-	printPerm(mode,S_IRUSR,'r');
-	printPerm(mode,S_IWUSR,'w');
-	printPerm(mode,S_IXUSR,exec);
-	printPerm(mode,S_IRGRP,'r');
-	printPerm(mode,S_IWGRP,'w');
-	printPerm(mode,S_IXGRP,exec);
-	printPerm(mode,S_IROTH,'r');
-	printPerm(mode,S_IWOTH,'w');
-	if(S_ISDIR(mode) && (mode & S_ISSTICKY))
-		sout << ((mode & S_IXOTH) ? 't' : 'T');
-	else
-		printPerm(mode,S_IXOTH,exec);
-	sout << ' ';
-}
-
-static void printPerm(file::mode_type mode,file::mode_type fl,char c) {
-	if((mode & fl) != 0)
-		sout << c;
-	else
-		sout << '-';
 }

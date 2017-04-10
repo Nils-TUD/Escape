@@ -1,0 +1,2 @@
+Import('env')
+env.EscapeCProg('bin', target = 'du', source = env.Glob('*.c'))

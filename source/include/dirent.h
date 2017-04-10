@@ -62,8 +62,10 @@ size_t cleanpath(char *dst,size_t dstSize,const char *src);
 /**
  * Builds an absolute path from <path>, if necessary.
  *
- * @param path the path
- * @return the absolute path (might use <path> or a statically allocated array)
+ * @param dst the destination
+ * @param dstSize the size of <dst> (has to be > 0)
+ * @param path the path to make absolute
+ * @return the absolute path (might be <path> or <dst>)
  */
 char *abspath(char *dst,size_t dstSize,const char *path);
 

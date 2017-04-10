@@ -18,20 +18,28 @@
  */
 
 #include <sys/common.h>
+#include <assert.h>
 #include <dirent.h>
 #include <stdlib.h>
 #include <string.h>
 
 char *abspath(char *dst,size_t dstSize,const char *path) {
+	assert(dstSize > 0);
+
 	if(*path != '/') {
 		/* translate "abc://def" to "/dev/abc/def" */
 		const char *p = path;
 		while(*p) {
 			if(p[0] == ':' && p[1] == '/' && p[2] == '/') {
-				size_t slen = p - path;
-				strncpy(dst,"/dev/",SSTRLEN("/dev/"));
-				strncpy(dst + SSTRLEN("/dev/"),path,slen);
-				strnzcpy(dst + SSTRLEN("/dev/") + slen,p + 2,dstSize - (SSTRLEN("/dev/") + slen));
+				size_t num = MIN(dstSize - 1,SSTRLEN("/dev/"));
+				strncpy(dst,"/dev/",num);
+				dstSize -= num;
+
+				size_t slen = MIN(dstSize - 1,(size_t)(p - path));
+				strncpy(dst + num,path,slen);
+				dstSize -= slen;
+
+				strnzcpy(dst + num + slen,p + 2,dstSize);
 				return dst;
 			}
 			p++;

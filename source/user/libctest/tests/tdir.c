@@ -30,6 +30,7 @@
 static void test_dir(void);
 static void test_opendir(void);
 static void test_canonpath(void);
+static void test_abspath(void);
 static void test_basename(void);
 static void test_dirname(void);
 
@@ -42,6 +43,7 @@ sTestModule tModDir = {
 static void test_dir(void) {
 	test_opendir();
 	test_canonpath();
+	test_abspath();
 	test_basename();
 	test_dirname();
 }
@@ -64,60 +66,54 @@ static void test_opendir(void) {
 }
 
 static void test_canonpath(void) {
+	char path[MAX_PATH_LEN];
 	size_t count;
-	char *path;
 
 	test_caseStart("Testing canonpath");
 
-	path = (char*)malloc((MAX_PATH_LEN + 1) * sizeof(char));
-	if(path == NULL) {
-		printe("Not enough mem for path");
-		return;
-	}
-
 	setenv("CWD","/");
 
-	count = canonpath(path,MAX_PATH_LEN + 1,"/");
+	count = canonpath(path,sizeof(path),"/");
 	test_assertUInt(count,SSTRLEN("/"));
 	test_assertStr(path,"/");
 
-	count = canonpath(path,MAX_PATH_LEN + 1,"/bin/ls");
+	count = canonpath(path,sizeof(path),"/bin/ls");
 	test_assertUInt(count,SSTRLEN("/bin/ls"));
 	test_assertStr(path,"/bin/ls");
 
-	count = canonpath(path,MAX_PATH_LEN + 1,"/../bin/../.././home");
+	count = canonpath(path,sizeof(path),"/../bin/../.././home");
 	test_assertUInt(count,SSTRLEN("/home"));
 	test_assertStr(path,"/home");
 
-	count = canonpath(path,MAX_PATH_LEN + 1,"bin/..///.././home");
+	count = canonpath(path,sizeof(path),"bin/..///.././home");
 	test_assertUInt(count,SSTRLEN("/home"));
 	test_assertStr(path,"/home");
 
-	count = canonpath(path,MAX_PATH_LEN + 1,"bin/./ls");
+	count = canonpath(path,sizeof(path),"bin/./ls");
 	test_assertUInt(count,SSTRLEN("/bin/ls"));
 	test_assertStr(path,"/bin/ls");
 
 	setenv("CWD","/home");
 
-	count = canonpath(path,MAX_PATH_LEN + 1,"hrniels/./scripts");
+	count = canonpath(path,sizeof(path),"hrniels/./scripts");
 	test_assertUInt(count,SSTRLEN("/home/hrniels/scripts"));
 	test_assertStr(path,"/home/hrniels/scripts");
 
 	setenv("CWD","/home/");
 
-	count = canonpath(path,MAX_PATH_LEN + 1,"hrniels/./scripts");
+	count = canonpath(path,sizeof(path),"hrniels/./scripts");
 	test_assertUInt(count,SSTRLEN("/home/hrniels/scripts"));
 	test_assertStr(path,"/home/hrniels/scripts");
 
-	count = canonpath(path,MAX_PATH_LEN + 1,"..");
+	count = canonpath(path,sizeof(path),"..");
 	test_assertUInt(count,SSTRLEN("/"));
 	test_assertStr(path,"/");
 
-	count = canonpath(path,MAX_PATH_LEN + 1,"../../.");
+	count = canonpath(path,sizeof(path),"../../.");
 	test_assertUInt(count,SSTRLEN("/"));
 	test_assertStr(path,"/");
 
-	count = canonpath(path,MAX_PATH_LEN + 1,"./../bin");
+	count = canonpath(path,sizeof(path),"./../bin");
 	test_assertUInt(count,SSTRLEN("/bin"));
 	test_assertStr(path,"/bin");
 
@@ -137,7 +133,54 @@ static void test_canonpath(void) {
 	if(count > 8)
 		test_caseFailed("Copied too much");
 
-	free(path);
+	test_caseSucceeded();
+}
+
+static void test_abspath(void) {
+	char *p,path[MAX_PATH_LEN];
+
+	test_caseStart("Testing abspath");
+
+	setenv("CWD","/home/hrniels");
+
+	p = abspath(path,sizeof(path),".");
+	test_assertStr(p,"/home/hrniels/.");
+
+	p = abspath(path,sizeof(path),"/");
+	test_assertStr(p,"/");
+
+	p = abspath(path,sizeof(path),"../..");
+	test_assertStr(p,"/home/hrniels/../..");
+
+	p = abspath(path,sizeof(path),"http://www.example.com");
+	test_assertStr(p,"/dev/http/www.example.com");
+
+	p = abspath(path,sizeof(path),"a://");
+	test_assertStr(p,"/dev/a/");
+
+	p = abspath(path,sizeof(path),"a:/");
+	test_assertStr(p,"/home/hrniels/a:/");
+
+	p = abspath(path,8,"/");
+	test_assertStr(p,"/");
+
+	p = abspath(path,8,"..");
+	test_assertStr(p,"/home/h");
+
+	p = abspath(path,8,"f://bar");
+	test_assertStr(p,"/dev/f/");
+
+	p = abspath(path,8,"foobar://bar");
+	test_assertStr(p,"/dev/fo");
+
+	p = abspath(path,2,"a://b");
+	test_assertStr(p,"/");
+
+	p = abspath(path,1,"a://b");
+	test_assertStr(p,"");
+
+	p = abspath(path,1,".");
+	test_assertStr(p,"");
 
 	test_caseSucceeded();
 }

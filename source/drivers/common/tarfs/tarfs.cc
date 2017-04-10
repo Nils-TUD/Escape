@@ -98,15 +98,18 @@ public:
 		if(root != 0)
 			return -ENOTSUP;
 
+		char cpath[MAX_PATH_LEN];
+		cleanpath(cpath,sizeof(cpath),path);
+
 		const char *end = NULL;
-		PathTreeItem<TarINode> *tfile = tree.find(path,&end);
+		PathTreeItem<TarINode> *tfile = tree.find(cpath,&end);
 		if(file == NULL || *end != '\0') {
 			if(flags & O_CREAT) {
 				TarINode *inode = new TarINode(time(NULL),0,mode);
 				inode->info.st_uid = u->uid;
 				inode->info.st_gid = u->gid;
-				tree.insert(path,inode);
-				tfile = tree.find(path,&end);
+				tree.insert(cpath,inode);
+				tfile = tree.find(cpath,&end);
 			}
 
 			if((~flags & O_CREAT) || file == NULL)
@@ -115,7 +118,7 @@ public:
 		if(!canReach(u,tfile))
 			return -EPERM;
 
-		*file = new OpenTarFile(fd,path,tfile,_archive,flags);
+		*file = new OpenTarFile(fd,cpath,tfile,_archive,flags);
 		return fd;
 	}
 

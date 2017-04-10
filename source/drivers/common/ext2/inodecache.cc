@@ -143,16 +143,16 @@ void Ext2INodeCache::print(FILE *f) {
 		if(inode->dirty)
 			dirty++;
 	}
-	fprintf(f,"\t\tTotal entries: %zu\n",EXT2_ICACHE_SIZE);
-	fprintf(f,"\t\tUsed entries: %zu\n",used);
-	fprintf(f,"\t\tDirty entries: %zu\n",dirty);
-	fprintf(f,"\t\tHits: %zu\n",_hits);
-	fprintf(f,"\t\tMisses: %zu\n",_misses);
+	fprintf(f,"\tTotal entries: %zu\n",EXT2_ICACHE_SIZE);
+	fprintf(f,"\tUsed entries: %zu\n",used);
+	fprintf(f,"\tDirty entries: %zu\n",dirty);
+	fprintf(f,"\tHits: %zu\n",_hits);
+	fprintf(f,"\tMisses: %zu\n",_misses);
 	if(_hits == 0)
 		hitrate = 0;
 	else
 		hitrate = 100.0f / ((float)(_misses + _hits) / _hits);
-	fprintf(f,"\t\tHitrate: %.3f%%\n",hitrate);
+	fprintf(f,"\tHitrate: %.3f%%\n",hitrate);
 }
 
 void Ext2INodeCache::acquire(Ext2CInode *inode,A_UNUSED uint mode) {

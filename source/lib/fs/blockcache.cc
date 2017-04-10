@@ -223,16 +223,16 @@ void BlockCache::printStats(FILE *f) {
 			dirty++;
 		bentry = bentry->next;
 	}
-	fprintf(f,"\t\tTotal blocks: %zu\n",_blockCacheSize);
-	fprintf(f,"\t\tUsed blocks: %zu\n",used);
-	fprintf(f,"\t\tDirty blocks: %zu\n",dirty);
-	fprintf(f,"\t\tHits: %lu\n",_hits);
-	fprintf(f,"\t\tMisses: %lu\n",_misses);
+	fprintf(f,"\tTotal blocks: %zu\n",_blockCacheSize);
+	fprintf(f,"\tUsed blocks: %zu\n",used);
+	fprintf(f,"\tDirty blocks: %zu\n",dirty);
+	fprintf(f,"\tHits: %lu\n",_hits);
+	fprintf(f,"\tMisses: %lu\n",_misses);
 	if(_hits == 0)
 		hitrate = 0;
 	else
 		hitrate = 100.0f / ((float)(_misses + _hits) / _hits);
-	fprintf(f,"\t\tHitrate: %.3f%%\n",hitrate);
+	fprintf(f,"\tHitrate: %.3f%%\n",hitrate);
 }
 
 #if DEBUGGING

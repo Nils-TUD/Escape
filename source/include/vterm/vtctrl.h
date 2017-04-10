@@ -28,7 +28,7 @@
 #include <sys/sync.h>
 #include <mutex>
 
-#define TAB_WIDTH			4
+#define TAB_WIDTH			8
 #define HISTORY_SIZE		12
 #define INPUT_BUF_SIZE		512
 #define MAX_VT_NAME_LEN		15

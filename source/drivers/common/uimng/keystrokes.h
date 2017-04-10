@@ -44,14 +44,14 @@ public:
 	}
 
 	/**
-	 * Creates a new text-console
+	 * Creates a new text console
 	 */
 	static void createTextConsole() {
 		createConsole(esc::InitUI::TUI);
 	}
 
 	/**
-	 * Creates a new GUI-console
+	 * Creates a new GUI console
 	 */
 	static void createGUIConsole() {
 		createConsole(esc::InitUI::GUI);

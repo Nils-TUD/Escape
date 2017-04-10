@@ -24,16 +24,25 @@
 #include <dirent.h>
 
 int mount(int ms,int fs,const char *path) {
-	char apath[MAX_PATH_LEN];
-	return syscall4(SYSCALL_MOUNT,ms,fs,(ulong)abspath(apath,sizeof(apath),path),0);
+	/* root is a special case; we cannot create it before, which is why it doesn't exist before
+	 * mounting something there */
+	if(path[0] == '/' && path[1] == '\0')
+		return syscall4(SYSCALL_MOUNT,ms,fs,(ulong)"/",0);
+	return remount(ms,fs,path,0);
 }
 
 int remount(int ms,int dir,const char *path,uint perm) {
 	char apath[MAX_PATH_LEN];
-	return syscall4(SYSCALL_MOUNT,ms,dir,(ulong)abspath(apath,sizeof(apath),path),perm);
+	ssize_t res = canonpath(apath,sizeof(apath),path);
+	if(res < 0)
+		return res;
+	return syscall4(SYSCALL_MOUNT,ms,dir,(ulong)apath,perm);
 }
 
 int unmount(int ms,const char *path) {
 	char apath[MAX_PATH_LEN];
-	return syscall2(SYSCALL_UNMOUNT,ms,(ulong)abspath(apath,sizeof(apath),path));
+	ssize_t res = canonpath(apath,sizeof(apath),path);
+	if(res < 0)
+		return res;
+	return syscall2(SYSCALL_UNMOUNT,ms,(ulong)apath);
 }

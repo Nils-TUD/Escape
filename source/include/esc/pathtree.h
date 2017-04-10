@@ -201,13 +201,12 @@ public:
 			last = i;
 		}
 
+		/* slashes at the beginning are optional */
+		while(*path == '/')
+			path++;
+
 		/* create the missing path elements, assuming a canonical path */
 		while(*path) {
-			if(*path != '/')
-				return -EINVAL;
-			path++;
-			if(*path == '\0')
-				break;
 			if(*path == '/')
 				return -EINVAL;
 
@@ -234,6 +233,9 @@ public:
 
 			last = i;
 			path += pos;
+			/* skip slash as well */
+			if(*path)
+				path++;
 		}
 		if(last->_data != NULL)
 			return -EEXIST;
@@ -265,14 +267,14 @@ public:
 	 * @return the data of the removed path or NULL if not found
 	 */
 	T *remove(const char *path) {
-		/* find the path; assuming a canonical path */
 		ITEM *last = _root;
-		while(*path) {
-			if(*path != '/')
-				return NULL;
+
+		/* slashes at the beginning are optional */
+		while(*path == '/')
 			path++;
-			if(*path == '\0')
-				break;
+
+		/* find the path; assuming a canonical path */
+		while(*path) {
 			if(*path == '/')
 				return NULL;
 
@@ -287,6 +289,8 @@ public:
 			if(!last)
 				return NULL;
 			path += pos;
+			if(*path)
+				path++;
 		}
 
 		/* remember and remove data */

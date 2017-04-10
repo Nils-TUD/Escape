@@ -32,11 +32,8 @@ DirCache::dirmap_type DirCache::dirs;
 time_t DirCache::now = time(NULL);
 
 DirCache::List *DirCache::getList(const CtrlConRef &ctrlRef,const char *path,bool load) {
-	char tmppath[MAX_PATH_LEN];
 	char cpath[MAX_PATH_LEN];
-	// TODO maybe the kernel should send us the path with a slash at the beginning?
-	snprintf(tmppath,sizeof(tmppath),"/%s",path);
-	cleanpath(cpath,sizeof(cpath),tmppath);
+	cleanpath(cpath,sizeof(cpath),path);
 
 	List *list = findList(cpath);
 	if(!list && load)
@@ -45,10 +42,8 @@ DirCache::List *DirCache::getList(const CtrlConRef &ctrlRef,const char *path,boo
 }
 
 int DirCache::getInfo(const CtrlConRef &ctrlRef,const char *path,struct stat *info) {
-	char tmppath[MAX_PATH_LEN];
 	char cpath[MAX_PATH_LEN];
-	snprintf(tmppath,sizeof(tmppath),"/%s",path);
-	cleanpath(cpath,sizeof(cpath),tmppath);
+	cleanpath(cpath,sizeof(cpath),path);
 
 	const char *dir = dirname(cpath);
 	dir = strcmp(dir,".") == 0 ? "/" : dir;
@@ -56,6 +51,7 @@ int DirCache::getInfo(const CtrlConRef &ctrlRef,const char *path,struct stat *in
 	if(!list)
 		list = loadList(ctrlRef,dir);
 
+	char tmppath[MAX_PATH_LEN];
 	strnzcpy(tmppath,path,sizeof(tmppath));
 	const char *filename = basename(tmppath);
 	filename = strcmp(filename,"/") == 0 ? "." : filename;
@@ -67,10 +63,8 @@ void DirCache::removeDir(const char *path) {
 }
 
 void DirCache::removeDirOf(const char *path) {
-	char tmppath[MAX_PATH_LEN];
 	char cpath[MAX_PATH_LEN];
-	snprintf(tmppath,sizeof(tmppath),"/%s",path);
-	cleanpath(cpath,sizeof(cpath),tmppath);
+	cleanpath(cpath,sizeof(cpath),path);
 
 	const char *dir = dirname(cpath);
 	dirs.erase(dir);

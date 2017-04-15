@@ -33,7 +33,7 @@ static int getMS(Proc *p,int ms,Syscalls::ScopedFile *msfile,VFSMS **msobj,uint 
 		return -EBADF;
 
 	/* <ms> has to be a mountspace */
-	if((*msfile)->getDev() != VFS_DEV_NO || !S_ISMS((*msfile)->getNode()->getMode()))
+	if((*msfile)->getDev() != VFS_DEV_NO || !IS_MOUNTSPC((*msfile)->getNode()->getMode()))
 		return -EINVAL;
 
 	*msobj = static_cast<VFSMS*>((*msfile)->getNode());

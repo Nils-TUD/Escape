@@ -20,7 +20,7 @@
 #pragma once
 
 #include <col/kpathtree.h>
-#include <vfs/node.h>
+#include <vfs/dir.h>
 #include <common.h>
 
 /**
@@ -28,7 +28,7 @@
  * counter is used for the processes that link here. The file cannot be unlinked from userspace to
  * prevent that somebody removes the last reference in this way when one process is still using it.
  */
-class VFSMS : public VFSNode {
+class VFSMS : public VFSDir {
 	class MSTreeItem : public esc::PathTreeItem<OpenFile>, public CacheAllocatable {
 	public:
 		explicit MSTreeItem(char *name,OpenFile *data = NULL)
@@ -50,15 +50,7 @@ public:
 	 * @param mode the mode to set
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	explicit VFSMS(pid_t pid,VFSNode *parent,char *name,mode_t mode,bool &success)
-		: VFSNode(pid,name,S_IFMS | (mode & MODE_PERM),success), _lock(), _tree() {
-		if(!success)
-			return;
-
-		/* auto-destroy if the last process stops using it */
-		refCount--;
-		append(parent);
-	}
+	explicit VFSMS(pid_t pid,VFSNode *parent,char *name,uint mode,bool &success);
 
 	/**
 	 * Creates a mountspace file that clones <ms>.
@@ -70,22 +62,7 @@ public:
 	 * @param mode the mode to set
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	explicit VFSMS(pid_t pid,const VFSMS &ms,VFSNode *parent,char *name,mode_t mode,bool &success)
-		: VFSNode(pid,name,S_IFMS | (mode & MODE_PERM),success), _lock(), _tree() {
-		if(!success)
-			return;
-		{
-			LockGuard<SpinLock> guard(&ms._lock);
-			if(_tree.replaceWith(ms._tree) != 0) {
-				success = false;
-				return;
-			}
-		}
-
-		/* auto-destroy if the last process stops using it */
-		refCount--;
-		append(parent);
-	}
+	explicit VFSMS(pid_t pid,const VFSMS &ms,VFSNode *parent,char *name,uint mode,bool &success);
 
 	virtual bool isDeletable() const {
 		return false;
@@ -155,10 +132,10 @@ public:
 	 */
 	void leave(Proc *p);
 
-	virtual ssize_t read(pid_t pid,OpenFile *f,void *buffer,off_t offset,size_t count);
 	virtual void print(OStream &os) const;
 
 private:
+	bool init();
 	static void readCallback(VFSNode *node,size_t *dataSize,void **buffer);
 	static void printItem(OStream &os,MSTreeItem *item);
 

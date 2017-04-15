@@ -36,7 +36,7 @@ public:
 	 * @param mode the mode to set
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	explicit VFSFile(pid_t pid,VFSNode *parent,char *name,mode_t mode,bool &success);
+	explicit VFSFile(pid_t pid,VFSNode *parent,char *name,uint mode,bool &success);
 
 	/**
 	 * Creates a new file for the memory <data>..<data>+<len>.

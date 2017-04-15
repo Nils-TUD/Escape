@@ -328,6 +328,28 @@ void VFSInfo::pidLinkReadCallback(VFSNode *node,size_t *dataSize,void **buffer) 
 	*dataSize = os.getLength();
 }
 
+void VFSInfo::mountsReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
+	const VFSMS *ms = static_cast<VFSMS*>(node->getParent());
+
+	OStringStream os;
+	ms->print(os);
+	*buffer = os.keepString();
+	*dataSize = os.getLength();
+}
+
+void VFSInfo::msLinkReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
+	Proc *p = getProc(node,dataSize,buffer);
+	if(!p)
+		return;
+
+	OStringStream os;
+	os.writef("%s",p->getMS()->getPath());
+	Proc::relRef(p);
+
+	*buffer = os.keepString();
+	*dataSize = os.getLength();
+}
+
 Proc *VFSInfo::getProc(VFSNode *node,size_t *dataSize,void **buffer) {
 	Proc *p = NULL;
 	VFSNode::acquireTree();

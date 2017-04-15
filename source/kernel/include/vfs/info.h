@@ -30,11 +30,11 @@ class VFSInfo {
 #define GEN_INFO_FILECLASS(className,fileName,callback)												\
 	class className : public VFSFile {																\
 	public:																							\
-		explicit className(pid_t pid,VFSNode *parent,char *name,mode_t mode,bool &success)			\
+		explicit className(pid_t pid,VFSNode *parent,char *name,uint mode,bool &success)			\
 			: VFSFile(pid,parent,name,mode,success) {												\
 		}																							\
 		explicit className(pid_t pid,VFSNode *parent,bool &success)									\
-			: className(pid,parent,(char*)(fileName),FILE_DEF_MODE,success) {						\
+			: className(pid,parent,(char*)(fileName),0444,success) {								\
 		}																							\
 		virtual ssize_t read(pid_t pid,OpenFile *,void *buffer,off_t offset,size_t count) override {\
 			ssize_t res = VFSInfo::readHelper(pid,this,buffer,offset,count,0,(callback));			\
@@ -60,6 +60,8 @@ class VFSInfo {
 	static void memUsageReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
 	static void selfLinkReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
 	static void pidLinkReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
+	static void mountsReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
+	static void msLinkReadCallback(VFSNode *node,size_t *dataSize,void **buffer);
 
 public:
 	/**
@@ -78,6 +80,8 @@ public:
 	GEN_INFO_FILECLASS(MemUsageFile,"memusage",memUsageReadCallback);
 	GEN_INFO_FILECLASS(SelfLinkFile,"",selfLinkReadCallback);
 	GEN_INFO_FILECLASS(PidLinkFile,"",pidLinkReadCallback);
+	GEN_INFO_FILECLASS(MountsFile,"info",mountsReadCallback);
+	GEN_INFO_FILECLASS(MSLinkFile,"ms",msLinkReadCallback);
 
 	static ssize_t readHelper(pid_t pid,VFSNode *node,void *buffer,off_t offset,
 			size_t count,size_t dataSize,read_func callback);

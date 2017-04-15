@@ -117,8 +117,6 @@ namespace esc {
 			os << 'f';
 		else if(S_ISSERV(mode))
 			os << 's';
-		else if(S_ISMS(mode))
-			os << 'm';
 		else if(S_ISIRQ(mode))
 			os << 'i';
 		else if(S_ISLNK(mode))

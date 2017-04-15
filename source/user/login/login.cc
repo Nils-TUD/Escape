@@ -103,7 +103,7 @@ int main(void) {
 
 	/* use a per-user mountspace */
 	char mspath[MAX_PATH_LEN];
-	snprintf(mspath,sizeof(mspath),"/sys/ms/%s",un);
+	snprintf(mspath,sizeof(mspath),"/sys/pid/self/ms/%s",un);
 	int ms = open(mspath,O_RDONLY);
 	if(ms < 0) {
 		ms = open("/sys/pid/self/ms",O_RDONLY);

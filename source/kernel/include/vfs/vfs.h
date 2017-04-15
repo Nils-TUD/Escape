@@ -42,7 +42,7 @@ public:
 	 * @return the directory of mountspaces
 	 */
 	static VFSNode *getMSDir() {
-		return msNode;
+		return mountsNode;
 	}
 
 	/**
@@ -70,7 +70,7 @@ public:
 	 * @param name the node name
 	 * @return 0 on success
 	 */
-	static int cloneMS(Proc *p,const VFSMS *src,const char *name);
+	static int cloneMS(Proc *p,VFSMS *src,const char *name);
 
 	/**
 	 * Joins the given mountspace.
@@ -161,10 +161,9 @@ public:
 	 * Creates a process-node with given pid
 	 *
 	 * @param pid the process-id
-	 * @param ms the mountspace of the process
 	 * @return 0 on success
 	 */
-	static ino_t createProcess(pid_t pid,VFSNode *ms);
+	static ino_t createProcess(pid_t pid);
 
 	/**
 	 * Sets uid/gid for given process.
@@ -222,5 +221,5 @@ private:
 	static VFSNode *procsNode;
 	static VFSNode *devNode;
 	static VFSNode *tmpNode;
-	static VFSNode *msNode;
+	static VFSNode *mountsNode;
 };

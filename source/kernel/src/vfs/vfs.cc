@@ -41,6 +41,7 @@
 #include <common.h>
 #include <cppsupport.h>
 #include <errno.h>
+#include <ostringstream.h>
 #include <string.h>
 #include <util.h>
 #include <video.h>
@@ -49,7 +50,7 @@ VFSNode *VFS::pidsNode;
 VFSNode *VFS::procsNode;
 VFSNode *VFS::devNode;
 VFSNode *VFS::tmpNode;
-VFSNode *VFS::msNode;
+VFSNode *VFS::mountsNode;
 
 void VFS::init() {
 	VFSNode *root,*sys;
@@ -60,10 +61,10 @@ void VFS::init() {
 	 *   |   |- boot
 	 *   |   |- dev
 	 *   |   |- irq
-	 *   |   |- ms
 	 *   |   |- pid
 	 *   |       \- self
-	 *   |   \- proc
+	 *   |   |- proc
+	 *   |   \- mount
 	 *   |- dev
 	 *   \- tmp
 	 */
@@ -78,8 +79,8 @@ void VFS::init() {
 	dev->chown(KERNEL_PID,ROOT_UID,GROUP_DRIVER);
 	VFSNode::release(dev);
 	VFSNode::release(createObj<VFSDir>(KERNEL_PID,sys,(char*)"irq",DIR_DEF_MODE));
-	msNode = createObj<VFSDir>(KERNEL_PID,sys,(char*)"ms",DIR_DEF_MODE);
-	VFSNode::release(msNode);
+	mountsNode = createObj<VFSDir>(KERNEL_PID,sys,(char*)"mount",DIR_DEF_MODE);
+	VFSNode::release(mountsNode);
 	devNode = createObj<VFSDir>(KERNEL_PID,root,(char*)"dev",DIR_DEF_MODE);
 	/* the user should be able to create devices as well */
 	/* TODO: maybe we should organize that differently */
@@ -116,43 +117,24 @@ void VFS::mountAll(Proc *p) {
 		Util::panic("Unable to mount /tmp");
 }
 
-static int updateMSLink(Proc *p,VFSMS *ms) {
-	VFSNode *node = VFSNode::get(p->getThreadsDir());
-	int res = VFSNode::request("../ms",&node,VFS_READ | VFS_NOLINKRES,0);
-	if(res < 0)
-		return res;
-	static_cast<VFSLink*>(node)->setTarget(ms);
-	VFSNode::release(node);
-	return 0;
-}
-
-int VFS::cloneMS(Proc *p,const VFSMS *src,const char *name) {
+int VFS::cloneMS(Proc *p,VFSMS *src,const char *name) {
 	size_t len = strlen(name);
+
+	// check if the file exists
+	if(src->findInDir(name,len))
+		return -EEXIST;
+
+	// create name copy
 	char *copy = (char*)Cache::alloc(len + 1);
 	if(!copy)
 		return -ENOMEM;
 	strcpy(copy,name);
 
-	// check if the file exists
-	VFSNode *tmp = msNode;
-	if(VFSNode::request(copy,&tmp,VFS_READ,0) == 0) {
-		VFSNode::release(tmp);
-		Cache::free(copy);
-		return -EEXIST;
-	}
-
 	// create new mountspace
-	VFSMS *ms = createObj<VFSMS>(p->getPid(),*src,msNode,copy,0600);
+	VFSMS *ms = createObj<VFSMS>(p->getPid(),*src,src,copy,0700);
 	if(ms == NULL) {
 		Cache::free(copy);
 		return -ENOMEM;
-	}
-
-	// update link in proc directory
-	int res = updateMSLink(p,ms);
-	if(res < 0) {
-		VFSNode::release(ms);
-		return res;
 	}
 
 	// use mountspace
@@ -161,10 +143,6 @@ int VFS::cloneMS(Proc *p,const VFSMS *src,const char *name) {
 }
 
 int VFS::joinMS(Proc *p,VFSMS *src) {
-	int res = updateMSLink(p,src);
-	if(res < 0)
-		return res;
-
 	src->join(p);
 	return 0;
 }
@@ -349,7 +327,7 @@ void VFS::closeFileDesc(pid_t pid,int fd) {
 	}
 }
 
-ino_t VFS::createProcess(pid_t pid,VFSNode *ms) {
+ino_t VFS::createProcess(pid_t pid) {
 	int res = -ENOMEM;
 	Proc *p = Proc::getByPid(pid);
 	assert(p != NULL);
@@ -409,13 +387,13 @@ ino_t VFS::createProcess(pid_t pid,VFSNode *ms) {
 	VFSNode::release(nn);
 
 	/* create mountspace-link-node */
-	nn = createObj<VFSLink>(KERNEL_PID,dir,(char*)"ms",ms);
+	nn = createObj<VFSInfo::MSLinkFile>(KERNEL_PID,dir,(char*)"ms",S_IFLNK | LNK_DEF_MODE);
 	if(nn == NULL)
 		goto errorDir;
 	VFSNode::release(nn);
 
 	/* create shm-dir */
-	nn = createObj<VFSDir>(KERNEL_PID,dir,(char*)"shm",0777);
+	nn = createObj<VFSDir>(KERNEL_PID,dir,(char*)"shm",S_IFDIR | 0777);
 	if(nn == NULL)
 		goto errorDir;
 	VFSNode::release(nn);

@@ -88,8 +88,6 @@ static const char *getType(mode_t mode) {
 		return "filesystem device";
 	if(S_ISSERV(mode))
 		return "service device";
-	if(S_ISMS(mode))
-		return "mountspace";
 	if(S_ISIRQ(mode))
 		return "interrupt";
 	return "regular file";

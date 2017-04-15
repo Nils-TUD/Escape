@@ -37,7 +37,7 @@ SpinLock VFSDevice::msgLock;
 uint16_t VFSDevice::nextRid = 1;
 
 /* block- and file-devices are none-empty by default, because their data is always available */
-VFSDevice::VFSDevice(pid_t pid,VFSNode *p,char *n,mode_t m,uint type,uint ops,bool &success)
+VFSDevice::VFSDevice(pid_t pid,VFSNode *p,char *n,uint m,uint type,uint ops,bool &success)
 		: VFSNode(pid,n,buildMode(type) | (m & MODE_PERM),success), creator(Thread::getRunning()->getTid()),
 		  funcs(ops), msgCount(0), lastClient() {
 	if(!success)

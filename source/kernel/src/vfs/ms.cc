@@ -30,6 +30,40 @@ VFSMS::MSTreeItem::MSTreeItem(const VFSMS::MSTreeItem &i)
 		getData()->incRefs();
 }
 
+VFSMS::VFSMS(pid_t pid,VFSNode *parent,char *name,uint mode,bool &success)
+	: VFSDir(pid,parent,name,MODE_TYPE_MOUNTSPC | mode,success), _lock(), _tree() {
+	if(!success)
+		return;
+
+	success = init();
+}
+
+VFSMS::VFSMS(pid_t pid,const VFSMS &ms,VFSNode *parent,char *name,uint mode,bool &success)
+	: VFSDir(pid,parent,name,MODE_TYPE_MOUNTSPC | mode,success), _lock(), _tree() {
+	if(!success)
+		return;
+	{
+		LockGuard<SpinLock> guard(&ms._lock);
+		if(_tree.replaceWith(ms._tree) != 0) {
+			success = false;
+			return;
+		}
+	}
+
+	success = init();
+}
+
+bool VFSMS::init() {
+	VFSNode *info = createObj<VFSInfo::MountsFile>(KERNEL_PID,this);
+	if(info == NULL)
+		return false;
+	VFSNode::release(info);
+
+	/* auto-destroy if the last process stops using it */
+	refCount--;
+	return true;
+}
+
 ino_t VFSMS::request(const char *path,const char **end,OpenFile **file) {
 	ino_t res = 0;
 	{
@@ -131,12 +165,6 @@ void VFSMS::join(Proc *p) {
 void VFSMS::leave(Proc *p) {
 	unref();
 	p->msnode = NULL;
-}
-
-ssize_t VFSMS::read(pid_t pid,OpenFile *,void *buffer,off_t offset,size_t count) {
-	ssize_t res = VFSInfo::readHelper(pid,this,buffer,offset,count,0,readCallback);
-	acctime = Timer::getTime();
-	return res;
 }
 
 void VFSMS::readCallback(VFSNode *node,size_t *dataSize,void **buffer) {

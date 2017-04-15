@@ -39,7 +39,7 @@ public:
 	 * @param ops the supported operations
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	explicit VFSDevice(pid_t pid,VFSNode *parent,char *name,mode_t mode,uint type,uint ops,bool &success);
+	explicit VFSDevice(pid_t pid,VFSNode *parent,char *name,uint mode,uint type,uint ops,bool &success);
 
 	virtual bool isDeletable() const {
 		return false;

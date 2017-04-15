@@ -31,6 +31,7 @@
 #define MODE_TYPE_CHANNEL			0x0010000
 #define MODE_TYPE_HARDLINK			0x0020000
 #define MODE_TYPE_DEVMASK			0x0700000
+#define MODE_TYPE_MOUNTSPC			(0x0800000 | S_IFDIR)
 #define MODE_TYPE_BLKDEV			(0x0100000 | S_IFBLK)
 #define MODE_TYPE_CHARDEV			(0x0200000 | S_IFCHR)
 #define MODE_TYPE_FSDEV				(0x0300000 | S_IFFS)
@@ -44,6 +45,7 @@
 #define IS_CHANNEL(mode)			(((mode) & MODE_TYPE_CHANNEL) != 0)
 #define IS_FS(mode)					(((mode) & MODE_TYPE_DEVMASK) == 0x0300000)
 #define IS_HDLNK(mode)				(((mode) & MODE_TYPE_HARDLINK) != 0)
+#define IS_MOUNTSPC(mode)			(((mode) & MODE_TYPE_MOUNTSPC) == MODE_TYPE_MOUNTSPC)
 
 #if defined(__mmix__)
 /* unfortunatly, we can't use the cheap solution that we use for the other architectures on mmix.

@@ -30,7 +30,7 @@
 #include <spinlock.h>
 #include <string.h>
 
-VFSFile::VFSFile(pid_t pid,VFSNode *p,char *n,mode_t m,bool &success)
+VFSFile::VFSFile(pid_t pid,VFSNode *p,char *n,uint m,bool &success)
 		: VFSNode(pid,n,m,success), dynamic(true), size(), pos(), data() {
 	if(!success)
 		return;

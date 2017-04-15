@@ -38,7 +38,7 @@ public:
 	 * @param mode the mode to set
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	explicit VFSIRQ(pid_t pid,VFSNode *parent,int irq,mode_t mode,bool &success)
+	explicit VFSIRQ(pid_t pid,VFSNode *parent,int irq,uint mode,bool &success)
 		: VFSNode(pid,buildName(irq),S_IFIRQ | (mode & MODE_PERM),success), _irq(irq) {
 		if(!success)
 			return;

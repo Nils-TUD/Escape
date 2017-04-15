@@ -181,19 +181,19 @@ int main(void) {
 		printe("Warning: unable to set permissions of %s",line);
 
 	/* clone mountspace */
-	int ms = open("/sys/ms/boot",O_RDONLY);
+	int ms = open("/sys/mount/boot",O_RDONLY);
 	if(ms < 0)
-		error("Unable to open '/sys/ms/boot'");
+		error("Unable to open '/sys/mount/boot'");
 	if(clonems(ms,"root") < 0)
 		error("Unable to clone mountspace");
 	close(ms);
 
 	/* mount root filesystem */
-	ms = open("/sys/ms/root",O_RDWR);
+	ms = open("/sys/pid/self/ms",O_RDWR);
 	if(ms < 0)
-		error("Unable to open '/sys/ms/root'");
-	if(fchmod(ms,0644) < 0)
-		error("Unable to chmod '/sys/ms/root'");
+		error("Unable to open '/sys/pid/self/ms'");
+	if(fchmod(ms,0755) < 0)
+		error("Unable to chmod '/sys/pid/self/ms'");
 	if(mount(ms,fd,"/") < 0)
 		error("Unable to mount '%s' at '/'",line);
 	close(ms);

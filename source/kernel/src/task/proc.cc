@@ -116,7 +116,7 @@ void ProcBase::init() {
 	p->depth = 0;
 
 	/* create boot mountspace */
-	p->msnode = createObj<VFSMS>(p->getPid(),VFS::getMSDir(),(char*)"boot",0644);
+	p->msnode = createObj<VFSMS>(p->getPid(),VFS::getMSDir(),(char*)"boot",0755);
 	if(p->msnode == NULL)
 		Util::panic("Unable to create initial mountspace");
 
@@ -128,7 +128,7 @@ void ProcBase::init() {
 		Util::panic("Unable to init semaphores");
 	p->command = strdup("[idle]");
 	/* create nodes in vfs */
-	p->threadsDir = VFS::createProcess(p->pid,p->getMS());
+	p->threadsDir = VFS::createProcess(p->pid);
 	if(p->threadsDir < 0)
 		Util::panic("Not enough mem for init process");
 
@@ -295,7 +295,7 @@ int ProcBase::clone(uint8_t flags) {
 	procLock.up();
 
 	/* create the VFS node */
-	p->threadsDir = VFS::createProcess(p->pid,p->getMS());
+	p->threadsDir = VFS::createProcess(p->pid);
 	if(p->threadsDir < 0) {
 		res = p->threadsDir;
 		goto errorAdd;

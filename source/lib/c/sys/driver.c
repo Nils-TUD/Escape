@@ -25,12 +25,12 @@
 #include <string.h>
 
 int createdev(const char *path,mode_t mode,uint type,uint ops) {
-	char *name, apath[MAX_PATH_LEN];
+	char *name;
 	char tmp[MAX_PATH_LEN];
 	/* copy it to the stack first, because abspath might return the third argument, which has to
 	 * be writable, because dirfile needs to change it */
-	strnzcpy(tmp,path,MAX_PATH_LEN);
-	const char *dirPath = dirfile(abspath(apath,MAX_PATH_LEN,tmp),&name);
+	strnzcpy(tmp,path,sizeof(tmp));
+	const char *dirPath = dirfile(tmp,&name);
 
 	int fd = open(dirPath,O_WRITE);
 	if(fd < 0)

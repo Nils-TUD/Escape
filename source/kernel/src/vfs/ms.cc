@@ -144,6 +144,10 @@ int VFSMS::unmount(Proc *p,const char *path) {
 		MSTreeItem *match = _tree.find(path,&end);
 		if(!match)
 			return -ENOENT;
+		/* unmounting of directories is not allowed */
+		/* TODO this could be extended to allow it if it reduces permissions */
+		if(match->root != 0)
+			return -EPERM;
 		if(match->devno == VFS_DEV_NO)
 			VFSNode::release(VFSNode::get(match->root));
 		/* remove the mountpoint */

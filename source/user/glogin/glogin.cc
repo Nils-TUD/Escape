@@ -207,26 +207,25 @@ int main(void) {
 	const sNamedItem *u = win->getUser();
 	Application::destroy();
 
-	/* set user and groups */
-	if(usergroup_changeToName(u->name) < 0)
-		error("Unable to change to user %s",u->name);
-
 	// use a per-user mountspace
 	char mspath[MAX_PATH_LEN];
 	snprintf(mspath,sizeof(mspath),"/sys/pid/self/ms/%s",u->name);
 	int ms = open(mspath,O_RDONLY);
 	if(ms < 0) {
-		ms = open("/sys/pid/self/ms",O_RDONLY);
-		if(ms < 0)
-			error("Unable to open /sys/pid/self/ms for reading");
-		if(clonems(ms,u->name) < 0)
+		if(clonems(u->name) < 0)
 			error("Unable to clone mountspace");
+		if(chown("/sys/pid/self/ms",u->id,usergroup_getGid(u->name)) < 0)
+			error("Unable to chown mountspace");
 	}
 	else {
 		if(joinms(ms) < 0)
 			error("Unable to join mountspace '%s'",mspath);
+		close(ms);
 	}
-	close(ms);
+
+	/* set user and groups */
+	if(usergroup_changeToName(u->name) < 0)
+		error("Unable to change to user %s",u->name);
 
 	// cd to home-dir
 	char homedir[MAX_PATH_LEN];

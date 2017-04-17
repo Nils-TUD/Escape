@@ -117,7 +117,8 @@ void VFS::mountAll(Proc *p) {
 		Util::panic("Unable to mount /tmp");
 }
 
-int VFS::cloneMS(Proc *p,VFSMS *src,const char *name) {
+int VFS::cloneMS(Proc *p,const char *name) {
+	VFSMS *src = p->getMS();
 	size_t len = strlen(name);
 
 	// check if the file exists

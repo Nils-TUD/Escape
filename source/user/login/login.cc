@@ -97,26 +97,25 @@ int main(void) {
 	}
 	fflush(stdout);
 
-	/* set user and groups */
-	if(usergroup_changeToName(un) < 0)
-		exitmsg("Unable to change to user " << un);
-
 	/* use a per-user mountspace */
 	char mspath[MAX_PATH_LEN];
 	snprintf(mspath,sizeof(mspath),"/sys/pid/self/ms/%s",un);
 	int ms = open(mspath,O_RDONLY);
 	if(ms < 0) {
-		ms = open("/sys/pid/self/ms",O_RDONLY);
-		if(ms < 0)
-			exitmsg("Unable to open /sys/pid/self/ms for reading");
-		if(clonems(ms,un) < 0)
+		if(clonems(un) < 0)
 			exitmsg("Unable to clone mountspace");
+		if(chown("/sys/pid/self/ms",uid,usergroup_getGid(un)) < 0)
+			exitmsg("Unable to chown mountspace");
 	}
 	else {
 		if(joinms(ms) < 0)
 			exitmsg("Unable to join mountspace '" << mspath << "'");
+		close(ms);
 	}
-	close(ms);
+
+	/* set user and groups */
+	if(usergroup_changeToName(un) < 0)
+		exitmsg("Unable to change to user " << un);
 
 	/* cd to home-dir */
 	char homedir[MAX_PATH_LEN];

@@ -74,19 +74,18 @@ A_CHECKRET int remount(int ms,int dir,const char *path,uint perm);
 A_CHECKRET int unmount(int ms,const char *path);
 
 /**
- * Clones the given mountspace into a new one with the given name and assigns it to the current
+ * Clones the current mountspace into a new one with the given name and assigns it to the current
  * process.
  *
- * @param ms the mountspace to clone
  * @param name the name for the new mountspace
  * @return 0 on success
  */
-static inline int clonems(int ms,const char *name) {
-	return syscall2(SYSCALL_CLONEMS,ms,(ulong)name);
+static inline int clonems(const char *name) {
+	return syscall1(SYSCALL_CLONEMS,(ulong)name);
 }
 
 /**
- * Joins the mountspace denoted by <ms>.
+ * Joins the mountspace denoted by <ms>. This is only allowed for the root user.
  *
  * @param id the mountspace to join
  * @return 0 on success

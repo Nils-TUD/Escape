@@ -111,27 +111,24 @@ int Syscalls::unmount(Thread *t,IntrptStackFrame *stack) {
 
 int Syscalls::clonems(Thread *t,IntrptStackFrame *stack) {
 	char namecpy[64];
-	int ms = SYSC_ARG1(stack);
-	const char *name = (const char*)SYSC_ARG2(stack);
+	const char *name = (const char*)SYSC_ARG1(stack);
 	Proc *p = t->getProc();
-	int res;
 
 	if(!isStrInUserSpace(name,NULL))
 		SYSC_ERROR(stack,-EINVAL);
 	strncpy(namecpy,name,sizeof(namecpy));
 
-	ScopedFile msfile;
-	VFSMS *msobj;
-	if((res = getMS(p,ms,&msfile,&msobj,VFS_READ)) < 0)
-		SYSC_ERROR(stack,res);
-
-	res = VFS::cloneMS(p,msobj,namecpy);
+	int res = VFS::cloneMS(p,namecpy);
 	SYSC_RESULT(stack,res);
 }
 
 int Syscalls::joinms(Thread *t,IntrptStackFrame *stack) {
 	int ms = SYSC_ARG1(stack);
 	Proc *p = t->getProc();
+
+	/* only root can join mountspaces */
+	if(p->getUid() != ROOT_UID)
+		SYSC_ERROR(stack,-EPERM);
 
 	ScopedFile msfile;
 	VFSMS *msobj;

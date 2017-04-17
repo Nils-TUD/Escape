@@ -63,14 +63,13 @@ public:
 	static void mountAll(Proc *p);
 
 	/**
-	 * Clones the given mountspace into a new VFS node and assigns it to <p>.
+	 * Clones the current mountspace into a new VFS node and assigns it to <p>.
 	 *
 	 * @param p the process
-	 * @param src the mountspace to clone
 	 * @param name the node name
 	 * @return 0 on success
 	 */
-	static int cloneMS(Proc *p,VFSMS *src,const char *name);
+	static int cloneMS(Proc *p,const char *name);
 
 	/**
 	 * Joins the given mountspace.

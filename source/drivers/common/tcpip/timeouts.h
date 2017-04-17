@@ -31,13 +31,13 @@ public:
 	typedef std::Functor<void> callback_type;
 
 	struct Entry {
-		explicit Entry(int _id,callback_type *_cb,uint _timestamp)
+		explicit Entry(int _id,callback_type *_cb,uint64_t _timestamp)
 			: id(_id), cb(_cb), timestamp(_timestamp) {
 		}
 
 		int id;
 		callback_type *cb;
-		uint timestamp;
+		uint64_t timestamp;
 	};
 
 	static int thread(void*);
@@ -50,7 +50,6 @@ public:
 	static void cancel(int id);
 
 private:
-	static uint _now;
 	static int _nextId;
 	static std::list<Entry> _list;
 };

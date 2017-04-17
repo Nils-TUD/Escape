@@ -115,7 +115,7 @@ const struct Syscall syscalls[] = {
 	{"delegate",        "%d,%d,%O,%d",				},
 	{"obtain",          "%d,%d",					},
 	{"sysconfstr",		"%d,%p,%x"					},
-	{"clonems",			""							},
+	{"clonems",			"%s"						},
 	{"joinms",			"%d"						},
 	{"mlock",			"%p,%x"						},
 	{"mlockall",		""							},

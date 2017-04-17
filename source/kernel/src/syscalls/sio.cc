@@ -454,6 +454,10 @@ int Syscalls::rmdir(Thread *t,IntrptStackFrame *stack) {
 
 	if(EXPECT_FALSE(!copyPath(filename,sizeof(filename),name)))
 		SYSC_ERROR(stack,-EFAULT);
+	/* "." and ".." cannot be removed */
+	if((filename[0] == '.' && filename[1] == '\0') ||
+	   (filename[0] == '.' && filename[1] == '.' && filename[2] == '\0'))
+		SYSC_ERROR(stack,-EINVAL);
 
 	ScopedFile file(p,fd);
 	int res = EXPECT_TRUE(file) ? file->rmdir(p->getPid(),filename) : -EBADF;

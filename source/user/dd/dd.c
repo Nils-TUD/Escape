@@ -77,8 +77,8 @@ int main(int argc,char *argv[]) {
 	uint64_t start = rdtsc(), end;
 	{
 		int shmfd;
-		uchar *shmem;
-		if((shmfd = sharebuf(infd,bs,(void**)&shmem,0)) < 0) {
+		void *shmem;
+		if((shmfd = sharebuf(infd,bs,&shmem,0)) < 0) {
 			if(shmem == NULL)
 				error("Unable to mmap buffer");
 		}

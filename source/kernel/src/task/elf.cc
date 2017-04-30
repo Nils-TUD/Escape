@@ -143,6 +143,10 @@ int ELF::addSegment(OpenFile *file,const sElfPHeader *pheader,size_t loadSegNo,i
 	if(pheader->p_flags & PF_X)
 		prot |= PROT_EXEC;
 
+#if DISABLE_DEMLOAD
+	flags |= MAP_POPULATE;
+#endif
+
 	/* determine type */
 	if(loadSegNo == 0) {
 		/* dynamic linker has a special entrypoint */
@@ -169,7 +173,7 @@ int ELF::addSegment(OpenFile *file,const sElfPHeader *pheader,size_t loadSegNo,i
 	}
 
 	/* regions without binary will not be demand-loaded */
-	if(file == NULL) {
+	if(file == NULL || (flags & MAP_POPULATE)) {
 		if(!t->reserveFrames(BYTES_2_PAGES(memsz))) {
 			Log::get().writef("[LOADER] Unable to reserve frames for region (%zx bytes)\n",memsz);
 			return -ENOMEM;

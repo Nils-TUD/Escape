@@ -23,6 +23,7 @@
 #include <sys/thread.h>
 #include <sys/tls.h>
 #include <errno.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
@@ -150,6 +151,11 @@ uintptr_t __libc_preinit(uintptr_t entryPoint,int argc,char *argv[]) {
 }
 
 void __libc_init(void) {
+	/* use the pthread CU once to ensure that it is linked in */
+	/* TODO actually, gcc_eh is using it. but somehow, the linker fails to see that (the symbols
+	 * are undefined in the executable)!? note also that this is only an issue with static linking */
+	pthread_cancel(0);
+
 	if(signal(SIGRET,(sighandler_t)&sigRetFunc) == SIG_ERR)
 		error("Unable to set signal return address");
 	initHeap();

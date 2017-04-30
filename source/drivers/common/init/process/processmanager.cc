@@ -155,7 +155,7 @@ void ProcessManager::finalize(int task) {
 
 void ProcessManager::addRunning() {
 	size_t bootMods = getBootModCount();
-	esc::file procDir("/sys/proc");
+	esc::file procDir("/sys/pid");
 	vector<struct dirent> procs = procDir.list_files(false);
 	for(auto  it = procs.begin(); it != procs.end(); ++it) {
 		int pid = atoi(it->d_name);

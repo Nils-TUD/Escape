@@ -120,7 +120,9 @@ char Keymap::translateKeycode(uchar flags,uchar keycode,uchar *modifier) const {
 	*modifier = (_altDown ? STATE_ALT : 0) | (_ctrlDown ? STATE_CTRL : 0) |
 			(_shiftDown ? STATE_SHIFT : 0) | (isBreak ? STATE_BREAK : 0) |
 			((flags & esc::Keyb::Event::FL_CAPS) ? STATE_CAPS : 0);
-	if(_shiftDown || (flags & esc::Keyb::Event::FL_CAPS))
+	if((flags & esc::Keyb::Event::FL_CAPS) && isalpha(e->def))
+		return _shiftDown ? e->def : e->shift;
+	if(_shiftDown)
 		return e->shift;
 	if(_altDown)
 		return e->alt;

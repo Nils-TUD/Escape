@@ -75,7 +75,7 @@ public:
 	}
 
 	virtual bool isKillable() const {
-		return name() != "video";
+		return name().find("video") == std::string::npos;
 	}
 	const std::string &user() const {
 		return _user;

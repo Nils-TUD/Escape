@@ -40,6 +40,7 @@ int execvpe(const char *path,const char **args,const char **env) {
 		return fd;
 	int res = fexecvpe(fd,args,env);
 	close(fd);
+	errno = res;
 	return res;
 }
 

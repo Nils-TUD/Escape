@@ -136,6 +136,7 @@ int link(const char *oldPath,const char *newPath) {
 	int dir = open(dirPath,O_WRITE);
 	if(dir < 0) {
 		close(target);
+		errno = dir;
 		return dir;
 	}
 	int res = flink(target,dir,name);
@@ -183,6 +184,7 @@ int rename(const char *oldPath,const char *newPath) {
 	int newDir = open(newDirPath,O_WRITE);
 	if(newDir < 0) {
 		close(oldDir);
+		errno = newDir;
 		return newDir;
 	}
 	int res = frename(oldDir,oldName,newDir,newName);

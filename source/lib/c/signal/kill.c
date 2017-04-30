@@ -31,5 +31,6 @@ int kill(pid_t pid,int signal) {
 		return fd;
 	int res = syscall2(SYSCALL_SENDSIG,fd,signal);
 	close(fd);
+	errno = res;
 	return res;
 }

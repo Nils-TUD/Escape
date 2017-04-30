@@ -31,5 +31,6 @@ int semcrtirq(int irq,const char *name,uint64_t *msiaddr,uint32_t *msival) {
 		return fd;
 	int res = fsemcrtirq(fd,name,msiaddr,msival);
 	close(fd);
+	errno = res;
 	return res;
 }

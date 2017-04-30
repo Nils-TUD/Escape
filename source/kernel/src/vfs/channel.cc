@@ -144,8 +144,10 @@ void VFSChannel::close(pid_t pid,OpenFile *file,int msgid) {
 	if(!isAlive())
 		unref();
 	else {
-		if(file->isDevice())
+		if(file->isDevice()) {
+			Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)this);
 			destroy();
+		}
 		/* if there is only the device left, do the real close */
 		else if(unref() == 1) {
 			send(pid,0,msgid,NULL,0,NULL,0);

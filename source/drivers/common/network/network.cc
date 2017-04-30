@@ -171,6 +171,7 @@ struct NICProc {
 };
 
 static std::vector<NICProc*> procs;
+static volatile bool run = true;
 
 static void start(esc::Net &net,const std::string &bdf,const std::string &driver,const std::string &link) {
 	int pid = fork();
@@ -215,8 +216,15 @@ static void start(esc::Net &net,const std::string &bdf,const std::string &driver
 	}
 }
 
+static void sighdl(int) {
+	run = false;
+}
+
 int main() {
 	esc::Net net("/dev/tcpip");
+
+	if(signal(SIGTERM,sighdl) == SIG_ERR || signal(SIGINT,sighdl) == SIG_ERR)
+		error("Unable to set signal handler");
 
 	// create loopback device
 	start(net,"0","/sbin/lo","/dev/lo");
@@ -246,7 +254,7 @@ int main() {
 	}
 #endif
 
-	while(1) {
+	while(run) {
 		sExitState st;
 		if(waitchild(&st,-1,0) == 0) {
 			for(auto p = procs.begin(); p != procs.end(); ++p) {
@@ -269,5 +277,21 @@ int main() {
 			}
 		}
 	}
-	return 0;
+
+	// kill all drivers and unregister their links
+	for(auto p = procs.begin(); p != procs.end(); ++p) {
+		NICProc *np = *p;
+		if(kill(np->pid,SIGTERM) < 0)
+			printe("Killing child %d failed",np->pid);
+		if(waitchild(NULL,np->pid,0) < 0)
+			printe("Waiting for child %d failed",np->pid);
+
+		try {
+			net.linkRem(strchr(np->link.c_str() + 1,'/') + 1);
+		}
+		catch(const std::exception &e) {
+			print(e.what());
+		}
+	}
+	return EXIT_FAILURE;
 }

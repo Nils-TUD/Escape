@@ -348,6 +348,7 @@ void X86CPUInfo::print(esc::OStream &os,info::cpu &cpu) {
 				}
 				break;
 			}
+			os << "\n";
 			os << fmt("Stepping:","-",12) << info.stepping << "\n";
 			os << fmt("Flags:","-",12);
 			printFlags(os);

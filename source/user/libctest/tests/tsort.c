@@ -108,7 +108,7 @@ static void test_qsort(void) {
 			"m3/m3-15.png",
 			"m3/m3-27.png",
 		};
-		qsort(strs,ARRAY_SIZE(strs),sizeof(int),strCompare);
+		qsort(strs,ARRAY_SIZE(strs),sizeof(char*),strCompare);
 		for(size_t i = 0; i < ARRAY_SIZE(strs); ++i) {
 			const char *sno = strs[i] + SSTRLEN("m3/m3-");
 			int no = atoi(sno);

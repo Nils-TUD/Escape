@@ -306,9 +306,11 @@ ssize_t VFSDevice::receive(VFSChannel *chan,ushort flags,msgid_t *id,USER void *
 			Thread::switchNoSigs();
 
 		/* if we waked up and there is no message, the driver probably died */
-		if(EXPECT_FALSE(!isAlive()))
-			return -EDESTROYED;
 		msgLock.down();
+		if(EXPECT_FALSE(!isAlive())) {
+			msgLock.up();
+			return -EDESTROYED;
+		}
 	}
 
 	if(event == EV_CLIENT)

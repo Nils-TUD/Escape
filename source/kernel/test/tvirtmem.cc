@@ -96,7 +96,7 @@ static void test_1() {
 #ifndef __mmix__
 	pid_t cpid = Proc::clone(0);
 	if(cpid == 0) {
-		Proc::terminate(0);
+		Proc::terminate();
 		A_UNREACHED;
 	}
 	test_assertTrue(cpid > 0);

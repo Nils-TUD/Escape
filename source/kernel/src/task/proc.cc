@@ -539,7 +539,7 @@ errorTerm:
 	release(p,PLOCK_PROG);
 errorTermNoRel:
 	Cache::free(argBuffer);
-	terminate(1,SIG_COUNT);
+	terminate(SIG_COUNT);
 	A_UNREACHED;
 }
 
@@ -604,91 +604,85 @@ void ProcBase::terminateThread(int exitCode) {
 	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
 	assert(p != NULL);
 
-	/* are we the last one? */
-	if(p->threads.length() == 1) {
-		release(p,PLOCK_PROG);
-		terminate(exitCode,SIG_COUNT);
-	}
-	else {
-		t->terminate();
-		release(p,PLOCK_PROG);
+	t->terminate();
+	t->stats.exitCode = exitCode;
+	release(p,PLOCK_PROG);
 
-		/* we don't want to continue anymore */
-		Thread::switchAway();
-		A_UNREACHED;
-	}
+	/* we don't want to continue anymore */
+	Thread::switchAway();
+	A_UNREACHED;
 }
 
 void ProcBase::killThread(Thread *t) {
 	Proc *p = request(t->getProc()->pid,PLOCK_PROG);
 	if(p) {
+		/* print information to log */
+		if(t->stats.signal != SIG_COUNT || t->stats.exitCode != 0) {
+			Log::get().writef("Thread %d:%d:%s terminated ",t->tid,p->pid,p->command);
+			if(t->stats.signal != SIG_COUNT)
+				Log::get().writef("by signal %d ",t->stats.signal);
+			Log::get().writef("with exitCode %d\n",t->stats.exitCode);
+		}
+
+		/* the first erroneous exit information is used for the process */
+		if(p->stats.exitSignal == SIG_COUNT)
+			p->stats.exitSignal = t->stats.signal;
+		if(p->stats.exitCode == 0)
+			p->stats.exitCode = t->stats.exitCode;
+
+		/* remove thread */
 		t->kill();
 		p->threads.remove(t);
+
+		/* if it was the last, free resources and notify parent */
 		if(p->threads.length() == 0) {
+			if(p->flags & P_KERNEL)
+				Util::panic("You can't terminate kernel processes");
+
 			/* we are a zombie now, so notify parent that he can get our exit-state */
 			/* this can only be done if all threads have been killed because we have to kill them
 			 * before the process is killed */
 			p->flags &= ~P_PREZOMBIE;
 			p->flags |= P_ZOMBIE;
 
-			/* ensure that the parent-wakeup doesn't get lost */
+			Sems::destroyAll(p,true);
+			FileDesc::destroy(p);
+			Groups::leave(p->pid);
+			doRemoveRegions(p,true);
+			p->msnode->leave(p);
+			terminateArch(p);
+			release(p,PLOCK_PROG);
+
+			/* the parent can get the exit status now */
 			LockGuard<Mutex> g(&childLock);
 			notifyProcDied(p->parentPid);
 		}
-		release(p,PLOCK_PROG);
+		else
+			release(p,PLOCK_PROG);
 	}
 }
 
-void ProcBase::terminate(int exitCode,int signal) {
+void ProcBase::terminate(int signal) {
 	Thread *t = Thread::getRunning();
 	Proc *p = request(t->getProc()->getPid(),PLOCK_PROG);
 	assert(p != NULL);
 
-	/* if terminate has already been called, just terminate our own thread */
-	if(p->flags & (P_PREZOMBIE | P_ZOMBIE))
-		t->terminate();
-	else {
-		p->stats.exitCode = exitCode;
-		if(signal != SIG_COUNT)
-			p->stats.exitSignal = signal;
+	/* set exit information */
+	t->stats.exitCode = 1;
+	if(signal != SIG_COUNT)
+		t->stats.signal = signal;
 
-		if(p->flags & P_KERNEL)
-			Util::panic("You can't terminate kernel processes");
-
-		/* print information to log */
-		if(signal != SIG_COUNT || exitCode != 0) {
-			Log::get().writef("Process %d:%s terminated ",p->pid,p->command);
-			if(signal != SIG_COUNT)
-				Log::get().writef("by signal %d ",signal);
-			Log::get().writef("with exitCode %d\n",exitCode);
-		}
-
-		/* send all other threads the kill signal */
+	/* if not already done, kill other threads */
+	if(!(p->flags & (P_PREZOMBIE | P_ZOMBIE))) {
 		for(auto pt = p->threads.begin(); pt != p->threads.end(); ++pt) {
 			if(*pt != t)
 				Signals::addSignalFor(*pt,SIGKILL);
 		}
 		p->flags |= P_PREZOMBIE;
-
-		/* wait until all threads are dead */
-		release(p,PLOCK_PROG);
-		join(0,false);
-		p = request(p->getPid(),PLOCK_PROG);
-		assert(p != NULL);
-
-		/* release all resources that are not necessary anymore */
-		Sems::destroyAll(p,true);
-		FileDesc::destroy(p);
-		Groups::leave(p->pid);
-		doRemoveRegions(p,true);
-		p->msnode->leave(p);
-		terminateArch(p);
-
-		/* destroy our own thread, if there still is any (do that last, because this makes us
-		 * a zombie) */
-		assert(p->threads.length() == 1);
-		t->terminate();
 	}
+
+	/* destroy our own thread */
+	t->terminate();
 	release(p,PLOCK_PROG);
 
 	/* switch to somebody else */

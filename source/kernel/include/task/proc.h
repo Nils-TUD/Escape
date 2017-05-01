@@ -325,10 +325,9 @@ public:
 	 * parent thread fetches the exit-state we'll kill the process.
 	 *
 	 * @param pid the process-id
-	 * @param exitCode the exit-code to store
 	 * @param signal the signal with which it was killed (SIG_COUNT if none)
 	 */
-	A_NORETURN static void terminate(int exitCode,int signal = SIG_COUNT);
+	A_NORETURN static void terminate(int signal = SIG_COUNT);
 
 	/**
 	 * Kills the given process. This is done after the exit-state has been given to the parent.

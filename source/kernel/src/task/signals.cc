@@ -42,7 +42,7 @@ bool Signals::checkAndStart(Thread *t,int *sig,handler_func *handler) {
 				Atomic::fetch_and_and(&t->sigmask,~(1 << i));
 				if(t->sigHandler[i] == SIG_DFL) {
 					if(isFatal(i)) {
-						Proc::terminate(1,i);
+						Proc::terminate(i);
 						A_UNREACHED;
 					}
 					continue;

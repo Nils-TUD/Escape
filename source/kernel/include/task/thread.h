@@ -89,6 +89,10 @@ class ThreadBase : public esc::DListItem {
 		ulong syscalls;
 		ulong schedCount;
 		ulong migrations;
+		/* the signal that killed the thread (SIG_COUNT if none) */
+		int signal;
+		/* exit-code the thread gave us via exit() */
+		int exitCode;
 	};
 
 protected:

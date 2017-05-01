@@ -52,7 +52,7 @@ void UEnv::startSignalHandler(Thread *t,IntrptStackFrame *stack,int sig,Signals:
 	return;
 
 error:
-	Proc::terminate(1,SIGSEGV);
+	Proc::terminate(SIGSEGV);
 	A_UNREACHED;
 }
 

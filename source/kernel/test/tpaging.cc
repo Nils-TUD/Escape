@@ -65,7 +65,7 @@ static void test_paging_foreign() {
 	Thread *t = Thread::getRunning();
 	pid_t pid = Proc::clone(0);
 	if(pid == 0) {
-		Proc::terminate(0);
+		Proc::terminate();
 		A_UNREACHED;
 	}
 

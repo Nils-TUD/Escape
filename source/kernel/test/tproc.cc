@@ -68,7 +68,7 @@ static void test_proc_clone() {
 		pid = Proc::clone(0);
 		if(pid == 0) {
 			tprintf("Destroying myself\n");
-			Proc::terminate(0);
+			Proc::terminate();
 			A_UNREACHED;
 		}
 		else {

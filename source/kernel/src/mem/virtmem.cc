@@ -632,8 +632,8 @@ void VirtMem::sync(VMRegion *vm) const {
 	if((vm->reg->getFlags() & RF_SHAREABLE) && (vm->reg->getFlags() & RF_WRITABLE) && file) {
 		size_t pcount = BYTES_2_PAGES(vm->reg->getByteCount());
 		pid_t pid = proc->getPid();
-		/* can't and won't be done by a different process */
-		assert(pid == Proc::getRunning());
+		Proc *cur = Thread::getRunning()->getProc();
+		bool foreign = cur->getPid() != pid;
 
 		for(size_t i = 0; i < pcount; i++) {
 			size_t amount = i < pcount - 1 ? PAGE_SIZE : (vm->reg->getByteCount() - i * PAGE_SIZE);
@@ -646,7 +646,14 @@ void VirtMem::sync(VMRegion *vm) const {
 				return;
 
 			/* write our mapped memory to file */
-			file->write(pid,(void*)(vm->virt() + i * PAGE_SIZE),amount);
+			if(foreign) {
+				frameno_t frm = getPageDir()->getFrameNo(vm->virt() + i * PAGE_SIZE);
+				uintptr_t virt = cur->getPageDir()->getAccess(frm);
+				file->write(pid,(void*)virt,amount);
+				cur->getPageDir()->removeAccess(frm);
+			}
+			else
+				file->write(pid,(void*)(vm->virt() + i * PAGE_SIZE),amount);
 		}
 	}
 }

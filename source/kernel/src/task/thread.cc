@@ -75,6 +75,7 @@ ThreadBase::ThreadBase(Proc *p,uint8_t flags)
 	  cpu(), stackRegions(), threadDir(), threadListItem(static_cast<Thread*>(this)),
 	  signalListItem(static_cast<Thread*>(this)), reqFrames(), stats() {
 	stats.cycleStart = CPU::rdtsc();
+	stats.signal = SIG_COUNT;
 }
 
 Thread *ThreadBase::init(Proc *p) {

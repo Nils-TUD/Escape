@@ -154,8 +154,9 @@ static void test_insert() {
 		test_assertInt(mytree.insert("/foo//",(void*)0x22),-EINVAL);
 		test_assertInt(mytree.insert("/.",(void*)0x22),-EINVAL);
 		test_assertInt(mytree.insert("/..",(void*)0x22),-EINVAL);
-		test_assertInt(mytree.insert("//",(void*)0x22),-EINVAL);
 		test_assertInt(mytree.insert("/foo/../bar",(void*)0x22),-EINVAL);
+		// slashes are optional at the beginning
+		test_assertInt(mytree.insert("//",(void*)0x22),-EEXIST);
 
 		test_assertInt(mytree.insert("/foo",(void*)0x22),0);
 		test_assertInt(mytree.insert("/foo/test",(void*)0x33),0);

@@ -67,18 +67,22 @@ static off_t getsize(const char *path) {
 
 	if(S_ISDIR(info.st_mode)) {
 		DIR *d = opendir(path);
-		struct dirent *e;
-		while((e = readdir(d))) {
-			if(e->d_namelen == 1 && e->d_name[0] == '.')
-				continue;
-			if(e->d_namelen == 2 && e->d_name[0] == '.' && e->d_name[1] == '.')
-				continue;
+		if(d) {
+			struct dirent *e;
+			while((e = readdir(d))) {
+				if(e->d_namelen == 1 && e->d_name[0] == '.')
+					continue;
+				if(e->d_namelen == 2 && e->d_name[0] == '.' && e->d_name[1] == '.')
+					continue;
 
-			char fpath[MAX_PATH_LEN];
-			snprintf(fpath,sizeof(fpath),"%s/%s",path,e->d_name);
-			total += getsize(fpath);
+				char fpath[MAX_PATH_LEN];
+				snprintf(fpath,sizeof(fpath),"%s/%s",path,e->d_name);
+				total += getsize(fpath);
+			}
+			closedir(d);
 		}
-		closedir(d);
+		else
+			printe("unable to open directory '%s'",path);
 
 		if(!(flags & FL_SUMMARY))
 			printsize(path,total);

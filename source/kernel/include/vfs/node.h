@@ -326,12 +326,6 @@ public:
 	}
 
 	/**
-	 * @param node the node (is assumed to be locked)
-	 * @return 0 if this node is a dir and empty
-	 */
-	int isEmptyDir() const;
-
-	/**
 	 * Retrieves information about this node
 	 *
 	 * @param pid the process-id

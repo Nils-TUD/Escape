@@ -112,20 +112,6 @@ const VFSNode *VFSNode::openDir(bool locked,bool *valid) const {
 	return p->firstChild;
 }
 
-int VFSNode::isEmptyDir() const {
-	if(!S_ISDIR(mode))
-		return -ENOTDIR;
-	bool valid;
-	const VFSNode *c = openDir(true,&valid);
-	if(valid) {
-		bool res = c->next && !c->next->next;
-		closeDir(true);
-		return res ? 0 : -ENOTEMPTY;
-	}
-	closeDir(true);
-	return -EDESTROYED;
-}
-
 void VFSNode::getInfo(pid_t pid,struct stat *info) {
 	info->st_dev = VFS_DEV_NO;
 	info->st_atime = acctime;
@@ -364,10 +350,8 @@ int VFSNode::rmdir(pid_t pid,const char *name) {
 		treeLock.up();
 		return -ENOENT;
 	}
-	dir->ref();
-	treeLock.up();
 
-	int res;
+	int res = 0;
 	if(!S_ISDIR(dir->mode)) {
 		res = -ENOTDIR;
 		goto error;
@@ -378,13 +362,15 @@ int VFSNode::rmdir(pid_t pid,const char *name) {
 		res = -EPERM;
 		goto error;
 	}
-	res = dir->isEmptyDir();
-	if(res < 0)
+	/* empty? */
+	if(dir->firstChild) {
+		res = -ENOTEMPTY;
 		goto error;
+	}
 
-	dir->destroy();
+	dir->doUnref(true);
 error:
-	release(dir);
+	treeLock.up();
 	return res;
 }
 

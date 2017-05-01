@@ -36,10 +36,8 @@ enum {
 	F_LONG				= 1 << 0,
 	F_INODE				= 1 << 1,
 	F_ALL				= 1 << 2,
-	F_DIRSIZE			= 1 << 3,
-	F_DIRNUM			= 1 << 4,
-	F_NUMERIC			= 1 << 5,
-	F_HUMAN				= 1 << 6,
+	F_NUMERIC			= 1 << 3,
+	F_HUMAN				= 1 << 4,
 };
 
 /* for calculating the widths of the fields */
@@ -53,57 +51,26 @@ enum {
 	WIDTHS_COUNT,
 };
 
-class lsfile : public file {
-public:
-	lsfile(const lsfile& f)
-		: file(f), _rsize(f._rsize) {
-	}
-	lsfile(const file& f)
-		: file(f), _rsize(0) {
-	}
-	lsfile& operator =(const lsfile& f) {
-		file::operator =(f);
-		_rsize = f._rsize;
-		return *this;
-	}
-	virtual ~lsfile() {
-	}
-
-	size_type rsize() const {
-		return _rsize;
-	}
-	void rsize(size_type s) {
-		_rsize = s;
-	}
-
-private:
-	size_type _rsize;
-};
-
 struct DirList {
 	bool dir;
 	std::string path;
-	std::vector<lsfile*> entries;
+	std::vector<file*> entries;
 };
 
 static DirList collectEntries(const char *path,size_t *widths,bool showPath);
-static void printDir(const std::string &path,const std::vector<lsfile*> &entries,size_t *widths,
+static void printDir(const std::string &path,const std::vector<file*> &entries,size_t *widths,
 		uint cols,bool showPath);
-static void printColor(const lsfile *f);
-static bool compareEntries(const lsfile* a,const lsfile* b);
-static vector<lsfile*> getEntries(const string& path);
-static lsfile* buildFile(const file& f);
-static file::size_type getDirSize(const file& d);
+static void printColor(const file *f);
+static bool compareEntries(const file* a,const file* b);
+static vector<file*> getEntries(const string& path);
 static void printSize(size_t size,size_t width);
 
 static void usage(const char *name) {
-	serr << "Usage: " << name << " [-liasNn] [<path>...]\n";
+	serr << "Usage: " << name << " [-lian] [<path>...]\n";
 	serr << "    -l: long listing\n";
 	serr << "    -h: print human readable sizes\n";
 	serr << "    -i: print inode-numbers\n";
 	serr << "    -a: print also '.' and '..'\n";
-	serr << "    -s: print size of dir-content instead of directory-entries (implies -l)\n";
-	serr << "    -N: print number of directory-entries instead of their size (implies -l)\n";
 	serr << "    -n: print numeric user and group-ids\n";
 	exit(EXIT_FAILURE);
 }
@@ -121,16 +88,11 @@ int main(int argc,char *argv[]) {
 			case 'h': flags |= F_HUMAN; break;
 			case 'i': flags |= F_INODE; break;
 			case 'a': flags |= F_ALL; break;
-			case 's': flags |= F_DIRSIZE; break;
-			case 'N': flags |= F_DIRNUM; break;
 			case 'n': flags |= F_NUMERIC; break;
 			default:
 				usage(argv[0]);
 		}
 	}
-	// dirsize and dirnum imply long
-	if(flags & (F_DIRSIZE | F_DIRNUM))
-		flags |= F_LONG;
 
 	// get console-size
 	uint cols = esc::VTerm::getSize(esc::env::get("TERM").c_str()).first;
@@ -204,7 +166,7 @@ static DirList collectEntries(const char *path,size_t *widths,bool showPath) {
 	// calc widths
 	for(auto it = list.entries.begin(); it != list.entries.end(); ++it) {
 		size_t x;
-		lsfile *f = *it;
+		file *f = *it;
 		if(flags & F_INODE) {
 			if((x = count_digits(f->inode(),10)) > widths[W_INODE])
 				widths[W_INODE] = x;
@@ -229,7 +191,7 @@ static DirList collectEntries(const char *path,size_t *widths,bool showPath) {
 			// human readable is at most 3 digits plus binary prefix
 			if(flags & F_HUMAN)
 				widths[W_SIZE] = 4;
-			else if((x = count_digits(f->rsize(),10)) > widths[W_SIZE])
+			else if((x = count_digits(f->size(),10)) > widths[W_SIZE])
 				widths[W_SIZE] = x;
 		}
 		else {
@@ -240,7 +202,7 @@ static DirList collectEntries(const char *path,size_t *widths,bool showPath) {
 	return list;
 }
 
-static void printLinkTarget(const lsfile &f) {
+static void printLinkTarget(const file &f) {
 	sout << " -> ";
 
 	char tmp[MAX_PATH_LEN];
@@ -258,12 +220,12 @@ static void printLinkTarget(const lsfile &f) {
 	sout << "??";
 }
 
-static void printDir(const std::string &path,const std::vector<lsfile*> &entries,size_t *widths,
+static void printDir(const std::string &path,const std::vector<file*> &entries,size_t *widths,
 		uint cols,bool showPath) {
 	// display
 	size_t pos = 0;
 	for(auto it = entries.begin(); it != entries.end(); ++it) {
-		lsfile *f = *it;
+		file *f = *it;
 		if(flags & F_LONG) {
 			if(flags & F_INODE)
 				sout << fmt(f->inode(),widths[W_INODE]) << ' ';
@@ -282,7 +244,7 @@ static void printDir(const std::string &path,const std::vector<lsfile*> &entries
 			else
 				sout << fmt((g ? g->name : "?"),widths[W_GID]) << ' ';
 
-			printSize(f->rsize(),widths[W_SIZE]);
+			printSize(f->size(),widths[W_SIZE]);
 			sout << ' ';
 			{
 				char dateStr[SSTRLEN("2009-09-09 14:12") + 1];
@@ -320,7 +282,7 @@ static void printDir(const std::string &path,const std::vector<lsfile*> &entries
 		sout << '\n';
 }
 
-static void printColor(const lsfile *f) {
+static void printColor(const file *f) {
 	if(f->is_dir())
 		sout << "\033[co;9]";
 	else if(S_ISLNK(f->mode()))
@@ -331,7 +293,7 @@ static void printColor(const lsfile *f) {
 		sout << "\033[co;2]";
 }
 
-static bool compareEntries(const lsfile* a,const lsfile* b) {
+static bool compareEntries(const file* a,const file* b) {
 	if(a->is_dir() == b->is_dir())
 		return strcasecmp(a->name().c_str(),b->name().c_str()) < 0;
 	if(a->is_dir())
@@ -339,15 +301,15 @@ static bool compareEntries(const lsfile* a,const lsfile* b) {
 	return false;
 }
 
-static vector<lsfile*> getEntries(const string& path) {
-	vector<lsfile*> res;
+static vector<file*> getEntries(const string& path) {
+	vector<file*> res;
 	try {
 		file dir(path);
 		if(dir.is_dir()) {
 			vector<struct dirent> files = dir.list_files(flags & F_ALL);
 			for(auto it = files.begin(); it != files.end(); ++it) {
 				try {
-					res.push_back(buildFile(file(path,std::string(it->d_name),O_NOCHAN | O_NOFOLLOW)));
+					res.push_back(new file(path,std::string(it->d_name),O_NOCHAN | O_NOFOLLOW));
 				}
 				catch(const exception &e) {
 					printe("Skipping '%s/%s': %s",path.c_str(),it->d_name,e.what());
@@ -355,42 +317,10 @@ static vector<lsfile*> getEntries(const string& path) {
 			}
 		}
 		else
-			res.push_back(buildFile(dir));
+			res.push_back(new file(dir));
 	}
 	catch(const exception &e) {
 		printe("Skipping '%s': %s",path.c_str(),e.what());
-	}
-	return res;
-}
-
-static lsfile* buildFile(const file& f) {
-	lsfile *lsf = new lsfile(f);
-	if(f.is_dir() && (flags & (F_DIRSIZE | F_DIRNUM))) {
-		if(flags & F_DIRNUM) {
-			vector<struct dirent> files = lsf->list_files(flags & F_ALL);
-			lsf->rsize(files.size());
-		}
-		else
-			lsf->rsize(getDirSize(f));
-	}
-	else
-		lsf->rsize(lsf->size());
-	return lsf;
-}
-
-static file::size_type getDirSize(const file& d) {
-	file::size_type res = 0;
-	string path = d.path();
-	vector<struct dirent> files = d.list_files((flags & F_ALL) != 0);
-	for(auto it = files.begin(); it != files.end(); ++it) {
-		file f(path,std::string(it->d_name));
-		if(f.is_dir()) {
-			string name = f.name();
-			if(name != "." && name != "..")
-				res += getDirSize(f);
-		}
-		else
-			res += f.size();
 	}
 	return res;
 }

@@ -130,7 +130,8 @@ int VFSMS::remount(Proc *p,const char *path,OpenFile *dir,uint flags) {
 	match->root = dir->getNodeNo();
 	match->devno = dir->getDev();
 	/* increase references to prevent that we delete the node while it's mounted */
-	if(match->devno == VFS_DEV_NO)
+	/* but prevent circular dependencies (otherwise, we don't free the mountspace) */
+	if(match->devno == VFS_DEV_NO && dir->getNode() != this)
 		VFSNode::request(match->root);
 	return 0;
 }
@@ -148,8 +149,11 @@ int VFSMS::unmount(Proc *p,const char *path) {
 		/* TODO this could be extended to allow it if it reduces permissions */
 		if(match->root != 0)
 			return -EPERM;
-		if(match->devno == VFS_DEV_NO)
-			VFSNode::release(VFSNode::get(match->root));
+		if(match->devno == VFS_DEV_NO) {
+			VFSNode *node = VFSNode::get(match->root);
+			if(node != this)
+				VFSNode::release(node);
+		}
 		/* remove the mountpoint */
 		file = _tree.remove(path);
 		assert(file != NULL);
@@ -167,7 +171,8 @@ void VFSMS::join(Proc *p) {
 }
 
 void VFSMS::leave(Proc *p) {
-	unref();
+	if(unref() == 1)
+		destroy();
 	p->msnode = NULL;
 }
 

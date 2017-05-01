@@ -29,7 +29,6 @@
 
 /* some additional types for the kernel */
 #define MODE_TYPE_CHANNEL			0x0010000
-#define MODE_TYPE_HARDLINK			0x0020000
 #define MODE_TYPE_DEVMASK			0x0700000
 #define MODE_TYPE_MOUNTSPC			(0x0800000 | S_IFDIR)
 #define MODE_TYPE_BLKDEV			(0x0100000 | S_IFBLK)
@@ -44,7 +43,6 @@
 #define IS_DEVICE(mode)				(((mode) & MODE_TYPE_DEVMASK) != 0)
 #define IS_CHANNEL(mode)			(((mode) & MODE_TYPE_CHANNEL) != 0)
 #define IS_FS(mode)					(((mode) & MODE_TYPE_DEVMASK) == 0x0300000)
-#define IS_HDLNK(mode)				(((mode) & MODE_TYPE_HARDLINK) != 0)
 #define IS_MOUNTSPC(mode)			(((mode) & MODE_TYPE_MOUNTSPC) == MODE_TYPE_MOUNTSPC)
 
 #if defined(__mmix__)
@@ -379,16 +377,6 @@ public:
 	 * @return 0 on success
 	 */
 	int utime(pid_t pid,const struct utimbuf *utimes);
-
-	/**
-	 * Creates a link @ <dir>/<name> to <this>
-	 *
-	 * @param pid the process-id
-	 * @param dir the directory
-	 * @param name the name of the link to create
-	 * @return 0 on success
-	 */
-	int link(pid_t pid,VFSNode *dir,const char *name);
 
 	/**
 	 * Unlinks <this>/<name>

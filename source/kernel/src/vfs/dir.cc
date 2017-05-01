@@ -28,7 +28,6 @@
 #include <vfs/dir.h>
 #include <vfs/fs.h>
 #include <vfs/info.h>
-#include <vfs/link.h>
 #include <vfs/node.h>
 #include <vfs/openfile.h>
 #include <vfs/vfs.h>

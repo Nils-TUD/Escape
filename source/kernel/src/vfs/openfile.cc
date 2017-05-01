@@ -157,7 +157,7 @@ int OpenFile::link(pid_t pid,OpenFile *dir,const char *name) {
 
 	int err = -EINVAL;
 	if(devNo == VFS_DEV_NO)
-		err = node->link(pid,dir->node,name);
+		err = -ENOTSUP;
 	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *targetChan = static_cast<VFSChannel*>(node);
 		VFSChannel *dirChan = static_cast<VFSChannel*>(dir->node);

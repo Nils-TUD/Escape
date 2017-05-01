@@ -29,7 +29,6 @@
 #include <vfs/dir.h>
 #include <vfs/file.h>
 #include <vfs/info.h>
-#include <vfs/link.h>
 #include <vfs/node.h>
 #include <vfs/openfile.h>
 #include <vfs/vfs.h>
@@ -50,8 +49,7 @@ static size_t getMaxSize() {
 	return esc::Util::max(sizeof(VFSChannel),
 			esc::Util::max(sizeof(VFSDevice),
 			esc::Util::max(sizeof(VFSDir),
-			esc::Util::max(sizeof(VFSFile),
-			esc::Util::max(sizeof(VFSMS),sizeof(VFSLink))))));
+			esc::Util::max(sizeof(VFSFile),sizeof(VFSMS)))));
 }
 
 /* all nodes (expand dynamically) */
@@ -101,15 +99,10 @@ ssize_t VFSNode::open(pid_t pid,A_UNUSED const char *path,ssize_t *,A_UNUSED ino
 }
 
 const VFSNode *VFSNode::openDir(bool locked,bool *valid) const {
-	const VFSNode *p;
-	if(!IS_HDLNK(mode))
-		p = this;
-	else
-		p = static_cast<const VFSLink*>(this)->resolve();
 	if(locked)
 		treeLock.down();
-	*valid = p->name != NULL;
-	return p->firstChild;
+	*valid = name != NULL;
+	return firstChild;
 }
 
 void VFSNode::getInfo(pid_t pid,struct stat *info) {
@@ -214,36 +207,6 @@ int VFSNode::utime(pid_t pid,const struct utimbuf *utimes) {
 		modtime = utimes->modtime;
 		acctime = utimes->actime;
 	}
-	return res;
-}
-
-int VFSNode::link(pid_t pid,VFSNode *dir,const char *name) {
-	if(S_ISDIR(mode))
-		return -EISDIR;
-
-	/* make copy of name */
-	int res;
-	VFSNode *link;
-	char *namecpy = strdup(name);
-	if(!namecpy)
-		return -ENOMEM;
-
-	/* file exists? */
-	if(dir->findInDir(namecpy,strlen(name)) != NULL) {
-		res = -EEXIST;
-		goto errorName;
-	}
-
-	/* now create link */
-	if((link = createObj<VFSLink>(pid,dir,namecpy,this)) == NULL) {
-		res = -ENOMEM;
-		goto errorName;
-	}
-	release(link);
-	return 0;
-
-errorName:
-	Cache::free(namecpy);
 	return res;
 }
 
@@ -535,10 +498,6 @@ int VFSNode::request(const char *path,VFSNode *node,RequestResult *res,uint flag
 			err = -EEXIST;
 			goto done;
 		}
-
-		/* resolve link */
-		if(!(flags & VFS_NOLINKRES) && IS_HDLNK(n->mode))
-			n = const_cast<VFSNode*>(static_cast<const VFSLink*>(n)->resolve());
 
 		/* virtual node */
 		res->node = const_cast<VFSNode*>(n);

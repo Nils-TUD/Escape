@@ -30,8 +30,6 @@
 class Input {
 	explicit Input(esc::UIEvents *uiev)
 		: _buttons(), _cur(), _cursor(esc::Screen::CURSOR_DEFAULT), _mouseWin(WINID_UNUSED), _uiev(uiev) {
-		if(startthread(thread,this) < 0)
-			error("Unable to start input thread");
 	}
 
 public:
@@ -42,15 +40,17 @@ public:
 		return *_inst;
 	}
 
+	void handleKbMessage(esc::UIEvents::Event *data);
+	void handleMouseMessage(esc::UIEvents::Event *data);
+
+	esc::UIEvents &events() {
+		return *_uiev;
+	}
 	const gui::Pos &getMouse() const {
 		return _cur;
 	}
 
 private:
-	void handleKbMessage(esc::UIEvents::Event *data);
-	void handleMouseMessage(esc::UIEvents::Event *data);
-
-	static int thread(void *arg);
 
 	uchar _buttons;
 	gui::Pos _cur;

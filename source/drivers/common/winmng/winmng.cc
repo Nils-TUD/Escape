@@ -29,6 +29,7 @@
 #include <sys/proc.h>
 #include <sys/thread.h>
 #include <usergroup/usergroup.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -263,10 +264,55 @@ public:
 	}
 };
 
-static int eventThread(void *arg) {
-	WinMngEventDevice *evdev = (WinMngEventDevice*)arg;
+static WinMngEventDevice *evdev;
+static WinMngDevice *windev;
+static volatile bool run = true;
+
+static void sighdl(int) {
+	evdev->stop();
+	windev->stop();
+	run = false;
+	signal(SIGINT,sighdl);
+}
+
+static int eventThread(void *) {
+	if(signal(SIGINT,sighdl) == SIG_ERR)
+		error("Unable to set signal handler");
+
 	evdev->bindto(gettid());
 	evdev->loop();
+	return 0;
+}
+
+static int inputThread(void *) {
+	if(signal(SIGINT,sighdl) == SIG_ERR)
+		error("Unable to set signal handler");
+
+	/* read from uimanager and handle the keys */
+	try {
+		Input &in = Input::get();
+		while(run) {
+			esc::UIEvents::Event ev;
+			in.events() >> ev;
+
+			switch(ev.type) {
+				case esc::UIEvents::Event::TYPE_KEYBOARD:
+					in.handleKbMessage(&ev);
+					break;
+
+				case esc::UIEvents::Event::TYPE_MOUSE:
+					in.handleMouseMessage(&ev);
+					break;
+
+				default:
+					break;
+			}
+		}
+	}
+	catch(const std::exception &e) {
+		fprintf(stderr,"Input thread failed: %s\n",e.what());
+		kill(getpid(),SIGINT);
+	}
 	return 0;
 }
 
@@ -284,26 +330,41 @@ int main(int argc,char *argv[]) {
 	/* create event-device */
 	snprintf(path,sizeof(path),"%s-events",argv[3]);
 	print("Creating window-manager-events at %s",path);
-	WinMngEventDevice evdev(path,0110);
+	evdev = new WinMngEventDevice(path,0110);
 
 	/* create device */
 	print("Creating window-manager at %s",argv[3]);
-	WinMngDevice windev(argv[3],0550);
+	windev = new WinMngDevice(argv[3],0550);
+
+	if(signal(SIGINT,sighdl) == SIG_ERR || signal(SIGTERM,sighdl) == SIG_ERR)
+		error("Unable to set signal handler");
 
 	/* open input device and attach */
 	UIEvents *uiev = new UIEvents(*ui);
 
 	esc::Screen::Mode mode = ui->findGraphicsMode(atoi(argv[1]),atoi(argv[2]),DEF_BPP);
-	WinList::create(windev.id(),ui,mode.id);
+	WinList::create(windev->id(),ui,mode.id);
 
 	/* start helper modules */
-	Listener::create(windev.id());
+	Listener::create(windev->id());
 	Input::create(uiev);
 	Preview::create();
 
+	/* start threads */
+	if(startthread(inputThread,NULL) < 0)
+		error("Unable to start input thread");
 	if(startthread(eventThread,&evdev) < 0)
 		error("Unable to start thread for the event-channel");
 
-	windev.loop();
+	windev->loop();
+
+	/* stop other threads */
+	kill(getpid(),SIGINT);
+	join(0);
+
+	delete uiev;
+	delete windev;
+	delete evdev;
+	delete ui;
 	return EXIT_SUCCESS;
 }

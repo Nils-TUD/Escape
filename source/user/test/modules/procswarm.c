@@ -22,19 +22,23 @@
 #include <sys/thread.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 
 #include "../modules.h"
 
 int mod_procswarm(int argc,char *argv[]) {
 	size_t i,count = 100;
+	size_t dots = ULONG_MAX;
 	if(argc > 2)
-		count = atoi(argv[2]);
+		count = strtoul(argv[2],NULL,0);
+	if(argc > 3)
+		dots = strtoul(argv[3],NULL,0);
 	for(i = 0; i < count; i++) {
 		if(fork() == 0)
 			break;
 	}
 
-	while(1) {
+	while(dots-- > 0) {
 		printf(".");
 		fflush(stdout);
 		usleep(100 * 1000);

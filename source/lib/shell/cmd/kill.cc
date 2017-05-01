@@ -29,15 +29,11 @@
 #include "../ast/command.h"
 #include "../cmds.h"
 
-#define SIG_NAME_LEN		7
-
-typedef struct {
-	char name[SIG_NAME_LEN + 1];
-	int signal;
-} sSigName;
-
 /* the signal the user can send */
-static sSigName signals[] = {
+static struct {
+	const char *name;
+	int signal;
+} const signals[] = {
 	{"SIGKILL",SIGKILL},
 	{"SIGTERM",SIGTERM},
 	{"SIGINT",SIGINT},
@@ -49,6 +45,7 @@ static sSigName signals[] = {
 static int usage(const char *name) {
 	fprintf(stderr,"Usage: %s [-L] [-s <signal>] <pid>|<jobid>...\n",name);
 	fprintf(stderr,"    -L: list available signals\n");
+	fprintf(stderr,"    -s: the signal to send (SIGTERM by default)\n");
 	return EXIT_FAILURE;
 }
 

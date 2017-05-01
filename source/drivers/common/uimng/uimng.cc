@@ -46,20 +46,42 @@
 #include "screens.h"
 #include "uimngdev.h"
 
+static std::mutex mutex;
+
+class UIsFileDevice : public esc::FileDevice {
+public:
+	explicit UIsFileDevice(const char *path,mode_t mode)
+		: esc::FileDevice(path,mode) {
+	}
+
+	virtual std::string handleRead() {
+		esc::OStringStream os;
+		std::lock_guard<std::mutex> guard(mutex);
+		for(size_t i = 0; i < UIClient::MAX_CLIENTS; ++i) {
+			UIClient *cli = UIClient::getByIdx(i);
+			if(cli) {
+				cli->print(os);
+				os << '\n';
+			}
+		}
+		return os.str();
+	}
+};
+
 static int mouseClientThread(void *arg);
 static int kbClientThread(void *arg);
 static int headerThread(void *arg);
 static int uisFileThread(void *arg);
 
 static volatile bool run = true;
-static std::mutex mutex;
 static UIMngDevice *dev;
+static UIsFileDevice *uisdev;
 
 static void sigterm(int) {
 	dev->stop();
+	uisdev->stop();
 	run = false;
-}
-static void sigstop(int) {
+	signal(SIGINT,sigterm);
 }
 
 int main(int argc,char *argv[]) {
@@ -100,15 +122,13 @@ int main(int argc,char *argv[]) {
 	/* create first client */
 	Keystrokes::createTextConsole();
 
-	if(signal(SIGINT,sigterm) == SIG_ERR)
-		error("Unable to set signal handler");
-	if(signal(SIGTERM,sigterm) == SIG_ERR)
+	if(signal(SIGINT,sigterm) == SIG_ERR || signal(SIGTERM,sigterm) == SIG_ERR)
 		error("Unable to set signal handler");
 
 	dev->loop();
 
 	/* stop other threads */
-	kill(getpid(),SIGUSR1);
+	kill(getpid(),SIGINT);
 	join(0);
 
 	delete dev;
@@ -116,30 +136,36 @@ int main(int argc,char *argv[]) {
 }
 
 static int mouseClientThread(A_UNUSED void *arg) {
-	if(signal(SIGUSR1,sigstop) == SIG_ERR)
+	if(signal(SIGINT,sigterm) == SIG_ERR)
 		error("Unable to set signal handler");
 
 	struct stat info;
 	if(stat("/dev/mouse",&info) < 0)
 		return EXIT_FAILURE;
 
-	/* open mouse */
-	esc::IPCStream ms("/dev/mouse");
-	esc::Mouse::Event ev;
-	while(run) {
-		ms >> esc::ReceiveData(&ev,sizeof(ev),false);
+	try {
+		/* open mouse */
+		esc::IPCStream ms("/dev/mouse");
+		esc::Mouse::Event ev;
+		while(run) {
+			ms >> esc::ReceiveData(&ev,sizeof(ev),false);
 
-		esc::UIEvents::Event uiev;
-		uiev.type = esc::UIEvents::Event::TYPE_MOUSE;
-		uiev.d.mouse = ev;
+			esc::UIEvents::Event uiev;
+			uiev.type = esc::UIEvents::Event::TYPE_MOUSE;
+			uiev.d.mouse = ev;
 
-		try {
-			std::lock_guard<std::mutex> guard(mutex);
-			UIClient::send(&uiev,sizeof(uiev));
+			try {
+				std::lock_guard<std::mutex> guard(mutex);
+				UIClient::send(&uiev,sizeof(uiev));
+			}
+			catch(const std::exception &e) {
+				fprintf(stderr,"%s: %s\n",__FUNCTION__,e.what());
+			}
 		}
-		catch(const std::exception &e) {
-			printe("mouseClientThread: %s",e.what());
-		}
+	}
+	catch(const std::exception &e) {
+		fprintf(stderr,"%s: %s\n",__FUNCTION__,e.what());
+		kill(getpid(),SIGINT);
 	}
 	return EXIT_SUCCESS;
 }
@@ -200,44 +226,50 @@ static bool handleKey(esc::UIEvents::Event *data) {
 }
 
 static int kbClientThread(A_UNUSED void *arg) {
-	if(signal(SIGUSR1,sigstop) == SIG_ERR)
+	if(signal(SIGINT,sigterm) == SIG_ERR)
 		error("Unable to set signal handler");
 
-	/* open keyboard */
-	esc::IPCStream kb("/dev/keyb");
-	esc::Keyb::Event ev;
-	while(run) {
-		kb >> esc::ReceiveData(&ev,sizeof(ev),false);
+	try {
+		/* open keyboard */
+		esc::IPCStream kb("/dev/keyb");
+		esc::Keyb::Event ev;
+		while(run) {
+			kb >> esc::ReceiveData(&ev,sizeof(ev),false);
 
-		/* translate keycode */
-		esc::UIEvents::Event uiev;
-		uiev.type = esc::UIEvents::Event::TYPE_KEYBOARD;
-		uiev.d.keyb.keycode = ev.keycode;
+			/* translate keycode */
+			esc::UIEvents::Event uiev;
+			uiev.type = esc::UIEvents::Event::TYPE_KEYBOARD;
+			uiev.d.keyb.keycode = ev.keycode;
 
-		{
-			std::lock_guard<std::mutex> guard(mutex);
-			UIClient *active = UIClient::getActive();
-			const Keymap *map = active && active->keymap() ? active->keymap() : Keymap::getDefault();
-			uiev.d.keyb.character = map->translateKeycode(ev.flags,ev.keycode,&uiev.d.keyb.modifier);
-		}
-
-		/* mode switching etc. might fail */
-		try {
-			/* the create-console commands can't be locked */
-			if(!handleKey(&uiev)) {
+			{
 				std::lock_guard<std::mutex> guard(mutex);
-				UIClient::send(&uiev,sizeof(uiev));
+				UIClient *active = UIClient::getActive();
+				const Keymap *map = active && active->keymap() ? active->keymap() : Keymap::getDefault();
+				uiev.d.keyb.character = map->translateKeycode(ev.flags,ev.keycode,&uiev.d.keyb.modifier);
+			}
+
+			/* mode switching etc. might fail */
+			try {
+				/* the create-console commands can't be locked */
+				if(!handleKey(&uiev)) {
+					std::lock_guard<std::mutex> guard(mutex);
+					UIClient::send(&uiev,sizeof(uiev));
+				}
+			}
+			catch(const std::exception &e) {
+				fprintf(stderr,"%s: %s\n",__FUNCTION__,e.what());
 			}
 		}
-		catch(const std::exception &e) {
-			printe("kbClientThread: %s",e.what());
-		}
+	}
+	catch(const std::exception &e) {
+		fprintf(stderr,"%s: %s\n",__FUNCTION__,e.what());
+		kill(getpid(),SIGINT);
 	}
 	return EXIT_SUCCESS;
 }
 
 static int headerThread(A_UNUSED void *arg) {
-	if(signal(SIGUSR1,sigstop) == SIG_ERR)
+	if(signal(SIGINT,sigterm) == SIG_ERR)
 		error("Unable to set signal handler");
 
 	while(run) {
@@ -261,28 +293,11 @@ static int headerThread(A_UNUSED void *arg) {
 	return EXIT_SUCCESS;
 }
 
-class UIsFileDevice : public esc::FileDevice {
-public:
-	explicit UIsFileDevice(const char *path,mode_t mode)
-		: esc::FileDevice(path,mode) {
-	}
-
-	virtual std::string handleRead() {
-		esc::OStringStream os;
-		std::lock_guard<std::mutex> guard(mutex);
-		for(size_t i = 0; i < UIClient::MAX_CLIENTS; ++i) {
-			UIClient *cli = UIClient::getByIdx(i);
-			if(cli) {
-				cli->print(os);
-				os << '\n';
-			}
-		}
-		return os.str();
-	}
-};
-
 static int uisFileThread(void*) {
-	UIsFileDevice dev("/sys/uis",0440);
-	dev.loop();
-	return 0;
+	if(signal(SIGINT,sigterm) == SIG_ERR)
+		error("Unable to set signal handler");
+
+	uisdev = new UIsFileDevice("/sys/uis",0440);
+	uisdev->loop();
+	return EXIT_SUCCESS;
 }

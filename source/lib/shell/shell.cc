@@ -204,7 +204,7 @@ int shell_readLine(char *buffer,size_t max) {
 
 		/* handle special keycodes */
 		if(n3 != 0 || (n1 != '\t' && n1 != '\n' && !isprint(n1))) {
-			if(shell_handleSpecialKey(buffer,n2,n3,&cursorPos,&o) || !isprint(n1))
+			if(shell_handleSpecialKey(buffer,n2,n3,&cursorPos,&o) || (!isprint(n1) && !isspace(n1)))
 				continue;
 		}
 		if(n1 == '\t') {

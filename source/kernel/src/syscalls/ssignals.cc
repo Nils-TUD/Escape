@@ -79,8 +79,8 @@ int Syscalls::kill(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(!file))
 		SYSC_ERROR(stack,-EBADF);
 
-	/* it needs to be a node in /sys/proc */
-	if(file->getDev() != VFS_DEV_NO || !VFS::isProcDir(file->getNode()) || !file->getNode()->isAlive())
+	/* it needs to be a process node */
+	if(file->getDev() != VFS_DEV_NO || !IS_PROC(file->getNode()->getMode()) || !file->getNode()->isAlive())
 		SYSC_ERROR(stack,-EINVAL);
 
 	/* write access is required */

@@ -46,16 +46,6 @@ public:
 	}
 
 	/**
-	 * @return true if given node is a child of the /sys/proc node
-	 */
-	static bool isProcDir(VFSNode *node) {
-		VFSNode *n = node;
-		while(n && n != procsNode)
-			n = n->getParent();
-		return n == procsNode;
-	}
-
-	/**
 	 * Mounts the virtual filesystems into the given process. Should only be used by init.
 	 *
 	 * @param p the process

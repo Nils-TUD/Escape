@@ -355,7 +355,7 @@ ino_t VFS::createProcess(pid_t pid) {
 		proc = procsNode;
 
 	/* create dir */
-	dir = createObj<VFSDir>(KERNEL_PID,proc,name,DIR_DEF_MODE);
+	dir = createObj<VFSDir>(KERNEL_PID,proc,name,MODE_TYPE_PROC | DIR_DEF_MODE);
 	if(dir == NULL)
 		goto errorName;
 	/* change owner to user+group of process */

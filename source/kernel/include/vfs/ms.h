@@ -23,134 +23,34 @@
 #include <vfs/dir.h>
 #include <common.h>
 
-class Proc;
-
-class MSTreeItem : public esc::PathTreeItem<OpenFile>, public CacheAllocatable {
-public:
-	explicit MSTreeItem(char *name,OpenFile *data = NULL)
-		: esc::PathTreeItem<OpenFile>(name,data), CacheAllocatable(), root(0), devno(0) {
-	}
-	explicit MSTreeItem(const MSTreeItem &i);
-
-	ino_t root;
-	dev_t devno;
-};
-
-class MSPathTree : public esc::PathTree<OpenFile,MSTreeItem> {
-public:
-	void print(OStream &os) const {
-		printRec(os,this->_root);
-	}
-
-private:
-	void printRec(OStream &os,MSTreeItem *item) const;
-};
-
 /**
- * Represents a mountspace. Every process uses one of these objects as its mountspace. The reference
- * counter is used for the processes that link here. The file cannot be unlinked from userspace to
- * prevent that somebody removes the last reference in this way when one process is still using it.
+ * Mountspace representation in the VFS.
  */
 class VFSMS : public VFSDir {
-
 public:
 	/**
 	 * Creates an empty mountspace file.
 	 *
 	 * @param pid the process-id to use
 	 * @param parent the parent-node
+	 * @param id the mountspace id
 	 * @param name the node-name
 	 * @param mode the mode to set
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	explicit VFSMS(pid_t pid,VFSNode *parent,char *name,uint mode,bool &success);
-
-	/**
-	 * Creates a mountspace file that clones <ms>.
-	 *
-	 * @param pid the process-id to use
-	 * @param ms the mountspace to clone
-	 * @param parent the parent-node
-	 * @param name the node-name
-	 * @param mode the mode to set
-	 * @param success whether the constructor succeeded (is expected to be true before the call!)
-	 */
-	explicit VFSMS(pid_t pid,const VFSMS &ms,VFSNode *parent,char *name,uint mode,bool &success);
+	explicit VFSMS(pid_t pid,VFSNode *parent,uint64_t id,char *name,uint mode,bool &success);
 
 	virtual bool isDeletable() const {
 		return false;
 	}
 
 	/**
-	 * Resolves the given path for given process, i.e. it searches for the mountpoint in which
-	 * the given path resides. If successfull, a reference will be added, which is why you have
-	 * to call release() when you're done.
-	 *
-	 * @param path the path to resolve
-	 * @param begin will be set to the beginning of the path in the found mountpoint
-	 * @param file will be set to the file associated with the found mountpoint
-	 * @return the root inode on success
+	 * @return the mountspace id
 	 */
-	ino_t request(const char *path,const char **begin,OpenFile **file);
-
-	/**
-	 * Releases the previously with request() requested file.
-	 *
-	 * @param file the file
-	 */
-	static void release(OpenFile *file);
-
-	/**
-	 * Mounts the filesystem, handled by <file>, at <path>.
-	 *
-	 * @param p the process
-	 * @param path the path to mount it at
-	 * @param file the file that points to the channel over which the fs is handled
-	 * @return 0 on success
-	 */
-	int mount(Proc *p,const char *path,OpenFile *file);
-
-	/**
-	 * Remounts <dir> at <path> with given permissions.
-	 *
-	 * @param p the process
-	 * @param path the path to mount it at
-	 * @param dir the directory to remount
-	 * @param flags the flags (rwx) to use; only downgrading is allowed
-	 * @return 0 on success
-	 */
-	int remount(Proc *p,const char *path,OpenFile *dir,uint flags);
-
-	/**
-	 * Unmounts the filesystem that is mounted at <path>.
-	 *
-	 * @param p the process
-	 * @param path the path
-	 * @return 0 on success
-	 */
-	int unmount(Proc *p,const char *path);
-
-	/**
-	 * Leaves the current mountspace and joins this.
-	 *
-	 * @param p the process
-	 */
-	void join(Proc *p);
-
-	/**
-	 * Leaves the current mountspace (only possible for destroying processes, since it has no mount-
-	 * space afterwards).
-	 *
-	 * @param p the process
-	 */
-	void leave(Proc *p);
-
-	virtual void print(OStream &os) const;
+	uint64_t id() const {
+		return _id;
+	}
 
 private:
-	bool init();
-	static void readCallback(VFSNode *node,size_t *dataSize,void **buffer);
-
-	mutable SpinLock _lock;
-	MSPathTree _tree;
+	uint64_t _id;
 };

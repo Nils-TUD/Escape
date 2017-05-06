@@ -27,10 +27,10 @@
 #include <mem/vmtree.h>
 #include <task/elf.h>
 #include <task/groups.h>
+#include <task/mntspace.h>
 #include <task/sems.h>
 #include <task/thread.h>
 #include <vfs/fs.h>
-#include <vfs/ms.h>
 #include <assert.h>
 #include <common.h>
 #include <interrupts.h>
@@ -68,7 +68,6 @@ class Groups;
 class FileDesc;
 class VFS;
 class VFSFS;
-class VFSMS;
 class Env;
 
 /* represents a process */
@@ -77,7 +76,7 @@ class ProcBase : public esc::SListItem {
 	friend class FileDesc;
 	friend class VFS;
 	friend class VFSFS;
-	friend class VFSMS;
+	friend class MntSpace;
 	friend class Env;
 	friend class Sems;
 	friend class ThreadBase;
@@ -443,10 +442,10 @@ public:
 	 */
 	const char *getProgram() const;
 	/**
-	 * @return the mountspace (as VFSNode)
+	 * @return the mountspace
 	 */
-	VFSMS *getMS() {
-		return msnode;
+	MntSpace *getMS() {
+		return ms;
 	}
 	/**
 	 * @return the virtual memory object for this process
@@ -598,7 +597,7 @@ private:
 	Sems::Entry **sems;
 	size_t semsSize;
 	/* the mount space */
-	VFSMS *msnode;
+	MntSpace *ms;
 	/* the directory-node-number in the VFS of this process */
 	ino_t threadsDir;
 	Stats stats;

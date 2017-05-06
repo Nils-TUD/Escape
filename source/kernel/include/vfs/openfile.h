@@ -61,7 +61,7 @@ class VMTree;
 class FileDesc;
 class ThreadBase;
 class MSTreeItem;
-class VFSMS;
+class MntSpace;
 
 /* an entry in the global file table */
 class OpenFile {
@@ -70,7 +70,7 @@ class OpenFile {
 	friend class FileDesc;
 	friend class ThreadBase;
 	friend class MSTreeItem;
-	friend class VFSMS;
+	friend class MntSpace;
 
 	struct SemTreapNode : public esc::TreapNode<FileId> {
 		explicit SemTreapNode(const FileId &id) : esc::TreapNode<FileId>(id), refs(0), sem() {

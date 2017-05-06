@@ -51,7 +51,7 @@ int Syscalls::mount(Thread *t,IntrptStackFrame *stack) {
 	const char *path = (const char*)SYSC_ARG3(stack);
 	uint flags = (uint)SYSC_ARG4(stack);
 	Proc *p = t->getProc();
-	VFSMS *msobj;
+	VFSMS *msnode;
 	int res;
 
 	if(EXPECT_FALSE(!copyPath(abspath,sizeof(abspath),path)))
@@ -64,14 +64,19 @@ int Syscalls::mount(Thread *t,IntrptStackFrame *stack) {
 
 	/* get mountspace file */
 	ScopedFile msfile;
-	res = getMS(p,ms,&msfile,&msobj,VFS_WRITE);
+	res = getMS(p,ms,&msfile,&msnode,VFS_WRITE);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
 	/* if it's a filesystem, mount it */
 	if(fsfile->getDev() == VFS_DEV_NO && IS_CHANNEL(fsfile->getNode()->getMode()) &&
 			IS_FS(fsfile->getNode()->getParent()->getMode())) {
+		MntSpace *msobj = MntSpace::request(msnode->id());
+		if(!msobj)
+			SYSC_ERROR(stack,-EDESTROYED);
+
 		res = msobj->mount(p,abspath,&*fsfile);
+		MntSpace::release(msobj);
 	}
 	else {
 		if((flags & (VFS_READ | VFS_WRITE | VFS_EXEC)) == 0)
@@ -84,7 +89,12 @@ int Syscalls::mount(Thread *t,IntrptStackFrame *stack) {
 		if(!S_ISDIR(info.st_mode))
 			SYSC_ERROR(stack,-ENOTDIR);
 
+		MntSpace *msobj = MntSpace::request(msnode->id());
+		if(!msobj)
+			SYSC_ERROR(stack,-EDESTROYED);
+
 		res = msobj->remount(p,abspath,&*fsfile,flags);
+		MntSpace::release(msobj);
 	}
 
 	SYSC_RESULT(stack,res);
@@ -100,12 +110,17 @@ int Syscalls::unmount(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	ScopedFile msfile;
-	VFSMS *msobj;
-	int res = getMS(p,ms,&msfile,&msobj,VFS_WRITE);
+	VFSMS *msnode;
+	int res = getMS(p,ms,&msfile,&msnode,VFS_WRITE);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
+	MntSpace *msobj = MntSpace::request(msnode->id());
+	if(!msobj)
+		SYSC_ERROR(stack,-EDESTROYED);
+
 	res = msobj->unmount(p,abspath);
+	MntSpace::release(msobj);
 	SYSC_RESULT(stack,res);
 }
 
@@ -131,11 +146,16 @@ int Syscalls::joinms(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EPERM);
 
 	ScopedFile msfile;
-	VFSMS *msobj;
-	int res = getMS(p,ms,&msfile,&msobj,VFS_READ);
+	VFSMS *msnode;
+	int res = getMS(p,ms,&msfile,&msnode,VFS_READ);
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
+	MntSpace *msobj = MntSpace::request(msnode->id());
+	if(!msobj)
+		SYSC_ERROR(stack,-EDESTROYED);
+
 	res = VFS::joinMS(p,msobj);
+	MntSpace::release(msobj);
 	SYSC_RESULT(stack,res);
 }

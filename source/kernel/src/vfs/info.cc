@@ -25,6 +25,7 @@
 #include <mem/swapmap.h>
 #include <mem/useraccess.h>
 #include <mem/virtmem.h>
+#include <task/mntspace.h>
 #include <task/proc.h>
 #include <task/timer.h>
 #include <vfs/file.h>
@@ -329,10 +330,14 @@ void VFSInfo::pidLinkReadCallback(VFSNode *node,size_t *dataSize,void **buffer) 
 }
 
 void VFSInfo::mountsReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
-	const VFSMS *ms = static_cast<VFSMS*>(node->getParent());
+	const VFSMS *msnode = static_cast<VFSMS*>(node->getParent());
 
 	OStringStream os;
-	ms->print(os);
+	MntSpace *ms = MntSpace::request(msnode->id());
+	if(ms) {
+		ms->print(os);
+		MntSpace::release(ms);
+	}
 	*buffer = os.keepString();
 	*dataSize = os.getLength();
 }
@@ -343,7 +348,7 @@ void VFSInfo::msLinkReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
 		return;
 
 	OStringStream os;
-	os.writef("%s",p->getMS()->getPath());
+	os.writef("%s",p->getMS()->getNode()->getPath());
 	Proc::relRef(p);
 
 	*buffer = os.keepString();

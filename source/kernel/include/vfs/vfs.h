@@ -25,7 +25,7 @@
 #include <common.h>
 
 class Proc;
-class VFSMS;
+class MntSpace;
 
 class VFS {
 	VFS() = delete;
@@ -78,7 +78,7 @@ public:
 	 * @param src the mountspace to join
 	 * @return 0 on success
 	 */
-	static int joinMS(Proc *p,VFSMS *src);
+	static int joinMS(Proc *p,MntSpace *src);
 
 	/**
 	 * Checks whether the process with given id has permission to use <n> with the given flags

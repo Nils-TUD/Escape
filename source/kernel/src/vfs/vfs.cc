@@ -117,11 +117,11 @@ void VFS::mountAll(Proc *p) {
 }
 
 int VFS::cloneMS(Proc *p,const char *name) {
-	VFSMS *src = p->getMS();
+	MntSpace *src = p->getMS();
 	size_t len = strlen(name);
 
 	// check if the file exists
-	if(src->findInDir(name,len))
+	if(src->getNode()->findInDir(name,len))
 		return -EEXIST;
 
 	// create name copy
@@ -131,18 +131,18 @@ int VFS::cloneMS(Proc *p,const char *name) {
 	strcpy(copy,name);
 
 	// create new mountspace
-	VFSMS *ms = createObj<VFSMS>(p->getPid(),*src,src,copy,0700);
+	MntSpace *ms = src->clone(p->getPid(),copy);
 	if(ms == NULL) {
 		Cache::free(copy);
 		return -ENOMEM;
 	}
 
-	// use mountspace
-	p->msnode = ms;
+	// join mountspace
+	ms->join(p);
 	return 0;
 }
 
-int VFS::joinMS(Proc *p,VFSMS *src) {
+int VFS::joinMS(Proc *p,MntSpace *src) {
 	src->join(p);
 	return 0;
 }
@@ -266,13 +266,13 @@ int VFS::openPath(pid_t pid,ushort flags,mode_t mode,const char *path,ssize_t *s
 			return err;
 		}
 	}
-	VFSMS::release(fsFile);
+	MntSpace::release(fsFile);
 	return 0;
 
 error:
 	VFSNode::release(node);
 errorMnt:
-	VFSMS::release(fsFile);
+	MntSpace::release(fsFile);
 	return err;
 }
 

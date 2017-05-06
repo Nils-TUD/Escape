@@ -99,7 +99,7 @@ void ProcBase::relRef(const Proc *p) {
 ProcBase::ProcBase()
 	: flags(), pid(), parentPid(), uid(), gid(),
 	  priority(MAX_PRIO), depth(), refs(1), entryPoint(), virtmem(static_cast<Proc*>(this)), groups(),
-	  fileDescs(), fileDescsSize(), sems(), semsSize(), msnode(), threadsDir(), stats(),
+	  fileDescs(), fileDescsSize(), sems(), semsSize(), ms(), threadsDir(), stats(),
 	  sigRetAddr(), command(), threads(), locks(), mutexes() {
 	stats.exitSignal = SIG_COUNT;
 }
@@ -116,9 +116,12 @@ void ProcBase::init() {
 	p->depth = 0;
 
 	/* create boot mountspace */
-	p->msnode = createObj<VFSMS>(p->getPid(),VFS::getMSDir(),(char*)"boot",0755);
-	if(p->msnode == NULL)
+	MntSpace *ms = MntSpace::create(p->getPid(),VFS::getMSDir(),(char*)"boot");
+	if(ms == NULL)
 		Util::panic("Unable to create initial mountspace");
+	if(ms->getNode()->chmod(KERNEL_PID,0755) < 0)
+		Util::panic("Unable to chmdo initial mountspace");
+	ms->join(p);
 
 	/* add to procs */
 	add(p);
@@ -271,7 +274,7 @@ int ProcBase::clone(uint8_t flags) {
 	p->priority = cur->priority;
 	p->entryPoint = cur->entryPoint;
 	p->flags = flags;
-	cur->msnode->join(p);
+	cur->ms->join(p);
 
 	/* give the process the same name (may be changed by exec) */
 	p->command = strdup(cur->command);
@@ -374,7 +377,7 @@ errorAdd:
 errorCmd:
 	Cache::free((void*)p->command);
 errorProc:
-	p->msnode->leave(p);
+	p->ms->leave(p);
 	delete p;
 errorCur:
 	release(cur,PLOCK_PROG);
@@ -649,7 +652,7 @@ void ProcBase::killThread(Thread *t) {
 			FileDesc::destroy(p);
 			Groups::leave(p->pid);
 			doRemoveRegions(p,true);
-			p->msnode->leave(p);
+			p->ms->leave(p);
 			terminateArch(p);
 			release(p,PLOCK_PROG);
 

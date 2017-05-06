@@ -23,5 +23,5 @@
 extern uchar ctypetbl[];
 
 int ispunct(int c) {
-	return ctypetbl[c] & (CT_PUNCT);
+	return ctypetbl[(uchar)c] & (CT_PUNCT);
 }

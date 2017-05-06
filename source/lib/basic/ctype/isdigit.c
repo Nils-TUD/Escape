@@ -23,5 +23,5 @@
 extern uchar ctypetbl[];
 
 int isdigit(int c) {
-	return ctypetbl[c] & (CT_NUMERIC);
+	return ctypetbl[(uchar)c] & (CT_NUMERIC);
 }

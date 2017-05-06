@@ -23,5 +23,5 @@
 extern uchar ctypetbl[];
 
 int iscntrl(int c) {
-	return ctypetbl[c] & (CT_CTRL);
+	return ctypetbl[(uchar)c] & (CT_CTRL);
 }

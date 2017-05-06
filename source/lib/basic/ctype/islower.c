@@ -23,5 +23,5 @@
 extern uchar ctypetbl[];
 
 int islower(int c) {
-	return ctypetbl[c] & (CT_LOWER);
+	return ctypetbl[(uchar)c] & (CT_LOWER);
 }

@@ -23,5 +23,5 @@
 extern uchar ctypetbl[];
 
 int isblank(int c) {
-	return ctypetbl[c] & (CT_BLANK);
+	return ctypetbl[(uchar)c] & (CT_BLANK);
 }

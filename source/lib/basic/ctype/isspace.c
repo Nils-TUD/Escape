@@ -23,5 +23,5 @@
 extern uchar ctypetbl[];
 
 int isspace(int c) {
-	return ctypetbl[c] & (CT_BLANK | CT_SPACE);
+	return ctypetbl[(uchar)c] & (CT_BLANK | CT_SPACE);
 }

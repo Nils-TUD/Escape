@@ -23,5 +23,5 @@
 extern uchar ctypetbl[];
 
 int isgraph(int c) {
-	return (ctypetbl[c] & (CT_CTRL | CT_SPACE | CT_BLANK)) == 0;
+	return (ctypetbl[(uchar)c] & (CT_CTRL | CT_SPACE | CT_BLANK)) == 0;
 }

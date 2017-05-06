@@ -23,5 +23,5 @@
 extern uchar ctypetbl[];
 
 int isprint(int c) {
-	return (ctypetbl[c] & CT_CTRL) == 0;
+	return (ctypetbl[(uchar)c] & CT_CTRL) == 0;
 }

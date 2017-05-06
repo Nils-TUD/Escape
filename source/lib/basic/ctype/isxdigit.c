@@ -23,5 +23,5 @@
 extern uchar ctypetbl[];
 
 int isxdigit(int c) {
-	return ctypetbl[c] & (CT_NUMERIC | CT_HEX);
+	return ctypetbl[(uchar)c] & (CT_NUMERIC | CT_HEX);
 }

@@ -23,5 +23,5 @@
 extern uchar ctypetbl[];
 
 int isalpha(int c) {
-	return ctypetbl[c] & (CT_LOWER | CT_UPPER);
+	return ctypetbl[(uchar)c] & (CT_LOWER | CT_UPPER);
 }

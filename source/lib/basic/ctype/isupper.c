@@ -23,5 +23,5 @@
 extern uchar ctypetbl[];
 
 int isupper(int c) {
-	return ctypetbl[c] & (CT_UPPER);
+	return ctypetbl[(uchar)c] & (CT_UPPER);
 }

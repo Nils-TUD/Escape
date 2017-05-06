@@ -1,0 +1,2 @@
+Import('env')
+env.EscapeCXXProg('bin', target = 'sandbox', source = env.Glob('*.cc'), LIBS = ['usergroup'])

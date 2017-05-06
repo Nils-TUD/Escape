@@ -84,11 +84,10 @@ int Syscalls::kill(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EINVAL);
 
 	/* write access is required */
-	int res = VFS::hasAccess(p->getPid(),file->getNode(),VFS_WRITE);
-	if(res < 0)
-		SYSC_ERROR(stack,res);
+	if(!(file->getFlags() & VFS_WRITE))
+		SYSC_ERROR(stack,-EACCES);
 
 	/* send signal to process */
-	res = Proc::addSignalFor(atoi(file->getNode()->getName()),signal);
+	int res = Proc::addSignalFor(atoi(file->getNode()->getName()),signal);
 	SYSC_RESULT(stack,res);
 }

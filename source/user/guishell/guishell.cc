@@ -141,7 +141,6 @@ static int shellMain(const char *devName) {
 
 	// give vterm our pid
 	esc::VTerm vterm(fin);
-	vterm.setShellPid(getpid());
 
 	printf("\033[co;9]Welcome to Escape v%s!\033[co]\n",ESCAPE_VERSION);
 	printf("\n");
@@ -150,6 +149,8 @@ static int shellMain(const char *devName) {
 
 	int res = EXIT_SUCCESS;
 	while(1) {
+		vterm.enableSignals();
+
 		size_t width = vterm.getMode().cols;
 		// create buffer (history will free it)
 		char *buffer = (char*)malloc((width + 1) * sizeof(char));

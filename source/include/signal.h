@@ -66,6 +66,17 @@ static inline sighandler_t signal(int sig,sighandler_t handler) {
 }
 
 /**
+ * Sends the given signal to process, denoted by the file descriptor for /sys/proc/<pid>.
+ *
+ * @param fd the file descriptor for the process directory
+ * @param signal the signal
+ * @return 0 on success
+ */
+static inline int fkill(int fd,int signal) {
+	return syscall2(SYSCALL_SENDSIG,fd,signal);
+}
+
+/**
  * Sends the given signal to given process. To do so, write access to /sys/proc/<pid> is required.
  *
  * @param pid the process-id

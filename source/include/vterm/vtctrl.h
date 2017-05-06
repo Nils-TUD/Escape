@@ -117,8 +117,8 @@ struct sVTerm {
 	uchar inbufEOF;
 	size_t inbufSize;
 	esc::RingBuffer<char> *inbuf;
-	/* the pid of the shell for ctrl+c notifications */
-	pid_t shellPid;
+	/* the fd of the shell process for ctrl+c notifications */
+	int shellFd;
 	/* the escape-state */
 	size_t escapePos;
 	char escapeBuf[MAX_ESCC_LENGTH];
@@ -159,6 +159,15 @@ typedef enum {
  * @return true if successfull
  */
 bool vtctrl_init(sVTerm *vt,esc::Screen::Mode *mode);
+
+/**
+ * Sets the fd for the shell process.
+ *
+ * @param vt the vterm
+ * @param fd the file descriptor
+ * @return 0 on success
+ */
+int vtctrl_setShellFd(sVTerm *vt,int fd);
 
 /**
  * Handles the control-commands

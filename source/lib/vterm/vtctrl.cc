@@ -81,7 +81,7 @@ bool vtctrl_init(sVTerm *vt,esc::Screen::Mode *mode) {
 	vt->printToCom1 = sysconf(CONF_LOG);
 	vt->escapePos = -1;
 	vt->rlStartCol = 0;
-	vt->shellPid = 0;
+	vt->shellFd = -1;
 	vt->screenBackup = NULL;
 	vt->lines = vtctrl_createLines(vt->cols,vt->rows);
 	if(!vt->lines) {
@@ -201,12 +201,23 @@ bool vtctrl_resize(sVTerm *vt,size_t cols,size_t rows) {
 	return res;
 }
 
+int vtctrl_setShellFd(sVTerm *vt,int fd) {
+	struct stat info;
+	int res;
+	if((res = fstat(fd,&info)) < 0)
+		return res;
+	if(!S_ISDIR(info.st_mode))
+		return -ENOTDIR;
+
+	if(vt->shellFd != -1)
+		close(vt->shellFd);
+	vt->shellFd = fd;
+	return 0;
+}
+
 int vtctrl_control(sVTerm *vt,uint cmd,int arg1,int arg2) {
 	int res = 0;
 	switch(cmd) {
-		case MSG_VT_SHELLPID:
-			vt->shellPid = arg1;
-			break;
 		case MSG_VT_GETFLAG: {
 			switch(arg1) {
 				case esc::VTerm::FL_ECHO:

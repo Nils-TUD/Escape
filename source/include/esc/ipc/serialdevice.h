@@ -35,8 +35,8 @@ public:
 	static const size_t INBUF_SIZE	= 1024;
 
 	explicit SerialTermDevice(const char *name,mode_t perm)
-		: Device(name,perm,DEV_TYPE_CHAR,DEV_CANCEL | DEV_READ | DEV_WRITE | DEV_CLOSE),
-		  _shpid(), _flags((1 << VTerm::FL_ECHO) | (1 << VTerm::FL_READLINE)), _eof(),
+		: Device(name,perm,DEV_TYPE_CHAR,DEV_CANCEL | DEV_READ | DEV_WRITE | DEV_DELEGATE | DEV_CLOSE),
+		  _shfd(-1), _flags((1 << VTerm::FL_ECHO) | (1 << VTerm::FL_READLINE)), _eof(),
 		  _keymap(Keymap::getDefault()), _mutex(),
 		  _requests(std::make_memfun(this,&SerialTermDevice::handleRead)),
 		  _inbuf(INBUF_SIZE,RB_OVERWRITE) {
@@ -50,13 +50,13 @@ public:
 		_mode.mode = Screen::MODE_TEXT;
 
 		set(MSG_DEV_CANCEL,std::make_memfun(this,&SerialTermDevice::cancel));
+		set(MSG_DEV_DELEGATE,std::make_memfun(this,&SerialTermDevice::delegate));
 
 		set(MSG_FILE_READ,std::make_memfun(this,&SerialTermDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&SerialTermDevice::write));
 
 		set(MSG_VT_GETFLAG,std::make_memfun(this,&SerialTermDevice::getFlag));
 		set(MSG_VT_SETFLAG,std::make_memfun(this,&SerialTermDevice::setFlag));
-		set(MSG_VT_SHELLPID,std::make_memfun(this,&SerialTermDevice::setShellPid));
 		set(MSG_VT_ISVTERM,std::make_memfun(this,&SerialTermDevice::isVTerm));
 		set(MSG_VT_BACKUP,std::make_memfun(this,&SerialTermDevice::backup));
 		set(MSG_VT_RESTORE,std::make_memfun(this,&SerialTermDevice::restore));
@@ -82,6 +82,16 @@ public:
 				res = _requests.cancel(r.mid);
 		}
 		is << DevCancel::Response(res) << Reply();
+	}
+
+	void delegate(IPCStream &is) {
+		esc::DevDelegate::Request r;
+		is >> r;
+
+		if(_shfd != -1)
+			::close(_shfd);
+		_shfd = r.nfd;
+		is << esc::DevDelegate::Response(0) << esc::Reply();
 	}
 
 	void read(IPCStream &is) {
@@ -128,12 +138,6 @@ public:
 	void getMode(IPCStream &is) {
 		is << ValueResponse<Screen::Mode>::success(_mode) << Reply();
 	}
-	void setShellPid(IPCStream &is) {
-		pid_t pid;
-		is >> pid;
-		_shpid = pid;
-		is << errcode_t(0) << Reply();
-	}
 	void isVTerm(IPCStream &is) {
 		is << errcode_t(1) << Reply();
 	}
@@ -161,9 +165,9 @@ public:
 		/* ^C */
 		if(c == 0x3) {
 			/* send interrupt to shell */
-			if(_shpid) {
-				if(kill(_shpid,SIGINT) < 0)
-					printe("Unable to send SIGINT to %d",_shpid);
+			if(_shfd != -1) {
+				if(fkill(_shfd,SIGINT) < 0)
+					printe("Unable to send SIGINT to shell (fd %d)",_shfd);
 			}
 			return;
 		}
@@ -281,7 +285,7 @@ private:
 		return true;
 	}
 
-	int _shpid;
+	int _shfd;
 	uint _flags;
 	bool _eof;
 	Keymap *_keymap;

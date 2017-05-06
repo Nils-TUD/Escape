@@ -51,16 +51,16 @@ public:
 	 * @throws if the operation failed
 	 */
 	explicit VTermDevice(const char *name,mode_t mode,sVTerm *vterm)
-		: Device(name,mode,DEV_TYPE_CHAR,DEV_CANCEL | DEV_READ | DEV_WRITE | DEV_CLOSE),
+		: Device(name,mode,DEV_TYPE_CHAR,DEV_CANCEL | DEV_READ | DEV_WRITE | DEV_DELEGATE | DEV_CLOSE),
 		  _requests(std::make_memfun(this,&VTermDevice::handleRead)), _vterm(vterm) {
 		set(MSG_DEV_CANCEL,std::make_memfun(this,&VTermDevice::cancel));
+		set(MSG_DEV_DELEGATE,std::make_memfun(this,&VTermDevice::delegate));
 		set(MSG_FILE_READ,std::make_memfun(this,&VTermDevice::read));
 		set(MSG_FILE_WRITE,std::make_memfun(this,&VTermDevice::write));
 		set(MSG_VT_GETFLAG,std::make_memfun(this,&VTermDevice::getFlag));
 		set(MSG_VT_SETFLAG,std::make_memfun(this,&VTermDevice::setFlag));
 		set(MSG_VT_BACKUP,std::make_memfun(this,&VTermDevice::backup));
 		set(MSG_VT_RESTORE,std::make_memfun(this,&VTermDevice::restore));
-		set(MSG_VT_SHELLPID,std::make_memfun(this,&VTermDevice::setShellPid));
 		set(MSG_VT_ISVTERM,std::make_memfun(this,&VTermDevice::isVTerm));
 		set(MSG_UIM_SETMODE,std::make_memfun(this,&VTermDevice::setMode));
 	}
@@ -84,6 +84,14 @@ public:
 	}
 
 private:
+	void delegate(IPCStream &is) {
+		esc::DevDelegate::Request r;
+		is >> r;
+
+		errcode_t res = vtctrl_setShellFd(_vterm,r.nfd);
+		is << esc::DevDelegate::Response(res) << esc::Reply();
+	}
+
 	void cancel(IPCStream &is) {
 		DevCancel::Request r;
 		is >> r;
@@ -169,12 +177,6 @@ private:
 	}
 	void restore(IPCStream &is) {
 		errcode_t res = handleControlMsg(MSG_VT_RESTORE,0,0);
-		is << res << Reply();
-	}
-	void setShellPid(IPCStream &is) {
-		pid_t pid;
-		is >> pid;
-		errcode_t res = handleControlMsg(MSG_VT_SHELLPID,pid,0);
 		is << res << Reply();
 	}
 	void isVTerm(IPCStream &is) {

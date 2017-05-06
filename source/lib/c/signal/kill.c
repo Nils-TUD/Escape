@@ -29,7 +29,7 @@ int kill(pid_t pid,int signal) {
 	int fd = open(path,O_WRONLY);
 	if(fd < 0)
 		return fd;
-	int res = syscall2(SYSCALL_SENDSIG,fd,signal);
+	int res = fkill(fd,signal);
 	close(fd);
 	errno = res;
 	return res;

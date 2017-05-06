@@ -129,16 +129,18 @@ public:
 	}
 
 	/**
-	 * Publishes the pid of the shell to the vterm.
+	 * Allows the vterm to send signals to this process.
 	 *
-	 * @param pid the shell-pid
 	 * @throws if the operation failed
 	 */
-	void setShellPid(pid_t pid) {
-		errcode_t res;
-		_is << pid << SendReceive(MSG_VT_SHELLPID) >> res;
+	void enableSignals() {
+		int fd = open("/sys/pid/self",O_WRONLY);
+		if(fd < 0)
+			VTHROWE("enableSignals()",fd);
+		int res = delegate(_is.fd(),fd,O_WRONLY,0);
+		close(fd);
 		if(res < 0)
-			VTHROWE("setShellPid(" << pid << ")",res);
+			VTHROWE("enableSignals()",res);
 	}
 
 private:

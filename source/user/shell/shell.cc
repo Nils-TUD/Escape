@@ -60,28 +60,11 @@ int main(int argc,char **argv) {
 
 	/* interactive mode */
 
-	/* allow the UI group to send signals to us (for ^C) */
-	int gid = usergroup_nameToId(GROUPS_PATH,"ui");
-	if(gid < 0)
-		printe("Unable to get id of ui group");
-	else {
-		int fd = open("/sys/pid/self",O_NOCHAN);
-		if(fd < 0)
-			printe("Unable to open own proc directory");
-		else {
-			if(fchmod(fd,0775) < 0)
-				printe("Unable to chmod own proc directory");
-			if(fchown(fd,-1,gid) < 0)
-				printe("Unable to chown our proc directory");
-			close(fd);
-		}
-	}
-
 	esc::VTerm vterm(STDOUT_FILENO);
 
 	while(1) {
-		/* give vterm our pid (before every command in case we spawned a shell or similar) */
-		vterm.setShellPid(getpid());
+		/* re-enable signals (before every command in case we spawned a shell or similar) */
+		vterm.enableSignals();
 
 		size_t width = vterm.getMode().cols;
 		/* create buffer (history will free it) */

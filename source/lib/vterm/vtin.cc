@@ -67,9 +67,9 @@ void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 				switch(keycode) {
 					case VK_C:
 						/* send interrupt to shell */
-						if(vt->shellPid) {
-							if(kill(vt->shellPid,SIGINT) < 0)
-								printe("Unable to send SIGINT to %d",vt->shellPid);
+						if(vt->shellFd != -1) {
+							if(fkill(vt->shellFd,SIGINT) < 0)
+								printe("Unable to send SIGINT to shell (fd %d)",vt->shellFd);
 						}
 						return;
 					case VK_D:

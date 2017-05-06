@@ -81,8 +81,7 @@ enum {
 	MSG_VT_SETFLAG					= 501,	/* sets a flag */
 	MSG_VT_BACKUP					= 502,	/* backups the screen */
 	MSG_VT_RESTORE					= 503,	/* restores the screen */
-	MSG_VT_SHELLPID					= 504,	/* gives the vterm the shell-pid */
-	MSG_VT_ISVTERM					= 505,	/* dummy message on which only vterm answers with no error */
+	MSG_VT_ISVTERM					= 504,	/* dummy message on which only vterm answers with no error */
 
 	/* keyboard */
 	MSG_KB_EVENT					= 600,	/* events that the keyboard-driver sends */

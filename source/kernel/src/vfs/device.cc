@@ -28,6 +28,7 @@
 #include <assert.h>
 #include <common.h>
 #include <errno.h>
+#include <log.h>
 #include <spinlock.h>
 #include <video.h>
 

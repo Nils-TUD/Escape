@@ -19,9 +19,32 @@
 
 #pragma once
 
-#include <col/kpathtree.h>
+#include <esc/pathtree.h>
 #include <vfs/dir.h>
 #include <common.h>
+
+class Proc;
+
+class MSTreeItem : public esc::PathTreeItem<OpenFile>, public CacheAllocatable {
+public:
+	explicit MSTreeItem(char *name,OpenFile *data = NULL)
+		: esc::PathTreeItem<OpenFile>(name,data), CacheAllocatable(), root(0), devno(0) {
+	}
+	explicit MSTreeItem(const MSTreeItem &i);
+
+	ino_t root;
+	dev_t devno;
+};
+
+class MSPathTree : public esc::PathTree<OpenFile,MSTreeItem> {
+public:
+	void print(OStream &os) const {
+		printRec(os,this->_root);
+	}
+
+private:
+	void printRec(OStream &os,MSTreeItem *item) const;
+};
 
 /**
  * Represents a mountspace. Every process uses one of these objects as its mountspace. The reference
@@ -29,16 +52,6 @@
  * prevent that somebody removes the last reference in this way when one process is still using it.
  */
 class VFSMS : public VFSDir {
-	class MSTreeItem : public esc::PathTreeItem<OpenFile>, public CacheAllocatable {
-	public:
-		explicit MSTreeItem(char *name,OpenFile *data = NULL)
-			: esc::PathTreeItem<OpenFile>(name,data), CacheAllocatable(), root(0), devno(0) {
-		}
-		explicit MSTreeItem(const MSTreeItem &i);
-
-		ino_t root;
-		dev_t devno;
-	};
 
 public:
 	/**
@@ -137,8 +150,7 @@ public:
 private:
 	bool init();
 	static void readCallback(VFSNode *node,size_t *dataSize,void **buffer);
-	static void printItem(OStream &os,MSTreeItem *item);
 
 	mutable SpinLock _lock;
-	KPathTree<OpenFile,MSTreeItem> _tree;
+	MSPathTree _tree;
 };

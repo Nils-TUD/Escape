@@ -32,8 +32,7 @@
 #	include <stdlib.h>
 #endif
 
-template<class T,class ITEM>
-class KPathTree;
+class MSPathTree;
 
 namespace esc {
 
@@ -47,8 +46,7 @@ template<class T>
 class PathTreeItem {
 	template<class T2,class ITEM2>
 	friend class PathTree;
-	template<class T2,class ITEM2>
-	friend class ::KPathTree;
+	friend class ::MSPathTree;
 
 public:
 	explicit PathTreeItem(char *name,T *data = NULL)

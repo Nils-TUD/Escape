@@ -60,6 +60,7 @@ class VFS;
 class VMTree;
 class FileDesc;
 class ThreadBase;
+class MSTreeItem;
 class VFSMS;
 
 /* an entry in the global file table */
@@ -68,6 +69,7 @@ class OpenFile {
 	friend class VMTree;
 	friend class FileDesc;
 	friend class ThreadBase;
+	friend class MSTreeItem;
 	friend class VFSMS;
 
 	struct SemTreapNode : public esc::TreapNode<FileId> {

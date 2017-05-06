@@ -28,6 +28,7 @@
 #include <task/smp.h>
 #include <task/terminator.h>
 #include <task/thread.h>
+#include <vfs/vfs.h>
 #include <assert.h>
 #include <boot.h>
 #include <common.h>

@@ -24,7 +24,52 @@
 #include <ostringstream.h>
 #include <util.h>
 
-VFSMS::MSTreeItem::MSTreeItem(const VFSMS::MSTreeItem &i)
+static void printPath(OStream &os,MSTreeItem *item) {
+	if(item->getParent() != item) {
+		printPath(os,static_cast<MSTreeItem*>(item->getParent()));
+	}
+	os.writef("%s",item->getName());
+	if(!(item->getName()[0] == '/' && item->getName()[1] == '\0'))
+		os.writec('/');
+}
+
+static const char *decodeFlags(uint flags) {
+	static char buf[4];
+	buf[0] = (flags & VFS_READ) ? 'r' : '-';
+	buf[1] = (flags & VFS_WRITE) ? 'w' : '-';
+	buf[2] = (flags & VFS_EXEC) ? 'x' : '-';
+	buf[3] = '\0';
+	return buf;
+}
+
+void MSPathTree::printRec(OStream &os,MSTreeItem *item) const {
+	if(!item)
+		return;
+
+	OpenFile *file = item->getData();
+	if(file) {
+		// do not print the path to the channel, but to the device
+		if(IS_CHANNEL(file->getNode()->getMode()))
+			os.writef("%s on ",file->getNode()->getParent()->getPath());
+		else
+			os.writef("%s on ",file->getPath());
+		printPath(os,item);
+		os.writef(" type %s (%s",
+			IS_CHANNEL(file->getNode()->getMode()) ? "user" : "kernel",
+			decodeFlags(file->getFlags()));
+		if(item->root)
+			os.writef(",rootino=%d",item->root);
+		os.writef(")\n");
+	}
+
+	MSTreeItem *n = static_cast<MSTreeItem*>(item->_child);
+	while(n) {
+		printRec(os,n);
+		n = static_cast<MSTreeItem*>(n->_next);
+	}
+}
+
+MSTreeItem::MSTreeItem(const MSTreeItem &i)
 		: esc::PathTreeItem<OpenFile>(i), root(i.root), devno(i.devno) {
 	if(getData())
 		getData()->incRefs();
@@ -186,11 +231,5 @@ void VFSMS::readCallback(VFSNode *node,size_t *dataSize,void **buffer) {
 
 void VFSMS::print(OStream &os) const {
 	LockGuard<SpinLock> guard(&_lock);
-	os.writef("Mountspace %s:\n",getName());
-	_tree.print(os,printItem);
-}
-
-void VFSMS::printItem(OStream &os,MSTreeItem *item) {
-	OpenFile *file = item->getData();
-	os.writef("%s [flags=%#x root=%d]",file->getPath(),file->getFlags(),item->root);
+	_tree.print(os);
 }

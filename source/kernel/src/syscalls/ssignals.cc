@@ -23,6 +23,7 @@
 #include <task/thread.h>
 #include <task/uenv.h>
 #include <task/filedesc.h>
+#include <vfs/vfs.h>
 #include <common.h>
 #include <errno.h>
 #include <syscalls.h>

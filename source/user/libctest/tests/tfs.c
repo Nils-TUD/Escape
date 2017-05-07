@@ -22,6 +22,7 @@
 #include <sys/proc.h>
 #include <sys/stat.h>
 #include <sys/test.h>
+#include <sys/wait.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -100,6 +101,14 @@ static void test_basics(void) {
 	test_caseSucceeded();
 }
 
+#define RUN_IN_CHILD(code)							\
+	if(fork() == 0) {								\
+		code										\
+		exit(0);									\
+	}												\
+	else											\
+		test_assertInt(waitchild(NULL,-1,0),0);
+
 static void test_perms(void) {
 	size_t i;
 	struct stat info;
@@ -119,46 +128,55 @@ static void test_perms(void) {
 		test_assertInt(chown(paths[i].dir,1,1),0);
 
 		/* I'm the owner */
-		test_assertInt(setgid(1),0);
-		test_assertInt(setuid(1),0);
+		RUN_IN_CHILD(
+			test_assertInt(setgid(1),0);
+			test_assertInt(setuid(1),0);
 
-		test_assertCan(paths[i].dir,O_READ);
-		test_assertCan(paths[i].dir,O_WRITE);
+			test_assertCan(paths[i].dir,O_READ);
+			test_assertCan(paths[i].dir,O_WRITE);
+		);
 
 		/* I'm NOT the owner */
-		test_assertInt(setuid(0),0);
-		test_assertInt(setuid(2),0);
+		RUN_IN_CHILD(
+			test_assertInt(setgid(1),0);
+			test_assertInt(setuid(2),0);
 
-		test_assertCanNot(paths[i].dir,O_READ,-EACCES);
-		test_assertCanNot(paths[i].dir,O_WRITE,-EACCES);
+			test_assertCanNot(paths[i].dir,O_READ,-EACCES);
+			test_assertCanNot(paths[i].dir,O_WRITE,-EACCES);
+		);
 
 		/* give group read-perm */
-		test_assertInt(setuid(0),0);
 		test_assertInt(chmod(paths[i].dir,0640),0);
-		test_assertInt(setuid(2),0);
 
-		test_assertCan(paths[i].dir,O_READ);
-		test_assertCanNot(paths[i].dir,O_WRITE,-EACCES);
+		RUN_IN_CHILD(
+			test_assertInt(setgid(1),0);
+			test_assertInt(setuid(2),0);
+
+			test_assertCan(paths[i].dir,O_READ);
+			test_assertCanNot(paths[i].dir,O_WRITE,-EACCES);
+		);
 
 		/* neither owner nor group */
-		test_assertInt(setuid(0),0);
-		test_assertInt(setgid(0),0);
-		test_assertInt(setgid(2),0);
-		test_assertInt(setuid(2),0);
+		RUN_IN_CHILD(
+			test_assertInt(setgid(2),0);
+			test_assertInt(setuid(2),0);
 
-		test_assertCanNot(paths[i].dir,O_READ,-EACCES);
-		test_assertCanNot(paths[i].dir,O_WRITE,-EACCES);
+			test_assertCanNot(paths[i].dir,O_READ,-EACCES);
+			test_assertCanNot(paths[i].dir,O_WRITE,-EACCES);
+		);
 
 		/* give others read+write perm */
-		test_assertInt(setuid(0),0);
 		test_assertInt(chmod(paths[i].dir,0646),0);
-		test_assertInt(setuid(2),0);
 
-		test_assertCan(paths[i].dir,O_READ);
-		test_assertCan(paths[i].dir,O_WRITE);
+		RUN_IN_CHILD(
+			test_assertInt(setgid(2),0);
+			test_assertInt(setuid(2),0);
+
+			test_assertCan(paths[i].dir,O_READ);
+			test_assertCan(paths[i].dir,O_WRITE);
+		);
 
 		/* delete it */
-		test_assertInt(setuid(0),0);
 		test_assertInt(unlink(paths[i].dir),0);
 
 
@@ -168,52 +186,61 @@ static void test_perms(void) {
 		test_assertInt(chown(paths[i].dir,1,1),0);
 
 		/* I'm the owner */
-		test_assertInt(setgid(1),0);
-		test_assertInt(setuid(1),0);
+		RUN_IN_CHILD(
+			test_assertInt(setgid(1),0);
+			test_assertInt(setuid(1),0);
 
-		test_assertCan(paths[i].dir,O_READ);
-		test_assertCan(paths[i].dir,O_WRITE);
-		fs_createFile(paths[i].file,"foo");
-		test_assertInt(stat(paths[i].file,&info),0);
+			test_assertCan(paths[i].dir,O_READ);
+			test_assertCan(paths[i].dir,O_WRITE);
+			fs_createFile(paths[i].file,"foo");
+			test_assertInt(stat(paths[i].file,&info),0);
+		);
 
 		/* I'm NOT the owner */
-		test_assertInt(setuid(0),0);
-		test_assertInt(setuid(2),0);
+		RUN_IN_CHILD(
+			test_assertInt(setgid(1),0);
+			test_assertInt(setuid(2),0);
 
-		test_assertCanNot(paths[i].dir,O_READ,-EACCES);
-		test_assertCanNot(paths[i].dir,O_WRITE,-EACCES);
-		test_assertInt(stat(paths[i].file,&info),-EACCES);
+			test_assertCanNot(paths[i].dir,O_READ,-EACCES);
+			test_assertCanNot(paths[i].dir,O_WRITE,-EACCES);
+			test_assertInt(stat(paths[i].file,&info),-EACCES);
+		);
 
 		/* give group read-perm */
-		test_assertInt(setuid(0),0);
 		test_assertInt(chmod(paths[i].dir,0740),0);
-		test_assertInt(setuid(2),0);
 
-		test_assertCan(paths[i].dir,O_READ);
-		test_assertCanNot(paths[i].dir,O_WRITE,-EACCES);
-		test_assertInt(stat(paths[i].file,&info),-EACCES);
+		RUN_IN_CHILD(
+			test_assertInt(setgid(1),0);
+			test_assertInt(setuid(2),0);
+
+			test_assertCan(paths[i].dir,O_READ);
+			test_assertCanNot(paths[i].dir,O_WRITE,-EACCES);
+			test_assertInt(stat(paths[i].file,&info),-EACCES);
+		);
 
 		/* neither owner nor group */
-		test_assertInt(setuid(0),0);
-		test_assertInt(setgid(0),0);
-		test_assertInt(setgid(2),0);
-		test_assertInt(setuid(2),0);
+		RUN_IN_CHILD(
+			test_assertInt(setgid(2),0);
+			test_assertInt(setuid(2),0);
 
-		test_assertCanNot(paths[i].dir,O_READ,-EACCES);
-		test_assertCanNot(paths[i].dir,O_WRITE,-EACCES);
-		test_assertInt(stat(paths[i].file,&info),-EACCES);
+			test_assertCanNot(paths[i].dir,O_READ,-EACCES);
+			test_assertCanNot(paths[i].dir,O_WRITE,-EACCES);
+			test_assertInt(stat(paths[i].file,&info),-EACCES);
+		);
 
 		/* give others read+write perm */
-		test_assertInt(setuid(0),0);
 		test_assertInt(chmod(paths[i].dir,0747),0);
-		test_assertInt(setuid(2),0);
 
-		test_assertCan(paths[i].dir,O_READ);
-		test_assertCan(paths[i].dir,O_WRITE);
-		test_assertInt(stat(paths[i].file,&info),0);
+		RUN_IN_CHILD(
+			test_assertInt(setgid(2),0);
+			test_assertInt(setuid(2),0);
+
+			test_assertCan(paths[i].dir,O_READ);
+			test_assertCan(paths[i].dir,O_WRITE);
+			test_assertInt(stat(paths[i].file,&info),0);
+		);
 
 		/* delete it */
-		test_assertInt(setuid(0),0);
 		test_assertInt(unlink(paths[i].file),0);
 		test_assertInt(rmdir(paths[i].dir),0);
 	}

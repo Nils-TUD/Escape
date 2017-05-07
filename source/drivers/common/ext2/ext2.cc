@@ -288,8 +288,11 @@ int Ext2FileSystem::symlink(fs::User *u,fs::OpenFile *dir,const char *name,const
 	else {
 		ino_t ino;
 		res = Ext2File::create(this,u,cdir,name,&ino,S_IFLNK | LNK_DEF_MODE);
-		if(res == 0)
+		if(res == 0) {
 			res = Ext2File::write(this,ino,target,0,strlen(target));
+			if(res > 0)
+				res = 0;
+		}
 	}
 	inodeCache.release(cdir);
 	return res;

@@ -35,7 +35,8 @@ namespace info {
 		size_t unlimited = std::numeric_limits<size_t>::max();
 		is.ignore(unlimited,' ') >> mem._total;
 		is.ignore(unlimited,' ') >> mem._used;
-		is.ignore(unlimited,'\n');
+		ulong dummy;
+		is.ignore(unlimited,' ') >> dummy;
 		is.ignore(unlimited,' ') >> mem._swapTotal;
 		is.ignore(unlimited,' ') >> mem._swapUsed;
 		return is;

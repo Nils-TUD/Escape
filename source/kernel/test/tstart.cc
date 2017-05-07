@@ -43,7 +43,6 @@ extern sTestModule tModRegion;
 extern sTestModule tModSched;
 extern sTestModule tModString;
 extern sTestModule tModVFSn;
-extern sTestModule tModEscCodes;
 extern sTestModule tModSwapMap;
 extern sTestModule tModVmm;
 extern sTestModule tModPmemAreas;
@@ -81,7 +80,6 @@ void unittest_run() {
 	test_register(&tModSched);
 	test_register(&tModString);
 	test_register(&tModVFSn);
-	test_register(&tModEscCodes);
 	test_register(&tModSwapMap);
 	test_register(&tModVmm);
 	test_register(&tModPmemAreas);

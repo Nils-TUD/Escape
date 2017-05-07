@@ -35,6 +35,7 @@ extern sTestModule tModMath;
 extern sTestModule tModQSort;
 extern sTestModule tModGetOpt;
 extern sTestModule tModCtype;
+extern sTestModule tModEscCodes;
 
 int main(void) {
 	if(getuid() != ROOT_UID)
@@ -53,6 +54,7 @@ int main(void) {
 	test_register(&tModQSort);
 	test_register(&tModGetOpt);
 	test_register(&tModCtype);
+	test_register(&tModEscCodes);
 	test_start();
 	return EXIT_SUCCESS;
 }

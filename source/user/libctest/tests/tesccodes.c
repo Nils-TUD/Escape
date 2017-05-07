@@ -19,14 +19,13 @@
 
 #include <sys/esccodes.h>
 #include <sys/test.h>
-#include <common.h>
 
 /* forward declarations */
-static void test_esccodes();
+static void test_esccodes(void);
 static void test_check(const char *str,int cmd,int n1,int n2,int n3);
-static void test_1();
-static void test_2();
-static void test_3();
+static void test_1(void);
+static void test_2(void);
+static void test_3(void);
 
 /* our test-module */
 sTestModule tModEscCodes = {
@@ -34,7 +33,7 @@ sTestModule tModEscCodes = {
 	&test_esccodes
 };
 
-static void test_esccodes() {
+static void test_esccodes(void) {
 	test_1();
 	test_2();
 	test_3();
@@ -64,7 +63,7 @@ static void test_check(const char *str,int cmd,int n1,int n2,int n3) {
 	}
 }
 
-static void test_1() {
+static void test_1(void) {
 	const char *str[] = {
 		"\033[ml]","\033[ml;12]",
 		"\033[mr]","\033[mr;0]",
@@ -103,7 +102,7 @@ static void test_1() {
 	test_caseSucceeded();
 }
 
-static void test_2() {
+static void test_2(void) {
 	const char *str[] = {
 		"\033[]","\033[ab]","\033[ab;]","\033[;]","\033[;;]","\033[;;;]","\033[;bb;a]",
 		"\033]]","\033[colorcodeandmore]","\033[co;123123123123123123;12312313]","\033[co;+23,-12]",
@@ -116,7 +115,7 @@ static void test_2() {
 	test_caseSucceeded();
 }
 
-static void test_3() {
+static void test_3(void) {
 	const char *str[] = {
 		"\033[","\033[c","\033[co","\033[co;","\033[co;1","\033[co;12","\033[co;12;","\033[co;12;3"
 	};

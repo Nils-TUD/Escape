@@ -44,6 +44,7 @@ char *strstr(const char *str1,const char *str2) {
 			/* complete substring matched? */
 			if(!*sub)
 				return res;
+			str1 = res + 1;
 		}
 	}
 	return NULL;

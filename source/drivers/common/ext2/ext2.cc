@@ -100,7 +100,7 @@ ino_t Ext2FileSystem::find(fs::User *u,fs::OpenFile *dir,const char *name) {
 		return -ENOBUFS;
 
 	ino_t ino;
-	if(!S_ISDIR(cdir->inode.mode)) {
+	if(!S_ISDIR(le16tocpu(cdir->inode.mode))) {
 		ino = -ENOTDIR;
 		goto error;
 	}

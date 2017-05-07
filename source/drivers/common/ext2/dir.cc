@@ -37,7 +37,7 @@ int Ext2Dir::create(Ext2FileSystem *e,User *u,Ext2CInode *dir,const char *name,m
 	Ext2CInode *cnode;
 	ino_t ino;
 
-	if(!S_ISDIR(dir->inode.mode))
+	if(!S_ISDIR(le16tocpu(dir->inode.mode)))
 		return -ENOTDIR;
 
 	/* first create an inode and an entry in the directory */

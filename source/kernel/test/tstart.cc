@@ -41,7 +41,6 @@ extern sTestModule tModProc;
 extern sTestModule tModKHeap;
 extern sTestModule tModRegion;
 extern sTestModule tModSched;
-extern sTestModule tModString;
 extern sTestModule tModVFSn;
 extern sTestModule tModSwapMap;
 extern sTestModule tModVmm;
@@ -78,7 +77,6 @@ void unittest_run() {
 	test_register(&tModKHeap);
 	test_register(&tModRegion);
 	test_register(&tModSched);
-	test_register(&tModString);
 	test_register(&tModVFSn);
 	test_register(&tModSwapMap);
 	test_register(&tModVmm);

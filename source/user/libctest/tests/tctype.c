@@ -18,12 +18,9 @@
  */
 
 #include <sys/test.h>
-#include <common.h>
 #include <ctype.h>
-#include <string.h>
-#include <video.h>
 
-static void test_ctype();
+static void test_ctype(void);
 static int test_isalnum(int c);
 static int test_isalpha(int c);
 static int test_isblank(int c);
@@ -43,7 +40,7 @@ sTestModule tModCtype = {
 	&test_ctype
 };
 
-static void test_ctype() {
+static void test_ctype(void) {
 	test_caseStart("Testing all characters");
 
 	for(int c = 0; c <= 0xFF; c++) {

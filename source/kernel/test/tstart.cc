@@ -34,7 +34,6 @@ extern sTestModule tModAddrSpace;
 #endif
 extern sTestModule tModVMReg;
 extern sTestModule tModVMFree;
-extern sTestModule tModCtype;
 extern sTestModule tModMM;
 extern sTestModule tModDynArray;
 extern sTestModule tModPaging;
@@ -73,7 +72,6 @@ void unittest_run() {
 #endif
 	test_register(&tModVMReg);
 	test_register(&tModVMFree);
-	test_register(&tModCtype);
 	test_register(&tModMM);
 	test_register(&tModDynArray);
 	test_register(&tModPaging);

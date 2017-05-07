@@ -112,10 +112,9 @@ create_usbimg() {
 	# copy files necessary to boot, including the iso image containing everything
 	cp -R $1/dist/boot $tmp
 	mkdir $tmp/sbin $tmp/bin
-	for d in ramdisk ext2 pci; do
+	for d in ramdisk ext2 pci initloader; do
 		cp $1/dist/sbin/$d $tmp/sbin
 	done
-	cp $1/dist/sbin/initloader $tmp/bin
 	cp $1/fs.img.gz $tmp/boot
 
 	# create menu.lst

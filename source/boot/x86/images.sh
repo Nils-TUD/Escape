@@ -46,6 +46,8 @@ create_mini_cd() {
 	if [ "$3" = "1" ]; then
 		# remove test-files
 		rm -Rf $dir/zeros $dir/home/hrniels/* $dir/home/jon/* $dir/root/*
+		# remove test kernel
+		rm $dir/boot/escape_test
 	fi
 	# strip all binaries. just ignore the error for others
 	find $dir -type f | xargs strip -s 2>/dev/null

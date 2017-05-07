@@ -102,6 +102,17 @@ void *memcpy(void *dest,const void *src,size_t len);
 int memcmp(const void *str1,const void *str2,size_t count);
 
 /**
+ * Searches for <needle> in <haystack> with given lengths.
+ *
+ * @param haystack the memory to search in
+ * @param hslen the length of the haystack
+ * @param needle the memory to search for
+ * @param nlen the length of the needle
+ * @return the pointer to the found needle or NULL if not found
+ */
+void *memmem(const void *haystack,size_t hslen,const void *needle,size_t nlen);
+
+/**
  * Swaps the <n>-byte big values <a> and <b>
  *
  * @param a pointer to the first value

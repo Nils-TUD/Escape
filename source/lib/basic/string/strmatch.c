@@ -22,19 +22,22 @@
 #include <string.h>
 
 bool strmatch(const char *pattern,const char *str) {
-	char *lastStar,*firstStar = strchr(pattern,'*');
+	size_t plen = strlen(pattern);
+	size_t slen = strlen(str);
+
+	const char *firstStar = strchr(pattern,'*');
 	if(firstStar == NULL)
 		return strcmp(pattern,str) == 0;
-	lastStar = strrchr(pattern,'*');
+
 	/* does the beginning match? */
+	const char *lastStar = strrchr(pattern,'*');
 	if(firstStar != pattern) {
 		if(strncmp(str,pattern,firstStar - pattern) != 0)
 			return false;
 	}
+	
 	/* does the end match? */
 	if(lastStar[1] != '\0') {
-		size_t plen = strlen(pattern);
-		size_t slen = strlen(str);
 		size_t cmplen = pattern + plen - lastStar - 1;
 		if(strncmp(lastStar + 1,str + slen - cmplen,cmplen) != 0)
 			return false;
@@ -42,19 +45,19 @@ bool strmatch(const char *pattern,const char *str) {
 
 	/* now check whether the parts between the stars match */
 	str += firstStar - pattern;
+	slen -= firstStar - pattern;
 	while(1) {
 		char *match;
-		char *start = firstStar + 1;
+		const char *start = firstStar + 1;
 		firstStar = strchr(start,'*');
 		if(firstStar == NULL)
 			break;
 
-		*firstStar = '\0';
-		match = strstr(str,start);
-		*firstStar = '*';
+		match = memmem(str,slen,start,firstStar - start);
 		if(match == NULL)
 			return false;
 		str = match + (firstStar - start);
+		slen -= (match - str) + (firstStar - start);
 	}
 	return true;
 }

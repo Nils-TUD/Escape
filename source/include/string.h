@@ -132,9 +132,9 @@ static inline void memclear(void *addr,size_t count) {
 }
 
 /**
- * Copies the values of num bytes from the location pointed by source to the memory block pointed
- * by destination. Copying takes place as if an intermediate buffer was used, allowing the
- * destination and source to overlap.
+ * Copies the values of <count> bytes from the location pointed by <src> to the memory block pointed
+ * by <dest>. Copying takes place as if an intermediate buffer was used, allowing the destination
+ * and source to overlap.
  *
  * @param dest the destination
  * @param src the source

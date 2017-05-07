@@ -68,7 +68,21 @@ static void test_basics(void) {
 	test_assertInt(link("/newdir/file1","/newdir/file2"),0);
 	test_assertInt(stat("/newdir/file1",&info1),0);
 	test_assertInt(stat("/newdir/file2",&info2),0);
-	test_assertInt(memcmp(&info1,&info2,sizeof(struct stat)),0);
+
+	// compare elements individually, because the structs might contain uninitialized padding
+	test_assertUInt(info1.st_atime,info2.st_atime);
+	test_assertUInt(info1.st_mtime,info2.st_mtime);
+	test_assertUInt(info1.st_ctime,info2.st_ctime);
+	test_assertUInt(info1.st_blocks,info2.st_blocks);
+	test_assertUInt(info1.st_blksize,info2.st_blksize);
+	test_assertUInt(info1.st_dev,info2.st_dev);
+	test_assertUInt(info1.st_uid,info2.st_uid);
+	test_assertUInt(info1.st_gid,info2.st_gid);
+	test_assertUInt(info1.st_ino,info2.st_ino);
+	test_assertUInt(info1.st_nlink,info2.st_nlink);
+	test_assertUInt(info1.st_mode,info2.st_mode);
+	test_assertUInt(info1.st_size,info2.st_size);
+
 	test_assertUInt(info1.st_nlink,2);
 	test_assertInt(unlink("/newdir/file1"),0);
 	test_assertInt(rmdir("/newdir"),-ENOTEMPTY);

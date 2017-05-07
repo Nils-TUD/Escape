@@ -32,6 +32,7 @@ static void test_basics(void);
 static void test_perms(void);
 static void test_rename(void);
 static void test_largeFile(void);
+static void test_symlinks(void);
 static void test_assertCan(const char *path,uint mode);
 static void test_assertCanNot(const char *path,uint mode,int err);
 static void fs_createFile(const char *name,const char *content);
@@ -52,6 +53,7 @@ static void test_fs(void) {
 		test_perms();
 		test_rename();
 		test_largeFile();
+		test_symlinks();
 	}
 	else
 		printf("WARNING: Detected readonly filesystem; skipping the test\n\n");
@@ -307,6 +309,62 @@ static void test_largeFile(void) {
 	}
 
 	test_assertInt(unlink("/largefile"),0);
+
+	test_caseSucceeded();
+}
+
+static void test_symlinks(void) {
+	struct stat info1;
+	struct stat info2;
+	test_caseStart("Testing symbolic links");
+
+	/* in ext2 */
+	test_assertInt(symlink("/bin","/newlink"),0);
+	test_assertInt(lstat("/newlink",&info1),0);
+	test_assertTrue(S_ISLNK(info1.st_mode));
+	test_assertInt(stat("/newlink",&info1),0);
+	test_assertInt(stat("/bin",&info2),0);
+	test_assertUInt(info1.st_ino,info2.st_ino);
+	test_assertUInt(info1.st_dev,info2.st_dev);
+	test_assertInt(unlink("/newlink"),0);
+
+	/* ext2 to vfs */
+	test_assertInt(symlink("/sys","/newlink"),0);
+	test_assertInt(lstat("/newlink",&info1),0);
+	test_assertTrue(S_ISLNK(info1.st_mode));
+	test_assertInt(stat("/newlink",&info1),0);
+	test_assertInt(stat("/sys",&info2),0);
+	test_assertUInt(info1.st_ino,info2.st_ino);
+	test_assertUInt(info1.st_dev,info2.st_dev);
+
+	/* symlink to symlink */
+	test_assertInt(symlink("/newlink","/newlink2"),0);
+	test_assertInt(stat("/newlink2",&info1),0);
+	test_assertUInt(info1.st_ino,info2.st_ino);
+	test_assertUInt(info1.st_dev,info2.st_dev);
+	test_assertInt(unlink("/newlink"),0);
+	test_assertInt(stat("/newlink2",&info1),-ENOENT);
+	test_assertInt(lstat("/newlink2",&info1),0);
+	test_assertInt(unlink("/newlink2"),0);
+
+	/* symlink to itself */
+	test_assertInt(symlink("/newlink1","/newlink2"),0);
+	test_assertInt(symlink("/newlink2","/newlink1"),0);
+	test_assertInt(stat("/newlink1",&info1),-ELOOP);
+	test_assertInt(lstat("/newlink1",&info1),0);
+	test_assertTrue(S_ISLNK(info1.st_mode));
+	test_assertInt(lstat("/newlink2",&info1),0);
+	test_assertTrue(S_ISLNK(info1.st_mode));
+	test_assertInt(unlink("/newlink2"),0);
+	test_assertInt(unlink("/newlink1"),0);
+
+	/* relative symlink */
+	test_assertInt(symlink("../..","/bin/newlink"),0);
+	test_assertInt(stat("/bin/newlink",&info1),0);
+	test_assertInt(stat("/",&info2),0);
+	test_assertUInt(info1.st_ino,info2.st_ino);
+	test_assertUInt(info1.st_dev,info2.st_dev);
+	test_assertInt(unlink("/bin/newlink"),0);
 
 	test_caseSucceeded();
 }

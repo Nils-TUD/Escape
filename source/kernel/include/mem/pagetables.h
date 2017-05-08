@@ -165,6 +165,11 @@ public:
 	static void flushAddr(uintptr_t addr,bool wasPresent);
 
 	/**
+	 * Removes the entry for the page table of address <addr> from the TLB.
+	 */
+	static void flushPT(uintptr_t addr);
+
+	/**
 	 * @param addr the virtual address
 	 * @param lvl the level for which you want to have the index
 	 * @return the page table index for the given address in the given level

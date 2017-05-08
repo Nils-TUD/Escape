@@ -111,6 +111,10 @@ inline void PageTables::flushAddr(uintptr_t addr,bool wasPresent) {
 		asm volatile ("invlpg (%0)" : : "r" (addr));
 }
 
+inline void PageTables::flushPT(uintptr_t) {
+	// nothing to do
+}
+
 inline uintptr_t PageDirBase::getPhysAddr() const {
 	const PageDir *pdir = static_cast<const PageDir*>(this);
 	return pdir->pts.getRoot();

@@ -177,6 +177,7 @@ bool PageTables::gc(uintptr_t virt,pte_t pte,int level,uint bits,Allocator &allo
 		/* free that page-table */
 		alloc.freePT(PTE_FRAMENO(pt[idx]));
 		pt[idx] = 0;
+		flushPT(virt);
 	}
 
 	/* for not-top-level page-tables, check if all other entries are empty now as well */

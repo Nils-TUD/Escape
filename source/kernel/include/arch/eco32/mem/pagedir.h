@@ -69,6 +69,12 @@ inline void PageTables::flushAddr(uintptr_t addr,bool) {
 	PageDir::tlbRemove(addr);
 }
 
+inline void PageTables::flushPT(uintptr_t addr) {
+	/* on eco32, we map all PTEs into virtual memory. thus, if we remove PTs, we need to
+ 	 * flush the corresponding address in virtual memory */
+	PageDir::tlbRemove(MAPPED_PTS_START + (addr >> PT_BPL));
+}
+
 inline uintptr_t PageDirBase::getPhysAddr() const {
 	const PageDir *pdir = static_cast<const PageDir*>(this);
 	return pdir->pts.getRoot();

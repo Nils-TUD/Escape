@@ -50,22 +50,6 @@
 #include <string.h>
 #include <errno.h>
 
-class ViewOStream : public OStream {
-public:
-	explicit ViewOStream(Lines *l) : OStream(), lines(l) {
-	}
-
-private:
-	virtual void writec(char c) {
-		if(c == '\n')
-			lines->newLine();
-		else if(c != '\0')
-			lines->append(c);
-	}
-
-	Lines *lines;
-};
-
 typedef void (*view_func)(OStream &os);
 struct View {
 	char name[16];
@@ -137,13 +121,13 @@ int cons_cmd_view(OStream &os,size_t argc,char **argv) {
 	}
 
 	Lines lines;
-	ViewOStream vos(&lines);
+	Lines::OStream los(&lines);
 	_argc = argc;
 	_argv = argv;
 	size_t i;
 	for(i = 0; i < ARRAY_SIZE(views); i++) {
 		if(strcmp(views[i].name,argv[1]) == 0) {
-			views[i].func(vos);
+			views[i].func(los);
 			lines.endLine();
 			break;
 		}

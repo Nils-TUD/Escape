@@ -21,9 +21,26 @@
 
 #include <common.h>
 #include <cppsupport.h>
+#include <ostream.h>
 
 class Lines : public CacheAllocatable {
 public:
+	class OStream : public ::OStream {
+	public:
+		explicit OStream(Lines *l) : ::OStream(), lines(l) {
+		}
+
+	private:
+		virtual void writec(char c) {
+			if(c == '\n')
+				lines->newLine();
+			else if(c != '\0')
+				lines->append(c);
+		}
+
+		Lines *lines;
+	};
+
 	/**
 	 * Creates a new lines-object
 	 */

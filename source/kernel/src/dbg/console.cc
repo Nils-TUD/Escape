@@ -25,6 +25,7 @@
 #include <dbg/cmd/log.h>
 #include <dbg/cmd/ls.h>
 #include <dbg/cmd/mem.h>
+#include <dbg/cmd/node.h>
 #include <dbg/cmd/panic.h>
 #include <dbg/cmd/step.h>
 #include <dbg/cmd/view.h>
@@ -56,6 +57,8 @@ Console::Command Console::commands[] = {
 	{"c",		cont},
 	{"file",	cons_cmd_file},
 	{"f",		cons_cmd_file},
+	{"node",	cons_cmd_node},
+	{"n",		cons_cmd_node},
 	{"dump",	cons_cmd_dump},
 	{"d",		cons_cmd_dump},
 	{"view",	cons_cmd_view},

@@ -27,6 +27,7 @@
 #include <stdarg.h>
 
 class Log : public OStream {
+	static const size_t MAX_LOG_SIZE	= 1024 * 512;
 	static const size_t BUF_SIZE		= 2048;
 
 	class LogFile : public VFSFile {

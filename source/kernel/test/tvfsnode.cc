@@ -34,6 +34,7 @@ static void test_vfsn();
 static void test_vfs_node_resolvePath();
 static bool test_vfs_node_resolvePathCpy(const char *a,const char *b);
 static void test_vfs_node_getPath();
+static void test_vfs_node_file();
 static void test_vfs_node_file_refs();
 static void test_vfs_node_dir_refs();
 static void test_vfs_node_dev_refs();
@@ -47,6 +48,7 @@ sTestModule tModVFSn = {
 static void test_vfsn() {
 	test_vfs_node_resolvePath();
 	test_vfs_node_getPath();
+	test_vfs_node_file();
 	test_vfs_node_file_refs();
 	test_vfs_node_dir_refs();
 	test_vfs_node_dev_refs();
@@ -104,6 +106,49 @@ static void test_vfs_node_getPath() {
 	VFSNode::request("/sys/proc/0",&node,VFS_READ,0);
 	test_assertStr(node->getPath(),(char*)"/sys/proc/0");
 	VFSNode::release(node);
+
+	test_caseSucceeded();
+}
+
+static void test_vfs_node_file() {
+	char buf1[64] = "This is a test!";
+	char buf2[64];
+	Thread *t = Thread::getRunning();
+	pid_t pid = t->getProc()->getPid();
+
+	test_caseStart("Testing VFS files");
+
+	checkMemoryBefore(false);
+	size_t nodesBefore = VFSNode::getNodeCount();
+	{
+		OpenFile *f1,*f2;
+		test_assertInt(VFS::openPath(pid,VFS_READ | VFS_WRITE | VFS_CREATE,0,"/tmp/foobar",NULL,&f1),0);
+
+		test_assertSSize(f1->read(pid,buf1,sizeof(buf1)),0);
+		test_assertSSize(f1->write(pid,buf1,strlen(buf1) + 1),strlen(buf1) + 1);
+		f1->seek(pid,0,SEEK_SET);
+		test_assertSSize(f1->read(pid,buf2,sizeof(buf2)),strlen(buf1) + 1);
+		test_assertStr(buf2,buf1);
+
+		test_assertInt(f1->truncate(pid,8 * 1024 * 1024),0);
+		f1->seek(pid,0,SEEK_SET);
+		test_assertSSize(f1->write(pid,buf1,strlen(buf1) + 1),strlen(buf1) + 1);
+		f1->seek(pid,8 * 1024,SEEK_SET);
+		test_assertSSize(f1->write(pid,buf1,strlen(buf1) + 1),strlen(buf1) + 1);
+		f1->seek(pid,24 * 1024,SEEK_SET);
+		test_assertSSize(f1->write(pid,buf1,strlen(buf1) + 1),strlen(buf1) + 1);
+		f1->seek(pid,512 * 1024,SEEK_SET);
+		test_assertSSize(f1->write(pid,buf1,strlen(buf1) + 1),strlen(buf1) + 1);
+		f1->seek(pid,7 * 1024 * 1024,SEEK_SET);
+		test_assertSSize(f1->write(pid,buf1,strlen(buf1) + 1),strlen(buf1) + 1);
+
+		test_assertInt(VFS::openPath(pid,VFS_WRITE,0,"/tmp",NULL,&f2),0);
+		test_assertInt(f2->unlink(pid,"foobar"),0);
+
+		f1->close(pid);
+	}
+	test_assertSize(nodesBefore,VFSNode::getNodeCount());
+	checkMemoryAfter(false);
 
 	test_caseSucceeded();
 }

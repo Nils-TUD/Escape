@@ -145,7 +145,7 @@ void Boot::createModFiles() {
 
 	for(auto mod = modsBegin(); mod != modsEnd(); ++mod) {
 		char *modname = filename(mod->name);
-		VFSNode *n = createObj<VFSFile>(KERNEL_PID,node,modname,(void*)mod->virt,mod->size);
+		VFSNode *n = createObj<VFSFile>(KERNEL_PID,node,modname,(void*)mod->virt,mod->size,FILE_DEF_MODE);
 		if(!n)
 			Util::panic("Unable to create mbmod-file for '%s'",modname);
 		if(n->chown(KERNEL_PID,ROOT_UID,GROUP_DRIVER) != 0)

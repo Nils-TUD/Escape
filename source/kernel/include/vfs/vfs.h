@@ -31,8 +31,6 @@ class VFS {
 	VFS() = delete;
 
 public:
-	static const size_t MAX_FILE_SIZE 	= 1024 * 1024;
-
 	/**
 	 * Initializes the virtual file system
 	 */

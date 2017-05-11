@@ -31,7 +31,7 @@ class VFSInfo {
 	class className : public VFSFile {																\
 	public:																							\
 		explicit className(pid_t pid,VFSNode *parent,char *name,uint mode,bool &success)			\
-			: VFSFile(pid,parent,name,mode,success) {												\
+			: VFSFile(pid,parent,name,NULL,0,mode,success) {										\
 		}																							\
 		explicit className(pid_t pid,VFSNode *parent,bool &success)									\
 			: className(pid,parent,(char*)(fileName),0444,success) {								\

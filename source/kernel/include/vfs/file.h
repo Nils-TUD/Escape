@@ -21,10 +21,12 @@
 
 #include <vfs/node.h>
 #include <common.h>
+#include <mutex.h>
 
 class VFSFile : public VFSNode {
-	/* the initial size of the write-cache for file-nodes */
-	static const size_t VFS_INITIAL_WRITECACHE		= 128;
+	static const size_t DIRECT_COUNT	= 4;
+	/* limit the doubly indirect entries to limit total file size (16 * 1024 * 4 KiB) */
+	static const size_t DBL_INDIR_COUNT	= 16;
 
 public:
 	/**
@@ -46,9 +48,10 @@ public:
 	 * @param name the name
 	 * @param data the data to make available with that file
 	 * @param len the length of the data in bytes
+	 * @param mode the mode to set
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	explicit VFSFile(pid_t pid,VFSNode *parent,char *name,void *data,size_t len,bool &success);
+	explicit VFSFile(pid_t pid,VFSNode *parent,char *name,void *data,size_t len,uint mode,bool &success);
 
 	/**
 	 * Destructor
@@ -62,7 +65,7 @@ public:
 	 * @param newSize the new size
 	 * @return 0 on success
 	 */
-	int reserve(size_t newSize);
+	int reserve(off_t newSize);
 
 	virtual ssize_t getSize(pid_t pid);
 	virtual off_t seek(pid_t pid,off_t position,off_t offset,uint whence) const;
@@ -70,14 +73,24 @@ public:
 	virtual ssize_t write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,size_t count);
 	virtual int truncate(pid_t pid,off_t length);
 
+	virtual void print(OStream &os) const;
+
 private:
-	int doReserve(size_t newSize);
+	void *getIndirBlock(void ***table,off_t offset,size_t size,bool alloc);
+	void *getBlock(off_t offset,bool alloc);
 
 	bool dynamic;
-	/* size of the buffer */
-	size_t size;
-	/* currently used size */
-	off_t pos;
-	void *data;
+	/* total size */
+	off_t size;
+	union {
+		/* if dynamic is true */
+		struct {
+			void *direct[DIRECT_COUNT];
+			void **indirect;
+			void ***dblindir;
+		};
+		/* and false */
+		void *data;
+	};
 	SpinLock lock;
 };

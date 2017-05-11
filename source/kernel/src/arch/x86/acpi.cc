@@ -212,7 +212,7 @@ void ACPI::createFiles() {
 		if(name) {
 			strncpy(name,(char*)&(*it)->signature,4);
 			VFSNode *node = createObj<VFSFile>(
-				KERNEL_PID,acpidir,name,*it,static_cast<size_t>((*it)->length));
+				KERNEL_PID,acpidir,name,*it,static_cast<size_t>((*it)->length),FILE_DEF_MODE);
 			if(!node) {
 				Log::get().writef("Unable to create ACPI table %s\n",name);
 				Cache::free(name);

@@ -205,7 +205,7 @@ void ProcBase::startKProc(const char *name,void (*func)()) {
 		A_UNREACHED;
 	}
 	else if(res < 0)
-		Util::panic("Unable to start %s",name);
+		Util::panic("Unable to start %s: %s",name,strerror(res));
 }
 
 void ProcBase::getMemUsageOf(pid_t pid,size_t *own,size_t *shared,size_t *swapped) {

@@ -269,8 +269,8 @@ bool PhysMem::reserve(size_t frameCount,bool swap) {
 	/* swapping not possible? */
 	Thread *t = Thread::getRunning();
 	if(!swap || !swapEnabled || !swapperThread || t->getTid() == swapperThread->getTid()) {
-		defLock.up();
 		uframes -= frameCount;
+		defLock.up();
 		return false;
 	}
 

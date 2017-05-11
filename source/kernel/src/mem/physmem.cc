@@ -132,7 +132,15 @@ void PhysMem::init() {
 
 	if(!first)
 		Util::panic("Unable to find an area for the contiguous memory");
+
+	/* map bitmap */
+	size_t bmFrmCnt = BYTES_2_PAGES(BITMAP_PAGE_COUNT / 8);
+	bitmap = (tBitmap*)PageDir::makeAccessible(0,bmFrmCnt);
+	/* mark all free */
+	memclear(bitmap,BITMAP_PAGE_COUNT / 8);
 	bitmapStart = first->addr;
+	freeCont = BITMAP_PAGE_COUNT;
+	/* remove it from phys mem areas */
 	PhysMemAreas::rem(first->addr,first->addr + BITMAP_PAGE_COUNT * PAGE_SIZE);
 
 	/* determine which of the memory areas becomes lower and which upper memory */
@@ -156,12 +164,6 @@ void PhysMem::init() {
 		upper.begin = (frameno_t*)PageDir::makeAccessible(0,upper.pages);
 		upper.frames = upper.begin;
 	}
-
-	/* map bitmap behind it */
-	size_t bmFrmCnt = BYTES_2_PAGES(BITMAP_PAGE_COUNT / 8);
-	bitmap = (tBitmap*)PageDir::makeAccessible(0,bmFrmCnt);
-	/* mark all free */
-	memclear(bitmap,BITMAP_PAGE_COUNT / 8);
 
 	/* now mark the remaining memory as free on stack */
 	for(const PhysMemAreas::MemArea *area = PhysMemAreas::get(); area != NULL; area = area->next)
@@ -546,6 +548,7 @@ void PhysMem::markUsed(frameno_t frame,bool used) {
 		bit = (BITS_PER_BMWORD - 1) - (frame % BITS_PER_BMWORD);
 		if(used) {
 			*bitmapEntry = *bitmapEntry | (1UL << bit);
+			assert(freeCont > 0);
 			freeCont--;
 		}
 		else {

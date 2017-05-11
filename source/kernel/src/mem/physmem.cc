@@ -482,7 +482,7 @@ void PhysMem::print(OStream &os) {
 	os.writef("Swap enabled: %d\n",swapEnabled);
 	os.writef("CFrames: %zu\n",cframes);
 	os.writef("KFrames: %zu\n",kframes);
-	os.writef("UFrames: %zu\n",uframes);
+	os.writef("UFrames: %zu\n",getFreeDef() - (cframes + kframes));
 	os.writef("Swapped out: %zu\n",swappedOut);
 	os.writef("Swapped in: %zu\n",swappedIn);
 	os.writef("\n");

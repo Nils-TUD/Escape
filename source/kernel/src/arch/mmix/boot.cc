@@ -93,7 +93,7 @@ void Boot::parseBootInfo() {
 }
 
 int Boot::init(A_UNUSED IntrptStackFrame *stack) {
-	if(initPhase > 3)
+	if(initPhase > 2)
 		return -EEXIST;
 
 	if(unittests != NULL)
@@ -111,17 +111,11 @@ int Boot::init(A_UNUSED IntrptStackFrame *stack) {
 			break;
 
 		case 1:
-			/* start the swapper-process. it will never return */
-			if(PhysMem::canSwap())
-				Proc::startKProc("[swapper]",&PhysMem::swapper);
-			break;
-
-		case 2:
 			/* and the terminator */
 			Proc::startKProc("[terminator]",&Terminator::start);
 			break;
 
-		case 3: {
+		case 2: {
 			Thread *t = Thread::getRunning();
 			/* we can remove all user regions now */
 			Proc::removeRegions(t->getProc()->getPid(),true);

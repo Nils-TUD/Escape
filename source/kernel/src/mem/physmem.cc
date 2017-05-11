@@ -172,18 +172,6 @@ void PhysMem::init() {
 	/* stack and bitmap is ready */
 	initialized = true;
 
-	/* test whether a swap-device is present */
-	if(Config::getStr(Config::SWAP_DEVICE) != NULL) {
-		/* build freelist */
-		siFreelist = siJobs + 0;
-		siJobs[0].next = NULL;
-		for(size_t i = 1; i < SWAPIN_JOB_COUNT; i++) {
-			siJobs[i].next = siFreelist;
-			siFreelist = siJobs + i;
-		}
-		swapEnabled = true;
-	}
-
 	/* determine kernel-memory-size */
 	size_t free = getFreeDef();
 	cframes = 0;
@@ -407,26 +395,46 @@ int PhysMem::swapIn(uintptr_t addr) {
 
 void PhysMem::swapper() {
 	const char *dev = Config::getStr(Config::SWAP_DEVICE);
+	assert(dev != NULL);
+
+	assert(!swapperThread);
 	swapperThread = Thread::getRunning();
 	pid_t pid = swapperThread->getProc()->getPid();
-	assert(swapEnabled);
 
-	/* open device */
-	OpenFile *swapFile;
-	if(VFS::openPath(pid,VFS_READ | VFS_WRITE,0,dev,NULL,&swapFile) < 0) {
-		Log::get().writef("Unable to open swap-device '%s'\n",dev);
-		swapEnabled = false;
-	}
-	else {
-		/* get device-size and init swap-map */
-		struct stat info;
-		sassert(swapFile->fstat(pid,&info) == 0);
-
-		if(!SwapMap::init(info.st_size)) {
-			swapEnabled = false;
-			swapFile->close(pid);
+	/* open device; give it some tries, because the disk driver needs to create it first */
+	OpenFile *swapFile = NULL;
+	for(int i = 0; i < OPEN_RETRIES; ++i) {
+		int res = VFS::openPath(pid,VFS_READ | VFS_WRITE,0,dev,NULL,&swapFile);
+		if(res == 0)
+			break;
+		if(i == OPEN_RETRIES - 1 || res != -ENOENT) {
+			Log::get().writef("Unable to open swap-device '%s': %s\n",dev,strerror(res));
+			goto error;
 		}
+
+		Timer::sleepFor(swapperThread->getTid(),10,true);
+		Thread::switchAway();
 	}
+
+	/* get device-size and init swap-map */
+	struct stat info;
+	assert(swapFile);
+	sassert(swapFile->fstat(pid,&info) == 0);
+	if(!SwapMap::init(info.st_size)) {
+		Log::get().writef("Unable to init swap map\n");
+		swapFile->close(pid);
+		goto error;
+	}
+
+	/* build freelist */
+	siFreelist = siJobs + 0;
+	siJobs[0].next = NULL;
+	for(size_t i = 1; i < SWAPIN_JOB_COUNT; i++) {
+		siJobs[i].next = siFreelist;
+		siFreelist = siJobs + i;
+	}
+
+	swapEnabled = true;
 
 	/* start main-loop; wait for work */
 	defLock.down();
@@ -472,6 +480,12 @@ void PhysMem::swapper() {
 		}
 	}
 	defLock.up();
+
+error:
+	/* sleep for ever (we can't terminate kernel processes) */
+	Semaphore sem(0);
+	sem.down(false);
+	A_UNREACHED;
 }
 
 void PhysMem::print(OStream &os) {

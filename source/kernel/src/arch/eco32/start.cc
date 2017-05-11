@@ -66,10 +66,7 @@ uintptr_t procstart(uintptr_t *usp) {
 		return info.progEntry;
 	}
 
-	/* start the swapper-process. it will never return */
-	if(PhysMem::canSwap())
-		Proc::startKProc("[swapper]",&PhysMem::swapper);
-	/* and the terminator */
+	/* start the terminator */
 	Proc::startKProc("[terminator]",&Terminator::start);
 
 	thread_idle();

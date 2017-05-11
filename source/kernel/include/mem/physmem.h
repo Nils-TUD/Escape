@@ -64,6 +64,8 @@ class PhysMem {
 	/* the amount of memory at which we should start to set the region-timestamp */
 	static const size_t REG_TS_BEGIN				= 4 * 1024 * PAGE_SIZE;
 
+	static const int OPEN_RETRIES					= 1000;
+
 public:
 	static const frameno_t INVALID_FRAME			= -1;
 
@@ -112,13 +114,6 @@ public:
 	 * @return 0 on success
 	 */
 	static int setAttributes(uintptr_t addr,size_t size,uint attr);
-
-	/**
-	 * @return whether we can swap
-	 */
-	static bool canSwap() {
-		return swapEnabled;
-	}
 
 	/**
 	 * @return the number of bytes used for the mm-stack

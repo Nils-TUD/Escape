@@ -32,6 +32,7 @@
 #include <assert.h>
 #include <boot.h>
 #include <common.h>
+#include <config.h>
 #include <cpu.h>
 #include <spinlock.h>
 #include <util.h>
@@ -92,7 +93,7 @@ uintptr_t smpstart(uintptr_t *usp) {
 	}
 
 	/* start the swapper-process. it will never return */
-	if(PhysMem::canSwap())
+	if(Config::getStr(Config::SWAP_DEVICE) != NULL)
 		Proc::startKProc("[swapper]",&PhysMem::swapper);
 	/* and the terminator */
 	Proc::startKProc("[terminator]",&Terminator::start);

@@ -322,6 +322,11 @@ frameno_t PhysMem::allocate(FrameType type) {
 	else {
 		switch(type) {
 			case CRIT:
+				/* if there are no cframes anymore, take away a few kframes */
+				if(cframes == 0) {
+					cframes += kframes / 2;
+					kframes -= cframes;
+				}
 				if(cframes > 0) {
 					cframes--;
 					frame = allocFrame(false);

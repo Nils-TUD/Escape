@@ -410,8 +410,11 @@ void VirtMem::swapOut(pid_t pid,OpenFile *file,size_t count) {
 			ulong block = SwapMap::alloc();
 			assert(block != SwapMap::INVALID);
 
+			/* get the frame first, because the page has to be present */
+			frameno_t frameNo = vm->getPageDir()->getFrameNo(vmreg->virt() + index * PAGE_SIZE);
+
 #if DEBUG_SWAP
-			Log::get().writef("OUT: %d of region %x (block %d)\n",index,vmreg->reg,block);
+			Log::get().writef("OUT: %d of region %x (frame %#x, block %d)\n",index,vmreg->reg,frameNo,block);
 			for(auto mp = reg->vmbegin(); mp != reg->vmend(); ++mp) {
 				VMRegion *mpreg = (*mp)->regtree.getByReg(reg);
 				Log::get().writef("\tProcess %d:%s -> page %p\n",(*mp)->getProc()->getPid(),
@@ -420,8 +423,6 @@ void VirtMem::swapOut(pid_t pid,OpenFile *file,size_t count) {
 			Log::get().writef("\n");
 #endif
 
-			/* get the frame first, because the page has to be present */
-			frameno_t frameNo = vm->getPageDir()->getFrameNo(vmreg->virt() + index * PAGE_SIZE);
 			/* unmap the page in all processes and ensure that all CPUs have flushed their TLB */
 			/* this way we know that nobody can still access the page; if someone tries, he will
 			 * cause a page-fault and will wait until we release the region-mutex */
@@ -457,16 +458,6 @@ bool VirtMem::swapIn(pid_t pid,OpenFile *file,Thread *t,uintptr_t addr) {
 
 	ulong block = vmreg->reg->getSwapBlock(index);
 
-#if DEBUG_SWAP
-	Log::get().writef("IN: %d of region %x (block %d)\n",index,vmreg->reg,block);
-	for(auto mp = vmreg->reg->vmbegin(); mp != vmreg->reg->vmend(); ++mp) {
-		VMRegion *mpreg = (*mp)->regtree.getByReg(vmreg->reg);
-		Log::get().writef("\tProcess %d:%s -> page %p\n",(*mp)->getProc()->getPid(),
-				(*mp)->getProc()->getProgram(),mpreg->virt() + index * PAGE_SIZE);
-	}
-	Log::get().writef("\n");
-#endif
-
 	/* read into buffer (note that we can use the same for swap-in and swap-out because its both
 	 * done by the swapper-thread) */
 	sassert(file->seek(pid,block * PAGE_SIZE,SEEK_SET) >= 0);
@@ -475,6 +466,16 @@ bool VirtMem::swapIn(pid_t pid,OpenFile *file,Thread *t,uintptr_t addr) {
 	/* copy into a new frame */
 	frameno_t frame = t->getFrame();
 	PageDir::copyToFrame(frame,buffer);
+
+#if DEBUG_SWAP
+	Log::get().writef("IN: %d of region %x (frame %#x, block %d)\n",index,vmreg->reg,frame,block);
+	for(auto mp = vmreg->reg->vmbegin(); mp != vmreg->reg->vmend(); ++mp) {
+		VMRegion *mpreg = (*mp)->regtree.getByReg(vmreg->reg);
+		Log::get().writef("\tProcess %d:%s -> page %p\n",(*mp)->getProc()->getPid(),
+				(*mp)->getProc()->getProgram(),mpreg->virt() + index * PAGE_SIZE);
+	}
+	Log::get().writef("\n");
+#endif
 
 	/* mark as not-swapped and map into all affected processes */
 	setSwappedIn(vmreg->reg,index,frame);

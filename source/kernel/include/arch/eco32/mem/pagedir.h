@@ -127,7 +127,10 @@ inline int PageDirBase::clone(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst,s
 
 inline int PageDirBase::map(uintptr_t virt,size_t count,PageTables::Allocator &alloc,uint flags) {
 	PageDir *pdir = static_cast<PageDir*>(this);
-	return pdir->pts.map(virt,count,alloc,flags);
+	int res = pdir->pts.map(virt,count,alloc,flags);
+	if(res < 0)
+		return res;
+	return 0;
 }
 
 inline void PageDirBase::unmap(uintptr_t virt,size_t count,PageTables::Allocator &alloc) {

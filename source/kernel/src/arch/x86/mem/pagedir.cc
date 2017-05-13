@@ -143,9 +143,11 @@ int PageDirBase::clone(PageDir *dst,uintptr_t virtSrc,uintptr_t virtDst,size_t c
 int PageDirBase::map(uintptr_t virt,size_t count,PageTables::Allocator &alloc,uint flags) {
 	PageDir *pdir = static_cast<PageDir*>(this);
 	int res = pdir->pts.map(virt,count,alloc,flags);
+	if(res < 0)
+		return res;
 	if(res == 1)
 		SMP::flushTLB(pdir);
-	return res;
+	return 0;
 }
 
 void PageDirBase::unmap(uintptr_t virt,size_t count,PageTables::Allocator &alloc) {

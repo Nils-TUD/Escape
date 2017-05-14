@@ -222,14 +222,6 @@ void *malloc(size_t size);
 void *realloc(void *addr,size_t size);
 
 /**
- * Checks whether <ptr> resides on the heap.
- *
- * @param ptr the pointer to your object
- * @return true if <ptr> is on the heap
- */
-bool isOnHeap(const void *ptr);
-
-/**
  * Note that the heap does increase the data-pages of the process as soon as it's required and
  * does not decrease them. So the free-space may increase during runtime!
  *

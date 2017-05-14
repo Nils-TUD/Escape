@@ -39,6 +39,12 @@
 #define GUARD_MAGIC				0xDEADBEEF
 #define FREE_MAGIC				0xFEEEFEEE
 
+#define MIN_MMAP_SIZE			(16 * PAGE_SIZE)
+#define MAX_MMAP_SIZE			(8192 * PAGE_SIZE)
+
+#define MIN_AREA_SIZE			PAGE_SIZE
+#define MAX_AREA_SIZE			(64 * PAGE_SIZE)
+
 /* an area in memory */
 typedef struct sMemArea sMemArea;
 struct sMemArea {
@@ -51,26 +57,28 @@ void initHeap(void);
 
 /**
  * Allocates a new page for areas
- *
- * @return true on success
  */
 static bool loadNewAreas(void);
 
 /**
  * Allocates new space for alloation
- *
- * @param size the minimum size
- * @return true on success
  */
 static bool loadNewSpace(size_t size);
+
+/**
+ * Adds memory areas from given memory.
+ */
+static void initAreas(void *addr,size_t size);
 
 /* a linked list of free and usable areas. That means the areas have an address and size */
 static sMemArea *usableList = NULL;
 /* a linked list of free but not usable areas. That means the areas have no address and size */
 static sMemArea *freeList = NULL;
 /* total number of pages we're using */
-static uintptr_t heapstart = 0;
 static size_t pageCount = 0;
+/* current allocation sizes */
+static size_t nextSize = MIN_MMAP_SIZE;
+static size_t nextAreaSize = MIN_AREA_SIZE;
 
 /* the lock for the heap */
 static tUserSem heapSem;
@@ -374,57 +382,50 @@ void *realloc(void *addr,size_t size) {
 }
 
 static bool loadNewSpace(size_t size) {
-	void *oldEnd;
-	size_t count;
-	sMemArea *area;
+	size_t orgsize = size;
+	size = MAX(nextSize,size);
+	if(nextSize < MAX_MMAP_SIZE)
+		nextSize *= 2;
 
-	/* no free areas? */
-	if(freeList == NULL) {
-		if(!loadNewAreas())
-			return false;
-	}
-
+	size = ROUND_UP(size,PAGE_SIZE);
+	/* if we need new areas, allocate a page more */
+	if(freeList == NULL)
+		size += nextAreaSize;
 	/* check for overflow */
-	if(size + PAGE_SIZE < PAGE_SIZE)
+	if(size < orgsize)
 		return false;
 
 	/* allocate the required pages */
-	count = (size + PAGE_SIZE - 1) / PAGE_SIZE;
-	oldEnd = chgsize(count);
-	if(oldEnd == NULL)
+	void *res = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_PRIVATE,-1,0);
+	if(res == NULL)
 		return false;
 
-	if(pageCount == 0)
-		heapstart = (uintptr_t)oldEnd;
+	pageCount += size / PAGE_SIZE;
 
-	pageCount += count;
+	if(freeList == NULL) {
+		initAreas(res,nextAreaSize);
+
+		res = (void*)((char*)res + nextAreaSize);
+		size -= nextAreaSize;
+
+		if(nextAreaSize < MAX_AREA_SIZE)
+			nextAreaSize *= 2;
+	}
+
 	/* take one area from the freelist and put the memory in it */
-	area = freeList;
+	sMemArea *area = freeList;
 	freeList = freeList->next;
-	area->address = oldEnd;
-	area->size = PAGE_SIZE * count;
+	area->address = res;
+	area->size = size;
 	/* put area in the usable-list */
 	area->next = usableList;
 	usableList = area;
 	return true;
 }
 
-static bool loadNewAreas(void) {
-	sMemArea *area,*end;
-	void *oldEnd;
-
-	/* allocate one page for area-structs */
-	oldEnd = chgsize(1);
-	if(oldEnd == NULL)
-		return false;
-
-	if(pageCount == 0)
-		heapstart = (uintptr_t)oldEnd;
-
-	/* determine start- and end-address */
-	pageCount++;
-	area = (sMemArea*)oldEnd;
-	end = area + (PAGE_SIZE / sizeof(sMemArea));
+static void initAreas(void *addr,size_t size) {
+	sMemArea *area = (sMemArea*)addr;
+	sMemArea *end = area + (size / sizeof(sMemArea));
 
 	/* put all areas in the freelist */
 	freeList = area;
@@ -435,12 +436,22 @@ static bool loadNewAreas(void) {
 		freeList = area;
 		area++;
 	}
-
-	return true;
 }
 
-bool isOnHeap(const void *ptr) {
-	return (uintptr_t)ptr >= heapstart && (uintptr_t)ptr < heapstart + pageCount * PAGE_SIZE;
+static bool loadNewAreas(void) {
+	size_t size = MAX(nextAreaSize,PAGE_SIZE);
+	if(nextAreaSize < MAX_AREA_SIZE)
+		nextAreaSize *= 2;
+
+	/* allocate one page for area-structs */
+	void *res = mmap(NULL,size,0,PROT_READ | PROT_WRITE,MAP_PRIVATE,-1,0);
+	if(res == NULL)
+		return false;
+
+	pageCount += size / PAGE_SIZE;
+
+	initAreas(res,size);
+	return true;
 }
 
 size_t heapspace(void) {

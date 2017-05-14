@@ -222,7 +222,7 @@ void Interrupts::exProtFault(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 		Util::panic("proc %d: %s for address %p @ %p\n",pid,intrptList[irqNo].name,pfaddr,sregs->rww);
 	}
 #endif
-	Signals::addSignalFor(Thread::getRunning(),SIGSEGV);
+	Signals::addSignalFor(t,SIGSEGV);
 }
 
 void Interrupts::irqKB(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {

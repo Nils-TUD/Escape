@@ -217,11 +217,12 @@ void Interrupts::exProtFault(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 	Log::get().writef("proc %d: %s for address %p @ %p\n",pid,intrptList[irqNo].name,pfaddr,sregs->rww);
 	Log::get().writef("Unable to resolve because: %s (%d)\n",strerror(res),res);
 #if PANIC_ON_PAGEFAULT
-	Util::setpf(pfaddr,sregs->rww);
-	Util::panic("proc %d: %s for address %p @ %p\n",pid,intrptList[irqNo].name,pfaddr,sregs->rww);
-#else
-	Signals::addSignalFor(Thread::getRunning(),SIGSEGV);
+	if(res != -ENOMEM) {
+		Util::setpf(pfaddr,sregs->rww);
+		Util::panic("proc %d: %s for address %p @ %p\n",pid,intrptList[irqNo].name,pfaddr,sregs->rww);
+	}
 #endif
+	Signals::addSignalFor(Thread::getRunning(),SIGSEGV);
 }
 
 void Interrupts::irqKB(A_UNUSED IntrptStackFrame *stack,A_UNUSED int irqNo) {

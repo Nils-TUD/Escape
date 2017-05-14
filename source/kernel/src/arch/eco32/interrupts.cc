@@ -163,11 +163,12 @@ void Interrupts::exPageFault(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	Log::get().writef("proc %d, page fault for address %p @ %p\n",pid,pfaddr,stack->r[30]);
 	Log::get().writef("Unable to resolve because: %s (%d)\n",strerror(res),res);
 #if PANIC_ON_PAGEFAULT
-	Util::setpf(pfaddr,stack->r[30]);
-	Util::panic("proc %d: page fault for address %p @ %p\n",pid,pfaddr,stack->r[30]);
-#else
-	Signals::addSignalFor(t,SIGSEGV);
+	if(res != -ENOMEM) {
+		Util::setpf(pfaddr,stack->r[30]);
+		Util::panic("proc %d: page fault for address %p @ %p\n",pid,pfaddr,stack->r[30]);
+	}
 #endif
+	Signals::addSignalFor(t,SIGSEGV);
 }
 
 void Interrupts::irqTimer(Thread *t,IntrptStackFrame *stack) {

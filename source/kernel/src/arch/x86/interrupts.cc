@@ -302,11 +302,12 @@ void Interrupts::exPF(Thread *t,IntrptStackFrame *stack) {
 	printPFInfo(Log::get(),t,stack,addr);
 	Log::get().writef("Unable to resolve because: %s (%d)\n",strerror(res),res);
 #if PANIC_ON_PAGEFAULT
-	Util::setpf(addr,stack->getIP());
-	Util::panic("Process segfaulted");
-#else
-	Signals::addSignalFor(t,SIGSEGV);
+	if(res != -ENOMEM) {
+		Util::setpf(addr,stack->getIP());
+		Util::panic("Process segfaulted");
+	}
 #endif
+	Signals::addSignalFor(t,SIGSEGV);
 }
 
 void Interrupts::irqTimer(A_UNUSED Thread *t,IntrptStackFrame *stack) {

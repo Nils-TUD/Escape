@@ -162,7 +162,7 @@ bool Interrupts::dynTrap(IntrptStackFrame *stack,int irqNo) {
 
 	/* only handle signals, if we come directly from user-mode */
 	t = Thread::getRunning();
-	if((t->getFlags() & T_IDLE) || t->getIntrptLevel() == 0) {
+	if((t->getFlags() & T_IDLE) || t->getIntrptLevel() == 1) {
 		if(t->haveHigherPrio())
 			Thread::switchAway();
 		if(t->hasSignal())
@@ -206,7 +206,7 @@ void Interrupts::exProtFault(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 
 	/* pagefault in kernel? */
 	Thread *t = Thread::getRunning();
-	if(t->getIntrptLevel() > 0) {
+	if(t->getIntrptLevel() > 1) {
 		/* skip that instruction */
 		KSpecRegs *sregs = t->getSpecRegs();
 		sregs->rxx = 1UL << 63;

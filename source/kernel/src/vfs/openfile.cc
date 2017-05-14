@@ -261,6 +261,8 @@ int OpenFile::createdev(pid_t pid,const char *name,mode_t mode,uint type,uint op
 int OpenFile::createchan(pid_t pid,uint perm,OpenFile **chan) {
 	if(!IS_DEVICE(node->getMode()))
 		return -ENOTSUP;
+	if(!(flags & VFS_DEVICE))
+		return -EPERM;
 
 	/* create new channel */
 	VFSChannel *chnode = createObj<VFSChannel>(pid,node);

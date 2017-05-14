@@ -30,8 +30,10 @@
 
 /* forward declarations */
 static void test_proc();
+#ifndef __mmix__
 static void test_proc_clone();
 static void test_thread();
+#endif
 
 /* our test-module */
 sTestModule tModProc = {
@@ -48,6 +50,7 @@ static void test_proc() {
 #endif
 }
 
+#ifndef __mmix__
 /**
  * Stores the current page-count and free frames and starts a test-case
  */
@@ -106,3 +109,4 @@ static void test_thread() {
 
 	test_caseSucceeded();
 }
+#endif

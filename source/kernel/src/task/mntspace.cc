@@ -179,8 +179,14 @@ int MntSpace::remount(Proc *p,const char *path,OpenFile *dir,uint flags) {
 	OpenFile *nfile;
 	OpenFile *old = match->getData();
 	const uint rwx = VFS_READ | VFS_WRITE | VFS_EXEC;
-	if((flags & rwx) != (old->getFlags() & rwx)) {
-		flags = (old->getFlags() & ~rwx) | (flags & rwx);
+	const uint oldrwx = old->getFlags() & rwx;
+	const uint newrwx = flags & rwx;
+	/* only downgrades are possible */
+	if(~oldrwx & newrwx)
+		return -EACCES;
+
+	if(newrwx != oldrwx) {
+		flags = (old->getFlags() & ~rwx) | newrwx;
 		int res = OpenFile::getFree(p->getPid(),flags,flags,old->getNodeNo(),old->getDev(),
 			old->getNode(),&nfile,true);
 		if(res < 0)

@@ -76,14 +76,6 @@ void ProcessManager::restart(pid_t pid) {
 		p->load();
 }
 
-void ProcessManager::setAlive(pid_t pid) {
-	Process *p = getByPid(pid);
-	if(p) {
-		p->setAlive();
-		esc::sout << "Process " << pid << " is alive and promised to terminate ASAP" << esc::endl;
-	}
-}
-
 void ProcessManager::died(pid_t pid) {
 	Process *p = getByPid(pid);
 	if(p) {
@@ -125,7 +117,7 @@ void ProcessManager::finalize(int task) {
 	addRunning();
 	for(auto  it = _procs.rbegin(); it != _procs.rend(); ++it) {
 		Process *p = *it;
-		if(!p->isAlive() && !p->isDead() && p->isKillable()) {
+		if(!p->isDead() && p->isKillable()) {
 			esc::sout << "Sending SIGKILL to " << p->pid() << esc::endl;
 			if(kill(p->pid(),SIGKILL) < 0)
 				printe("Unable to send the kill-signal to %d",p->pid());

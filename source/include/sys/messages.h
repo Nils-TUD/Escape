@@ -105,11 +105,9 @@ enum {
 	MSG_PCI_HAS_CAP					= 906,	/* checks if a given capability exists for a given device */
 	MSG_PCI_ENABLE_MSIS				= 907,	/* enables MSIs for a given device */
 
-	/* init */
-	MSG_INIT_REBOOT					= 1000,	/* requests a reboot */
-	MSG_INIT_SHUTDOWN				= 1001,	/* requests a shutdown */
-	MSG_INIT_IAMALIVE				= 1002,	/* tells init that the shutdown-request has been received
-										 	 * and that you promise to terminate as soon as possible */
+	/* power */
+	MSG_POWER_REBOOT				= 1000,	/* requests a reboot */
+	MSG_POWER_SHUTDOWN				= 1001,	/* requests a shutdown */
 
 	/* NIC */
 	MSG_NIC_GETMAC					= 1100,	/* get the MAC address of a NIC */

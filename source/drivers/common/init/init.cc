@@ -34,7 +34,7 @@
 #include "process/processmanager.h"
 #include "process/uimanager.h"
 
-class InitDevice;
+class PowerDevice;
 
 enum {
 	STATE_RUN,
@@ -52,19 +52,18 @@ static std::mutex mutex;
 static ProcessManager pm;
 static UIManager uim;
 static int state = STATE_RUN;
-static InitDevice *dev;
+static PowerDevice *dev;
 
 static const char *uitypes[] = {
 	"/etc/init/tui",
 	"/etc/init/gui",
 };
 
-class InitDevice : public esc::Device {
+class PowerDevice : public esc::Device {
 public:
-	explicit InitDevice(const char *path,mode_t mode) : esc::Device(path,mode,DEV_TYPE_SERVICE,0) {
-		set(MSG_INIT_REBOOT,std::make_memfun(this,&InitDevice::reboot),false);
-		set(MSG_INIT_SHUTDOWN,std::make_memfun(this,&InitDevice::shutdown),false);
-		set(MSG_INIT_IAMALIVE,std::make_memfun(this,&InitDevice::iamalive),false);
+	explicit PowerDevice(const char *path,mode_t mode) : esc::Device(path,mode,DEV_TYPE_SERVICE,0) {
+		set(MSG_POWER_REBOOT,std::make_memfun(this,&PowerDevice::reboot),false);
+		set(MSG_POWER_SHUTDOWN,std::make_memfun(this,&PowerDevice::shutdown),false);
 	}
 
 	void reboot(esc::IPCStream &) {
@@ -85,15 +84,6 @@ public:
 				printe("Unable to set alarm");
 			pm.shutdown();
 		}
-	}
-
-	void iamalive(esc::IPCStream &is) {
-		pid_t pid;
-		is >> pid;
-
-		std::lock_guard<std::mutex> guard(mutex);
-		if(state != STATE_RUN)
-			pm.setAlive(pid);
 	}
 };
 
@@ -182,11 +172,14 @@ static int driverThread(A_UNUSED void *arg) {
 		exitmsg("Unable to set alarm-handler");
 
 	try {
-		dev = new InitDevice("/dev/init",0111);
+		dev = new PowerDevice("/dev/power",0110);
+		int gid = usergroup_nameToId(GROUPS_PATH,"power");
+		if(fchown(dev->id(),-1,gid) < 0)
+			error("Unable to chown power device");
 		dev->loop();
 	}
 	catch(const std::exception &e) {
-		errmsg("Handling init device failed: " << e.what());
+		errmsg("Handling power device failed: " << e.what());
 	}
 
 	std::lock_guard<std::mutex> guard(mutex);

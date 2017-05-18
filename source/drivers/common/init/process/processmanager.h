@@ -43,7 +43,6 @@ public:
 	void start();
 	void restart(pid_t pid);
 	void shutdown();
-	void setAlive(pid_t pid);
 	void died(pid_t pid);
 	void finalize(int task);
 

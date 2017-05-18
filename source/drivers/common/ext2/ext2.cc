@@ -46,9 +46,6 @@
 static fs::FSDevice<fs::OpenFile> *fsdev;
 
 static void sigTermHndl(int) {
-	/* notify init that we're alive and promise to terminate as soon as possible */
-	esc::Init init("/dev/init");
-	init.iamalive();
 	fsdev->stop();
 }
 

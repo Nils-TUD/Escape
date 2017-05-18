@@ -33,20 +33,14 @@ static inline void replace_var(std::string &s,const std::string &var,const std::
 class Process {
 public:
 	Process(int id = 0,bool killable = true)
-		: _pid(id), _alive(), _dead(), _killable(killable), _name(), _args() {
+		: _pid(id), _dead(), _killable(killable), _name(), _args() {
 	}
 	Process(const std::string& procName)
-		: _pid(), _alive(), _dead(), _killable(true), _name(procName), _args() {
+		: _pid(), _dead(), _killable(true), _name(procName), _args() {
 	}
 	virtual ~Process() {
 	}
 
-	bool isAlive() const {
-		return _alive;
-	}
-	void setAlive() {
-		_alive = true;
-	}
 	bool isDead() const {
 		return _dead;
 	}
@@ -83,7 +77,6 @@ public:
 
 protected:
 	int _pid;
-	bool _alive;
 	bool _dead;
 	bool _killable;
 	std::string _name;

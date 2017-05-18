@@ -21,7 +21,6 @@
 
 #include <esc/ipc/clientdevice.h>
 #include <esc/proto/fs.h>
-#include <esc/proto/init.h>
 #include <fs/common.h>
 #include <sys/common.h>
 #include <sys/stat.h>

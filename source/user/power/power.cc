@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <esc/proto/init.h>
+#include <esc/proto/power.h>
 #include <esc/stream/std.h>
 #include <getopt.h>
 #include <stdlib.h>
@@ -31,11 +31,11 @@ int main(int argc,char *argv[]) {
 	if(argc < 2 || getopt_ishelp(argc,argv))
 		usage(argv[0]);
 
-	esc::Init init("/dev/init");
+	esc::Power power("/dev/power");
 	if(strcmp(argv[1],"-r") == 0)
-		init.reboot();
+		power.reboot();
 	else if(strcmp(argv[1],"-s") == 0)
-		init.shutdown();
+		power.shutdown();
 	else
 		usage(argv[0]);
 	return EXIT_SUCCESS;

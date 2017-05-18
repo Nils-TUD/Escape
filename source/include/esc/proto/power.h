@@ -27,9 +27,9 @@
 namespace esc {
 
 /**
- * The IPC-interface for the init device. Allows you to reboot, shutdown etc..
+ * The IPC-interface for the power device. Allows you to reboot, shutdown etc..
  */
-class Init {
+class Power {
 public:
 	/**
 	 * Opens the given device
@@ -37,14 +37,14 @@ public:
 	 * @param path the path to the device
 	 * @throws if the operation failed
 	 */
-	explicit Init(const char *path) : _is(path) {
+	explicit Power(const char *path) : _is(path) {
 	}
 
 	/**
 	 * No copying
 	 */
-	Init(const Init&) = delete;
-	Init &operator=(const Init&) = delete;
+	Power(const Power&) = delete;
+	Power &operator=(const Power&) = delete;
 
 	/**
 	 * Reboots the machine
@@ -52,7 +52,7 @@ public:
 	 * @throws if the operation failed
 	 */
 	void reboot() {
-		_is << Send(MSG_INIT_REBOOT);
+		_is << Send(MSG_POWER_REBOOT);
 	}
 
 	/**
@@ -61,18 +61,7 @@ public:
 	 * @throws if the operation failed
 	 */
 	void shutdown() {
-		_is << Send(MSG_INIT_SHUTDOWN);
-	}
-
-	/**
-	 * Sends the I-am-alive signal to init, so that it gives you more time to terminate on reboot/
-	 * shutdown.
-	 *
-	 * @throws if the operation failed
-	 */
-	void iamalive() {
-		pid_t pid = getpid();
-		_is << pid << Send(MSG_INIT_IAMALIVE);
+		_is << Send(MSG_POWER_SHUTDOWN);
 	}
 
 private:

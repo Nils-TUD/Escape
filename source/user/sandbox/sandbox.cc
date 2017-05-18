@@ -63,7 +63,7 @@ static uint perms(const char *perms) {
 	return p;
 }
 
-static void remount(std::vector<std::string> &mounts) {
+static void remount(std::vector<std::string> &mounts,bool alone) {
 	int ms = -1;
 
 	char path[MAX_PATH_LEN];
@@ -84,8 +84,8 @@ static void remount(std::vector<std::string> &mounts) {
 		if(canonpath(path,sizeof(path),os.str().c_str()) < 0)
 			error("canonpath for '%s' failed",os.str().c_str());
 		mounts.push_back(std::string(path) + ":rw");
-		/* but everything else readonly */
-		mounts.push_back("/sys/proc:r");
+		/* but everything else readonly / invisible */
+		mounts.push_back(std::string("/sys/proc:") + (alone ? "x" : "r"));
 	}
 
 	/* make the hierarchy below our mountspace writable */
@@ -121,7 +121,8 @@ static void remount(std::vector<std::string> &mounts) {
 }
 
 static void usage(const char *name) {
-	serr << "Usage: " << name << " [-L] [-l <group>] [-m <path>:<perms>] <program> [<arg>...]\n";
+	serr << "Usage: " << name << " [-a] [-L] [-l <group>] [-m <path>:<perms>] <program> [<arg>...]\n";
+	serr << "  -a:                hide other processes, so that the sandbox is `alone'.\n";
 	serr << "  -L:                leave all groups\n";
 	serr << "  -l <group>:        leave given group\n";
 	serr << "  -m <path>:<perms>: remount <path> and reduce permissions to <perms> (rwx)\n";
@@ -129,14 +130,16 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char **argv) {
+	bool alone = false;
 	bool leaveAll = false;
 	std::vector<std::string> leaveGroups;
 	std::vector<std::string> mounts;
 
 	// parse args
 	int opt;
-	while((opt = getopt(argc,argv,"Ll:m:")) != -1) {
+	while((opt = getopt(argc,argv,"aLl:m:")) != -1) {
 		switch(opt) {
+			case 'a': alone = true; break;
 			case 'L': leaveAll = true; break;
 			case 'l': leaveGroups.push_back(optarg); break;
 			case 'm': mounts.push_back(optarg); break;
@@ -150,7 +153,7 @@ int main(int argc,char **argv) {
 	int pid;
 	if((pid = fork()) == 0) {
 		// remounts
-		remount(mounts);
+		remount(mounts,alone);
 
 		// leave groups
 		int res = 0;

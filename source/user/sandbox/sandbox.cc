@@ -18,6 +18,8 @@
  */
 
 #include <esc/stream/std.h>
+#include <esc/env.h>
+#include <sys/conf.h>
 #include <sys/mount.h>
 #include <sys/proc.h>
 #include <sys/stat.h>
@@ -152,6 +154,20 @@ int main(int argc,char **argv) {
 
 	int pid;
 	if((pid = fork()) == 0) {
+		// the sandboxed process shouldn't share stdin, stdout and stderr with us.
+		const std::string &term = env::get("TERM");
+		int maxfds = sysconf(CONF_MAX_FDS);
+		for(int i = 0; i < maxfds; ++i) {
+			if(i != 3)
+				close(i);
+		}
+		if(open(term.c_str(),O_RDONLY | O_MSGS) != STDIN_FILENO)
+			error("Unable to reopen '%s' for stdin",term.c_str());
+		if(open(term.c_str(),O_WRONLY | O_MSGS) != STDOUT_FILENO)
+			error("Unable to reopen '%s' for stdout",term.c_str());
+		if(dup(STDOUT_FILENO) != STDERR_FILENO)
+			error("Unable to duplicate stdout to stderr");
+
 		// remounts
 		remount(mounts,alone);
 

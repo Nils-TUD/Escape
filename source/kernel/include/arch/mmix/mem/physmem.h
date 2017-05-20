@@ -42,6 +42,6 @@
  * 0xFFFFFFFFFFFFFFFF: +-----------------------------------+
  */
 
-#define PHYS_BITS				64
+#define PHYS_MEM_END			0xFFFFFFFFFFFFFFFF
 
 #define BITMAP_PAGE_COUNT		((6 * 1024 * 1024) / PAGE_SIZE)

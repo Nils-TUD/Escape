@@ -100,16 +100,15 @@ void PhysMem::init() {
 	for(size_t i = 0; i < info->mmapCount; ++i) {
 		if(info->mmap[i].type == Boot::MemMap::MEM_AVAILABLE) {
 			/* take care that we don't add memory that we can't access */
-			if(info->mmap[i].baseAddr > (1ULL << PHYS_BITS) - 1) {
+			if(info->mmap[i].baseAddr > PHYS_MEM_END) {
 				Log::get().writef("Skipping unaddressable memory: %#Lx .. %#Lx\n",
 					info->mmap[i].baseAddr,info->mmap[i].baseAddr + info->mmap[i].size);
 				continue;
 			}
 			uint64_t end = info->mmap[i].baseAddr + info->mmap[i].size;
-			if(end >= (1ULL << PHYS_BITS) - 1) {
-				Log::get().writef("Skipping unaddressable memory: %#Lx .. %#Lx\n",
-					(1ULL << PHYS_BITS) - 1,end);
-				end = (1ULL << PHYS_BITS) - 1;
+			if(end >= PHYS_MEM_END) {
+				Log::get().writef("Skipping unaddressable memory: %#Lx .. %#Lx\n",PHYS_MEM_END,end);
+				end = PHYS_MEM_END;
 			}
 			PhysMemAreas::add((uintptr_t)info->mmap[i].baseAddr,end);
 		}

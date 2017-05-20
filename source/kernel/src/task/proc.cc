@@ -133,11 +133,11 @@ void ProcBase::init() {
 	/* create nodes in vfs */
 	p->threadsDir = VFS::createProcess(p->pid);
 	if(p->threadsDir < 0)
-		Util::panic("Not enough mem for init process");
+		Util::panic("Unable to create VFS entries for init process");
 
 	/* init fds */
 	if(FileDesc::init(p) < 0)
-		Util::panic("Not enough mem to init file-descriptors of init-process");
+		Util::panic("Unable to init file-descriptors of init-process");
 
 	/* create first thread */
 	if(!p->threads.append(Thread::init(p)))

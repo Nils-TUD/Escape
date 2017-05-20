@@ -32,6 +32,13 @@
 
 using namespace esc;
 
+enum {
+	FL_ALONE	= 1,
+	FL_LEAVEALL	= 2,
+};
+
+static uint flags;
+
 static int leave(const std::vector<std::string> &groups) {
 	// get current groups
 	size_t count = getgroups(0,NULL);
@@ -65,7 +72,7 @@ static uint perms(const char *perms) {
 	return p;
 }
 
-static void remount(std::vector<std::string> &mounts,bool alone) {
+static void remount(std::vector<std::string> &mounts) {
 	int ms = -1;
 
 	char path[MAX_PATH_LEN];
@@ -87,7 +94,7 @@ static void remount(std::vector<std::string> &mounts,bool alone) {
 			error("canonpath for '%s' failed",os.str().c_str());
 		mounts.push_back(std::string(path) + ":rw");
 		/* but everything else readonly / invisible */
-		mounts.push_back(std::string("/sys/proc:") + (alone ? "x" : "r"));
+		mounts.push_back(std::string("/sys/proc:") + ((flags & FL_ALONE) ? "x" : "r"));
 	}
 
 	/* make the hierarchy below our mountspace writable */
@@ -132,8 +139,6 @@ static void usage(const char *name) {
 }
 
 int main(int argc,char **argv) {
-	bool alone = false;
-	bool leaveAll = false;
 	std::vector<std::string> leaveGroups;
 	std::vector<std::string> mounts;
 
@@ -141,8 +146,8 @@ int main(int argc,char **argv) {
 	int opt;
 	while((opt = getopt(argc,argv,"aLl:m:")) != -1) {
 		switch(opt) {
-			case 'a': alone = true; break;
-			case 'L': leaveAll = true; break;
+			case 'a': flags |= FL_ALONE; break;
+			case 'L': flags |= FL_LEAVEALL; break;
 			case 'l': leaveGroups.push_back(optarg); break;
 			case 'm': mounts.push_back(optarg); break;
 			default:
@@ -169,11 +174,11 @@ int main(int argc,char **argv) {
 			error("Unable to duplicate stdout to stderr");
 
 		// remounts
-		remount(mounts,alone);
+		remount(mounts);
 
 		// leave groups
 		int res = 0;
-		if(leaveAll)
+		if(flags & FL_LEAVEALL)
 			res = setgroups(0,NULL);
 		else if(!leaveGroups.empty())
 			res = leave(leaveGroups);

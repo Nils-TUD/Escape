@@ -122,17 +122,6 @@ static inline int setgroups(size_t size,const gid_t *list) {
 }
 
 /**
- * Checks whether the process <pid> is in the group <gid>.
- *
- * @param pid the process-id
- * @param gid the group-id
- * @return 1 if so, 0 if not, negative if an error occurred
- */
-static inline int isingroup(pid_t pid,gid_t gid) {
-	return syscall2(SYSCALL_ISINGROUP,pid,gid);
-}
-
-/**
  * Clones the current process
  *
  * @return new pid for parent, 0 for child, < 0 if failed

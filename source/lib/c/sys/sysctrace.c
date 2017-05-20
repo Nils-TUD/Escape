@@ -101,16 +101,15 @@ const struct Syscall syscalls[] = {
 	{"chown",    		"%d,%d,%d"					},
 	{"getgroups",    	"%x,%p"						},
 	{"setgroups",    	"%x,%p"						},
-	{"isingroup",    	"%d,%d"						},
 	{"alarm",    		"%u",						},
 	{"tsctotime",    	"%u"						},
 	{"semcrt",			"%u"						},
 	{"semop",			"%d,%d"						},
 	{"semdestr",		"%d"						},
 	{"sendrecv",		"%d,%p,%p,%x"				},
+	{"cancel",			"%d,%u"						},
 
 	/* 60 */
-	{"cancel",			"%d,%u"						},
 	{"createchan",		"%d,%O"						},
 	{"delegate",        "%d,%d,%O,%d",				},
 	{"obtain",          "%d,%d",					},
@@ -120,9 +119,9 @@ const struct Syscall syscalls[] = {
 	{"mlock",			"%p,%x"						},
 	{"mlockall",		""							},
 	{"semcrtirq",		"%d,%s,%p,%p"				},
+	{"bindto",			"%d,%d"						},
 
 	/* 70 */
-	{"bindto",			"%d,%d"						},
 	{"rename",			"%d,%s,%d,%s"				},
 	{"gettimeofday",	"%p"						},
 	{"utime",			"%d,%p"						},

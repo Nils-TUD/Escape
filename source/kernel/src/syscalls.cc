@@ -96,16 +96,15 @@ const Syscalls::handler_func Syscalls::syscalls[] = {
 	chown,
 	getgroups,
 	setgroups,
-	isingroup,
 	alarm,
 	tsctotime,
 	semcrt,
 	semop,
 	semdestr,
 	sendrecv,
+	cancel,
 
 	/* 60 */
-	cancel,
 	createchan,
 	delegate,
 	obtain,
@@ -115,9 +114,9 @@ const Syscalls::handler_func Syscalls::syscalls[] = {
 	mlock,
 	mlockall,
 	semcrtirq,
+	bindto,
 
 	/* 70 */
-	bindto,
 	rename,
 	gettimeofday,
 	utime,

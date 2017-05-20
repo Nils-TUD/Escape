@@ -110,12 +110,6 @@ int Syscalls::setgroups(Thread *t,IntrptStackFrame *stack) {
 	SYSC_SUCCESS(stack,0);
 }
 
-int Syscalls::isingroup(A_UNUSED Thread *t,IntrptStackFrame *stack) {
-	pid_t pid = (pid_t)SYSC_ARG1(stack);
-	gid_t gid = (gid_t)SYSC_ARG2(stack);
-	SYSC_SUCCESS(stack,Groups::contains(pid,gid));
-}
-
 int Syscalls::fork(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	int res = Proc::clone(0);
 	SYSC_RESULT(stack,res);

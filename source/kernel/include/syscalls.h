@@ -182,7 +182,6 @@ private:
 	static int setgid(Thread *t,IntrptStackFrame *stack);
 	static int getgroups(Thread *t,IntrptStackFrame *stack);
 	static int setgroups(Thread *t,IntrptStackFrame *stack);
-	static int isingroup(Thread *t,IntrptStackFrame *stack);
 	static int fork(Thread *t,IntrptStackFrame *stack);
 	static int waitchild(Thread *t,IntrptStackFrame *stack);
 	static int exec(Thread *t,IntrptStackFrame *stack);

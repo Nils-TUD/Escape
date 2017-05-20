@@ -29,7 +29,7 @@ struct Empty {
 	size_t size() const {
 		return 0;
 	}
-};
+} A_ALIGNED(2);
 
 template<class T = Empty>
 class Ethernet;

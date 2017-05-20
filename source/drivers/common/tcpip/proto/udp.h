@@ -71,7 +71,7 @@ public:
 
 private:
 	static socket_map _socks;
-} A_PACKED;
+} A_PACKED A_ALIGNED(2);
 
 static inline esc::OStream &operator<<(esc::OStream &os,const UDP &p) {
 	os << "UDP payload:\n";

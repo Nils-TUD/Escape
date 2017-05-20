@@ -64,7 +64,7 @@ public:
 	// data (for echo and echo reply)
 	uint16_t identifier;
 	uint16_t sequence;
-} A_PACKED;
+} A_PACKED A_ALIGNED(2);
 
 static inline esc::OStream &operator<<(esc::OStream &os,const ICMP &p) {
 	os << "ICMP payload:\n";

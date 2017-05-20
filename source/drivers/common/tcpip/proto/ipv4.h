@@ -112,7 +112,7 @@ public:
 	esc::Net::IPv4Addr src;
 	esc::Net::IPv4Addr dst;
 	T payload;
-} A_PACKED;
+} A_PACKED A_ALIGNED(2);
 
 static inline esc::OStream &operator<<(esc::OStream &os,const IPv4<> &p) {
 	os << "IPv4 payload:\n";

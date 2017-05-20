@@ -83,9 +83,9 @@ int mod_pagefault(A_UNUSED int argc,A_UNUSED char *argv[]) {
 		printe("Unable to create buffer");
 		return 1;
 	}
-	int fd = creat("/sys/test",0600);
+	int fd = creat("/tmp/test",0600);
 	if(fd < 0) {
-		printe("open of /sys/test failed");
+		printe("open of /tmp/test failed");
 		return 1;
 	}
 	srand(time(NULL));
@@ -98,10 +98,10 @@ int mod_pagefault(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	close(fd);
 
 	causePagefaults(NULL);
-	causePagefaults("/sys/test");
+	causePagefaults("/tmp/test");
 	causePagefaults("/home/hrniels/testdir/bbc.bmp");
 
-	if(unlink("/sys/test") < 0)
+	if(unlink("/tmp/test") < 0)
 		printe("Unable to unlink test-file");
 	free(buffer);
 	return 0;

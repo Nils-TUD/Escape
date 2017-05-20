@@ -188,9 +188,9 @@ static void test_sharebuf(const char *path,size_t bufsize) {
 
 int mod_file(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	size_t i;
-	int fd = creat("/sys/test",0600);
+	int fd = creat("/tmp/test",0600);
 	if(fd < 0) {
-		printe("open of /sys/test failed");
+		printe("open of /tmp/test failed");
 		return 1;
 	}
 	srand(time(NULL));
@@ -202,16 +202,16 @@ int mod_file(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	}
 	close(fd);
 
-	printf("Using /sys/test...\n");
-	test_openseekclose("/sys/test");
+	printf("Using /tmp/test...\n");
+	test_openseekclose("/tmp/test");
 	fflush(stdout);
-	test_readwrite("/sys/test","read",O_READ,read,false);
+	test_readwrite("/tmp/test","read",O_READ,read,false);
 	fflush(stdout);
-	test_readwrite("/sys/test","write",O_WRONLY,(test_func)write,false);
+	test_readwrite("/tmp/test","write",O_WRONLY,(test_func)write,false);
 	fflush(stdout);
-	test_stat("/sys/test");
+	test_stat("/tmp/test");
 	fflush(stdout);
-	test_fstat("/sys/test");
+	test_fstat("/tmp/test");
 	fflush(stdout);
 
 	const char *filename = "/zeros";
@@ -233,7 +233,7 @@ int mod_file(A_UNUSED int argc,A_UNUSED char *argv[]) {
 	test_sharebuf(filename,PAGE_SIZE * 16);
 	fflush(stdout);
 
-	if(unlink("/sys/test") < 0)
+	if(unlink("/tmp/test") < 0)
 		printe("Unable to unlink test-file");
 	return 0;
 }

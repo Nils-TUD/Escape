@@ -81,9 +81,9 @@ static void do_read(const char *path,bool useshm) {
 
 int mod_reading(int argc,char **argv) {
 	bool useshm = argc < 3 ? true : strcmp(argv[2],"noshm") != 0;
-	int fd = creat("/sys/test",0600);
+	int fd = creat("/tmp/test",0600);
 	if(fd < 0) {
-		printe("open of /sys/test failed");
+		printe("open of /tmp/test failed");
 		return 1;
 	}
 	if(write(fd,buffer,sizeof(buffer)) != sizeof(buffer)) {
@@ -109,8 +109,8 @@ int mod_reading(int argc,char **argv) {
 		waitchild(NULL,-1,0);
 	}
 
-	do_read("/sys/test",false);
-	if(unlink("/sys/test") < 0)
-		printe("Unlink of /sys/test failed");
+	do_read("/tmp/test",false);
+	if(unlink("/tmp/test") < 0)
+		printe("Unlink of /tmp/test failed");
 	return 0;
 }

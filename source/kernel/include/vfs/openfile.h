@@ -77,7 +77,7 @@ class OpenFile {
 		explicit SemTreapNode(const FileId &id) : esc::TreapNode<FileId>(id), refs(0), sem() {
 		}
 
-	    virtual void print(OStream &os) {
+	    virtual void print(OStream &os) override {
 			os.writef("f=(%d,%d) refs=%d sem.value=%d\n",key().dev,key().ino,refs,sem.getValue());
 	    }
 

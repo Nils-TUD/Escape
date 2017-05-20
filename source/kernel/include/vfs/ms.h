@@ -40,7 +40,7 @@ public:
 	 */
 	explicit VFSMS(const fs::User &u,VFSNode *parent,uint64_t id,char *name,uint mode,bool &success);
 
-	virtual bool isDeletable() const {
+	virtual bool isDeletable() const override {
 		return false;
 	}
 

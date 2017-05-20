@@ -81,10 +81,10 @@ public:
 	 */
 	class NoAllocator : public Allocator {
 	public:
-		virtual frameno_t allocPage() {
+		virtual frameno_t allocPage() override {
 			return 0;
 		}
-		virtual void freePage(frameno_t) {
+		virtual void freePage(frameno_t) override {
 		}
 	};
 
@@ -96,10 +96,10 @@ public:
 		explicit RangeAllocator(frameno_t frame) : Allocator(), _frame(frame) {
 		}
 
-		virtual frameno_t allocPage() {
+		virtual frameno_t allocPage() override {
 			return _frame++;
 		}
-		virtual void freePage(frameno_t);
+		virtual void freePage(frameno_t) override;
 
 	private:
 		frameno_t _frame;
@@ -113,8 +113,8 @@ public:
 	public:
 		explicit UAllocator();
 
-		virtual frameno_t allocPage();
-		virtual void freePage(frameno_t frame) {
+		virtual frameno_t allocPage() override;
+		virtual void freePage(frameno_t frame) override {
 			PhysMem::free(frame,PhysMem::USR);
 		}
 
@@ -128,14 +128,14 @@ public:
 	 */
 	class KAllocator : public Allocator {
 	public:
-		virtual frameno_t allocPage() {
+		virtual frameno_t allocPage() override {
 			return PhysMem::allocate(PhysMem::CRIT);
 		}
-		virtual frameno_t allocPT();
-		virtual void freePage(frameno_t frame) {
+		virtual frameno_t allocPT() override;
+		virtual void freePage(frameno_t frame) override {
 			PhysMem::free(frame,PhysMem::CRIT);
 		}
-		virtual void freePT(frameno_t);
+		virtual void freePT(frameno_t) override;
 	};
 
 	/**
@@ -144,10 +144,10 @@ public:
 	 */
 	class KStackAllocator : public Allocator {
 	public:
-		virtual frameno_t allocPage() {
+		virtual frameno_t allocPage() override {
 			return PhysMem::allocate(PhysMem::KERN);
 		}
-		virtual void freePage(frameno_t frame) {
+		virtual void freePage(frameno_t frame) override {
 			PhysMem::free(frame,PhysMem::KERN);
 		}
 	};

@@ -20,10 +20,11 @@
 #pragma once
 
 #include <common.h>
+#include <ostream.h>
 
 class Term : public OStream {
 public:
-	virtual void writec(char c) {
+	virtual void writec(char c) override {
 		debugc(c);
 	}
 

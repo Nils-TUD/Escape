@@ -35,7 +35,7 @@ struct VMRegion : public esc::DListTreapNode<uintptr_t> {
     	: esc::DListTreapNode<uintptr_t>(_virt), fileuse(), reg(_reg) {
     }
 
-    virtual bool matches(uintptr_t key);
+    virtual bool matches(uintptr_t key) override;
 
     /**
      * @return the virtual address of this region
@@ -51,7 +51,7 @@ struct VMRegion : public esc::DListTreapNode<uintptr_t> {
     	key(_virt);
     }
 
-    virtual void print(OStream &os) {
+    virtual void print(OStream &os) override {
 		os.writef("virt=%p region=%p\n",virt(),reg);
     }
 

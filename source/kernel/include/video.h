@@ -93,11 +93,11 @@ public:
 		col = row = 0;
 	}
 
-	virtual void writec(char c);
+	virtual void writec(char c) override;
 
 private:
-	virtual bool escape(const char **str);
-	virtual uchar pipepad() const;
+	virtual bool escape(const char **str) override;
+	virtual uchar pipepad() const override;
 
 	void drawChar(ushort col,ushort row,char c);
 	void clear();

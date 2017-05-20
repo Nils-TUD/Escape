@@ -25,14 +25,14 @@
 
 class VideoLog : public OStream {
 public:
-	virtual void writec(char c) {
+	virtual void writec(char c) override {
 		Video::get().writec(c);
 		Log::get().writec(c);
 	}
-	virtual bool escape(const char **fmt) {
+	virtual bool escape(const char **fmt) override {
 		return Video::get().escape(fmt);
 	}
-	virtual uchar pipepad() const {
+	virtual uchar pipepad() const override {
 		return Video::get().pipepad();
 	}
 };

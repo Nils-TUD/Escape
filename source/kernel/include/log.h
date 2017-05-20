@@ -59,11 +59,11 @@ public:
 	 */
 	OpenFile *getFile();
 
-	virtual void writec(char c);
+	virtual void writec(char c) override;
 
 private:
-	virtual uchar pipepad() const;
-	virtual bool escape(const char **str);
+	virtual uchar pipepad() const override;
+	virtual bool escape(const char **str) override;
 
 	static void toSerial(char c);
 	void flush();

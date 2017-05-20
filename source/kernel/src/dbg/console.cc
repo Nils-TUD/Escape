@@ -85,13 +85,13 @@ public:
 		: NaviBackend(0,l->getLineCount() * Console::BYTES_PER_LINE), lines(l) {
 	}
 
-	virtual uint8_t *loadLine(uintptr_t addr) {
+	virtual uint8_t *loadLine(uintptr_t addr) override {
 		if(addr / Console::BYTES_PER_LINE < lines->getLineCount())
 			return (uint8_t*)lines->getLine(addr / Console::BYTES_PER_LINE);
 		return NULL;
 	}
 
-	virtual const char *getInfo(uintptr_t addr) {
+	virtual const char *getInfo(uintptr_t addr) override {
 		static char tmp[64];
 		OStringStream os(tmp,sizeof(tmp));
 		size_t start = addr / Console::BYTES_PER_LINE;
@@ -102,19 +102,19 @@ public:
 		return tmp;
 	}
 
-	virtual bool lineMatches(uintptr_t addr,const char *search,A_UNUSED size_t searchlen) {
+	virtual bool lineMatches(uintptr_t addr,const char *search,A_UNUSED size_t searchlen) override {
 		uint8_t *bytes = loadLine(addr);
 		return bytes != NULL && *search && strcasestr((char*)bytes,search) != NULL;
 	}
 
-	virtual void displayLine(OStream &os,uintptr_t,uint8_t *bytes) {
+	virtual void displayLine(OStream &os,uintptr_t,uint8_t *bytes) override {
 		if(bytes)
 			os.writef("%s\r",bytes);
 		else
 			os.writef("%*s\n",VID_COLS - 1,"");
 	}
 
-	virtual uintptr_t gotoAddr(const char *addr) {
+	virtual uintptr_t gotoAddr(const char *addr) override {
 		return (strtoul(addr,NULL,10) - 1) * Console::BYTES_PER_LINE;
 	}
 

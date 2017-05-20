@@ -42,14 +42,14 @@ public:
 			PageDir::removeAccess(lastFrame);
 	}
 
-	virtual const char *getInfo(uintptr_t) {
+	virtual const char *getInfo(uintptr_t) override {
 		static char procName[60];
 		OStringStream os(procName,sizeof(procName));
 		os.writef("Process %d (%s)",proc->getPid(),proc->getProgram());
 		return procName;
 	}
 
-	virtual uint8_t *loadLine(uintptr_t addr) {
+	virtual uint8_t *loadLine(uintptr_t addr) override {
 		if(page == NULL || addr / PAGE_SIZE != lastAddr / PAGE_SIZE) {
 			if(page)
 				PageDir::removeAccess(lastFrame);
@@ -64,15 +64,15 @@ public:
 		return page ? page + (addr & (PAGE_SIZE - 1)) : NULL;
 	}
 
-	virtual bool lineMatches(uintptr_t addr,const char *search,size_t searchlen) {
+	virtual bool lineMatches(uintptr_t addr,const char *search,size_t searchlen) override {
 		return Console::multiLineMatches(this,addr,search,searchlen);
 	}
 
-	virtual void displayLine(OStream &os,uintptr_t addr,uint8_t *bytes) {
+	virtual void displayLine(OStream &os,uintptr_t addr,uint8_t *bytes) override {
 		Console::dumpLine(os,addr,bytes);
 	}
 
-	virtual uintptr_t gotoAddr(const char *addr) {
+	virtual uintptr_t gotoAddr(const char *addr) override {
 		uintptr_t off = strtoul(addr,NULL,16);
 		return esc::Util::round_dn(off,Console::BYTES_PER_LINE);
 	}

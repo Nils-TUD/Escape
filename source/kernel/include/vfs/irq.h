@@ -53,11 +53,11 @@ public:
 		return _irq;
 	}
 
-	virtual bool isDeletable() const {
+	virtual bool isDeletable() const override {
 		return false;
 	}
 
-	virtual ssize_t read(OpenFile *,void *buffer,off_t offset,size_t count) {
+	virtual ssize_t read(OpenFile *,void *buffer,off_t offset,size_t count) override {
 		ssize_t res = VFSInfo::readHelper(this,buffer,offset,count,0,readCallback);
 		acctime = Timer::getTime();
 		return res;

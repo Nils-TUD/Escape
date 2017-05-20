@@ -31,7 +31,7 @@ public:
 		}
 
 	private:
-		virtual void writec(char c) {
+		virtual void writec(char c) override {
 			if(c == '\n')
 				lines->newLine();
 			else if(c != '\0')

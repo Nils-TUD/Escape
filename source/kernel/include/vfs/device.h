@@ -41,7 +41,7 @@ public:
 	 */
 	explicit VFSDevice(const fs::User &u,VFSNode *parent,char *name,uint mode,uint type,uint ops,bool &success);
 
-	virtual bool isDeletable() const {
+	virtual bool isDeletable() const override {
 		return false;
 	}
 
@@ -100,9 +100,9 @@ public:
 	 */
 	ssize_t receive(VFSChannel *chan,ushort flags,msgid_t *id,USER void *data,size_t size);
 
-	virtual ssize_t getSize();
-	virtual void close(OpenFile *file,int msgid);
-	virtual void print(OStream &os) const;
+	virtual ssize_t getSize() override;
+	virtual void close(OpenFile *file,int msgid) override;
+	virtual void print(OStream &os) const override;
 
 private:
 	void addMsgs(ulong count) {

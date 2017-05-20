@@ -43,9 +43,9 @@ public:
 	 */
 	explicit VFSDir(const fs::User &u,VFSNode *parent,char *name,uint mode,bool &success);
 
-	virtual off_t seek(off_t position,off_t offset,uint whence) const;
-	virtual ssize_t getSize();
-	virtual ssize_t read(OpenFile *file,USER void *buffer,off_t offset,size_t count);
+	virtual off_t seek(off_t position,off_t offset,uint whence) const override;
+	virtual ssize_t getSize() override;
+	virtual ssize_t read(OpenFile *file,USER void *buffer,off_t offset,size_t count) override;
 
 private:
 	static void add(VFSDirEntry *&dirEntry,ino_t ino,const char *name,size_t len);

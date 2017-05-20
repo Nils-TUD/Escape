@@ -37,18 +37,18 @@ class PageDir : public PageDirBase {
 			: _phys(physStart), _end(physStart + count * PAGE_SIZE) {
 		}
 
-		virtual frameno_t allocPage() {
+		virtual frameno_t allocPage() override {
 			return 0;
 		}
-		virtual frameno_t allocPT() {
+		virtual frameno_t allocPT() override {
 			assert(_phys < _end);
 			frameno_t frame = _phys / PAGE_SIZE;
 			_phys += PAGE_SIZE;
 			return frame;
 		}
-		virtual void freePage(frameno_t) {
+		virtual void freePage(frameno_t) override {
 		}
-		virtual void freePT(frameno_t) {
+		virtual void freePT(frameno_t) override {
 		}
 
 	private:

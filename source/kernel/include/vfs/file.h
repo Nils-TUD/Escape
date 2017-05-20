@@ -67,13 +67,13 @@ public:
 	 */
 	int reserve(off_t newSize);
 
-	virtual ssize_t getSize();
-	virtual off_t seek(off_t position,off_t offset,uint whence) const;
-	virtual ssize_t read(OpenFile *file,void *buffer,off_t offset,size_t count);
-	virtual ssize_t write(OpenFile *file,const void *buffer,off_t offset,size_t count);
-	virtual int truncate(off_t length);
+	virtual ssize_t getSize() override;
+	virtual off_t seek(off_t position,off_t offset,uint whence) const override;
+	virtual ssize_t read(OpenFile *file,void *buffer,off_t offset,size_t count) override;
+	virtual ssize_t write(OpenFile *file,const void *buffer,off_t offset,size_t count) override;
+	virtual int truncate(off_t length) override;
 
-	virtual void print(OStream &os) const;
+	virtual void print(OStream &os) const override;
 
 private:
 	void *getIndirBlock(void ***table,off_t offset,size_t size,bool alloc);

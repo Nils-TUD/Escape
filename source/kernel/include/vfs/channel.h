@@ -143,16 +143,16 @@ public:
 	int obtain(pid_t pid,OpenFile *chan,int arg);
 
 	virtual ssize_t open(const fs::User &u,const char *path,ssize_t *sympos,ino_t root,uint flags,
-		int msgid,mode_t mode);
-	virtual off_t seek(off_t position,off_t offset,uint whence) const;
-	virtual ssize_t getSize();
-	virtual ssize_t read(OpenFile *file,void *buffer,off_t offset,size_t count);
-	virtual ssize_t write(OpenFile *file,const void *buffer,off_t offset,size_t count);
-	virtual void close(OpenFile *file,int msgid);
-	virtual void print(OStream &os) const;
+		int msgid,mode_t mode) override;
+	virtual off_t seek(off_t position,off_t offset,uint whence) const override;
+	virtual ssize_t getSize() override;
+	virtual ssize_t read(OpenFile *file,void *buffer,off_t offset,size_t count) override;
+	virtual ssize_t write(OpenFile *file,const void *buffer,off_t offset,size_t count) override;
+	virtual void close(OpenFile *file,int msgid) override;
+	virtual void print(OStream &os) const override;
 
 protected:
-	virtual void invalidate();
+	virtual void invalidate() override;
 
 private:
 	pid_t getDeviceProc() const;

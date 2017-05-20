@@ -44,7 +44,7 @@ class ShFiles {
 		explicit FileNode(const FileId &id) : esc::TreapNode<FileId>(id), usages() {
 		}
 
-		virtual void print(OStream &os) {
+		virtual void print(OStream &os) override {
 			os.writef("file=(%u,%u) with %zu usages\n",key().dev,key().ino,usages.length());
 		}
 

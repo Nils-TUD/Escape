@@ -36,18 +36,32 @@
 
 using namespace std;
 
+enum Mode {
+	FORWARD,
+	BACKWARDS,
+};
+
 static void resetVterm(void);
-static void readLines(size_t end);
+static bool readLines(size_t end);
+static void searchLine(const char *pattern,bool forward);
 static void append(string& s,int& len,char c);
 static void scrollDown(long lines);
 static void refreshScreen(void);
 static void printStatus(const char *totalStr);
 
-static const int TAB_WIDTH = 4;
+static const int TAB_WIDTH 			= 4;
+static const size_t MAX_SEARCH_LEN	= 32;
+
+static const char *states[] = {"|","/","-","\\","|","/","-"};
 
 static esc::FStream *vt;
 static FILE *in;
 static const char *filename;
+static bool searchSuc = false;
+static bool searching = false;
+static Mode searchMode = FORWARD;
+static char searchStr[MAX_SEARCH_LEN] = "";
+static size_t searchPos = 0;
 static bool seenEOF;
 static LineContainer *lines;
 static size_t startLine = 0;
@@ -119,9 +133,47 @@ int main(int argc,char *argv[]) {
 			int cmd = vt->getesc(n1,n2,n3);
 			if(cmd != ESCC_KEYCODE || (n3 & STATE_BREAK))
 				continue;
+
+			if(searching) {
+				if(n2 == VK_ENTER || n2 == VK_ESC) {
+					searching = false;
+					if(n2 == VK_ENTER) {
+						searchStr[searchPos] = '\0';
+						searchLine(searchStr,true);
+					}
+					else
+						searchPos = 0;
+					refreshScreen();
+					continue;
+				}
+
+				if(n1 == '\b') {
+					if(searchPos > 0)
+						searchStr[--searchPos] = '\0';
+				}
+				else if(searchPos + 1 < MAX_SEARCH_LEN && isprint(n1))
+					searchStr[searchPos++] = n1;
+
+				esc::sout << '\r';
+				printStatus(seenEOF ? nullptr : "?");
+				esc::sout.flush();
+				continue;
+			}
+			else if(n1 == '/' || n1 == '?') {
+				searching = true;
+				searchMode = n1 == '/' ? FORWARD : BACKWARDS;
+				esc::sout << '\r';
+				printStatus(seenEOF ? nullptr : "?");
+				esc::sout.flush();
+			}
+
 			switch(n2) {
 				case VK_Q:
 					run = false;
+					break;
+				case VK_N:
+					searchLine(searchStr,!(n3 & STATE_SHIFT));
+					refreshScreen();
 					break;
 				case VK_HOME:
 					// scrollDown(0) means scroll to end..
@@ -160,6 +212,92 @@ static void resetVterm(void) {
 	vterm.restore();
 }
 
+template<long FREQ>
+class StateUpdater {
+public:
+	explicit StateUpdater() : _state(), _lines() {
+	}
+
+	bool check() {
+		if(_lines++ % FREQ == 0) {
+			// check if the user pressed a key
+			char vtc;
+			fcntl(vt->fd(),F_SETFL,O_NONBLOCK);
+			while((vtc = vt->get()) != EOF) {
+				if(vtc == '\033') {
+					int n1,n2,n3;
+					int cmd = vt->getesc(n1,n2,n3);
+					if(cmd != ESCC_KEYCODE || (n3 & STATE_BREAK))
+						continue;
+					if(n2 == VK_S) {
+						vt->clear();
+						fcntl(vt->fd(),F_SETFL,0);
+						return false;
+					}
+				}
+			}
+			vt->clear();
+			fcntl(vt->fd(),F_SETFL,0);
+
+			// indicate activity
+			esc::sout << '\r';
+			printStatus(states[_state]);
+			_state = (_state + 1) % ARRAY_SIZE(states);
+		}
+		return true;
+	}
+
+private:
+	int _state;
+	long _lines;
+};
+
+static void searchLine(const char *pattern,bool forward) {
+	if(!*pattern)
+		return;
+
+	StateUpdater<10000> stup;
+
+	searchSuc = false;
+	forward = searchMode == FORWARD ? forward : !forward;
+	if(forward) {
+		for(size_t i = startLine + 1; ; ++i) {
+			if(i >= lines->size()) {
+				if(!readLines(lines->size() + 1024))
+					break;
+				if(i >= lines->size())
+					break;
+			}
+
+			if(strcasestr(lines->get(i),pattern)) {
+				startLine = i;
+				searchSuc = true;
+				break;
+			}
+
+			if(!stup.check())
+				break;
+		}
+	}
+	else {
+		for(ssize_t i = startLine - 1; i >= 0; --i) {
+			if(strcasestr(lines->get(i),pattern)) {
+				startLine = i;
+				searchSuc = true;
+				break;
+			}
+
+			if(!stup.check())
+				break;
+		}
+	}
+
+	if(lines->size() >= mode.rows && startLine > lines->size() - mode.rows) {
+		if(!seenEOF)
+			readLines(startLine + mode.rows);
+	}
+}
+
 static void scrollDown(long l) {
 	size_t oldStart = startLine;
 	if(l < 0) {
@@ -185,11 +323,29 @@ static void scrollDown(long l) {
 
 static void refreshScreen(void) {
 	size_t j = 0;
-	LineContainer::size_type end = startLine + min(lines->size(),(size_t)mode.rows);
+	LineContainer::size_type end = startLine + min(lines->size() - startLine,(size_t)mode.rows);
 	// walk to the top of the screen
 	esc::sout << "\033[mh]";
 	for(LineContainer::size_type i = startLine; i < end; ++i, ++j) {
-		esc::sout << lines->get(i);
+		const char *line = lines->get(i);
+		if(searchPos > 0) {
+			const char *match = strcasestr(line,searchStr);
+			while(match) {
+				while(line != match)
+					esc::sout << *line++;
+
+				esc::sout << "\033[co;0;7]";
+				while(line != match + searchPos)
+					esc::sout << *line++;
+				esc::sout << "\033[co]";
+
+				match = strcasestr(line,searchStr);
+			}
+			esc::sout << line;
+		}
+		else
+			esc::sout << line;
+
 		if(j < mode.rows - 1)
 			esc::sout << '\n';
 	}
@@ -203,26 +359,42 @@ static void refreshScreen(void) {
 }
 
 static void printStatus(const char *totalStr) {
-	esc::OStringStream lineStr;
-	size_t end = min(lines->size(),(size_t)mode.rows);
-	lineStr << "Lines " << (startLine + 1) << "-" << (startLine + end) << " / ";
-	if(!totalStr)
-		lineStr << lines->size();
-	else
-		lineStr << totalStr;
+	size_t len = 0;
 	esc::sout << "\033[co;0;7]";
-	esc::sout << lineStr.str() << esc::fmt(filename,mode.cols - lineStr.str().length());
+	if(!searching) {
+		len = 1;
+		esc::sout << ':';
+		if(searchPos > 0 && !searchSuc) {
+			esc::sout << "Pattern not found";
+			len += SSTRLEN("Pattern not found");
+		}
+	}
+	else {
+		len = 1 + searchPos;
+		esc::sout << (searchMode == FORWARD ? '/' : '?');
+		for(size_t i = 0; i < searchPos; ++i)
+			esc::sout << searchStr[i];
+	}
+
+	size_t end = min(lines->size(),(size_t)mode.rows);
+	esc::OStringStream os;
+	os << filename << ", lines " << (startLine + 1) << "-" << (startLine + end) << " / ";
+	if(!totalStr)
+		os << lines->size();
+	else
+		os << totalStr;
+	esc::sout << esc::fmt(os.str().c_str(),mode.cols - len);
+
 	esc::sout << "\033[co]";
 }
 
-static void readLines(size_t end) {
-	int lineCount = 0;
+static bool readLines(size_t end) {
 	int lineLen = mode.cols;
 	string line;
-	static const char *states[] = {"|","/","-","\\","|","/","-"};
-	int state = 0;
 	if(seenEOF)
-		return;
+		return false;
+
+	StateUpdater<100> stup;
 
 	// read
 	char c = 0;
@@ -235,32 +407,11 @@ static void readLines(size_t end) {
 		}
 		lines->append(line.c_str());
 
-		// check whether the user has pressed a key
-		if(lineCount++ % 100 == 0) {
-			char vtc;
-			fcntl(vt->fd(),F_SETFL,O_NONBLOCK);
-			while((vtc = vt->get()) != EOF) {
-				if(vtc == '\033') {
-					int n1,n2,n3;
-					int cmd = vt->getesc(n1,n2,n3);
-					if(cmd != ESCC_KEYCODE || (n3 & STATE_BREAK))
-						continue;
-					if(n2 == VK_S) {
-						vt->clear();
-						fcntl(vt->fd(),F_SETFL,0);
-						return;
-					}
-				}
-			}
-			vt->clear();
-			fcntl(vt->fd(),F_SETFL,0);
-
-			esc::sout << '\r';
-			printStatus(states[state]);
-			state = (state + 1) % ARRAY_SIZE(states);
-		}
+		if(!stup.check())
+			return false;
 	}
 	seenEOF = c == EOF;
+	return true;
 }
 
 static void append(string& s,int& len,char c) {

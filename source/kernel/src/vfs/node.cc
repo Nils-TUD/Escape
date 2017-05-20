@@ -755,9 +755,7 @@ void VFSNode::doPrintTree(OStream &os,size_t level,const VFSNode *parent) {
 			for(size_t i = 0;i < level;i++)
 				os.writef(" |");
 			os.writef("- %s\n",n->name);
-			/* don't recurse for "." and ".." */
-			if(strncmp(n->name,".",1) != 0 && strncmp(n->name,"..",2) != 0)
-				doPrintTree(os,level + 1,n);
+			doPrintTree(os,level + 1,n);
 			n = n->next;
 		}
 	}

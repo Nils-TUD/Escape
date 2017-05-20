@@ -38,9 +38,6 @@ extern sTestModule tModCtype;
 extern sTestModule tModEscCodes;
 
 int main(void) {
-	if(getuid() != ROOT_UID)
-		error("Please start this program as root!");
-
 	test_register(&tModHeap);
 	test_register(&tModFileio);
 	test_register(&tModDir);

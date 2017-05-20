@@ -39,7 +39,7 @@ sTestModule tModMem = {
 
 static void test_mem(void) {
 	test_mmap_file();
-	test_mmap_shared_file("/sys/foobar");
+	test_mmap_shared_file("/tmp/foobar");
 	struct stat info;
 	if(stat(".",&info) < 0)
 		error("Unable to stat .");

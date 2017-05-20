@@ -47,16 +47,23 @@ static void test_fs(void) {
 	struct stat info;
 	if(stat("/bin",&info) < 0)
 		error("Unable to stat /bin");
-	/* don't try that on readonly-filesystems */
-	if((info.st_mode & S_IWUSR)) {
-		test_basics();
-		test_perms();
-		test_rename();
-		test_largeFile();
-		test_symlinks();
+
+	if(getuid() != ROOT_UID) {
+		printf("You are not root; skipping the test\n\n");
+		return;
 	}
-	else
+
+	/* don't try that on readonly-filesystems */
+	if(!(info.st_mode & S_IWUSR)) {
 		printf("WARNING: Detected readonly filesystem; skipping the test\n\n");
+		return;
+	}
+
+	test_basics();
+	test_perms();
+	test_rename();
+	test_largeFile();
+	test_symlinks();
 }
 
 static void test_basics(void) {

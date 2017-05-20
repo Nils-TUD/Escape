@@ -264,7 +264,8 @@ namespace gui {
 		switch(bpp) {
 			case 16: {
 				for(; rpos.y < yend; rpos.y++) {
-					uint16_t *addr = (uint16_t*)orgaddr;
+					// always 16-bit aligned
+					uint16_t *addr = (uint16_t*)(void*)orgaddr;
 					for(xcur = rpos.x; xcur < xend; xcur++)
 						*addr++ = _col;
 					orgaddr += widthadd;
@@ -288,7 +289,8 @@ namespace gui {
 
 			case 32: {
 				for(; rpos.y < yend; rpos.y++) {
-					uint32_t *addr = (uint32_t*)orgaddr;
+					// always 32-bit aligned
+					uint32_t *addr = (uint32_t*)(void*)orgaddr;
 					for(xcur = rpos.x; xcur < xend; xcur++)
 						*addr++ = _col;
 					orgaddr += widthadd;

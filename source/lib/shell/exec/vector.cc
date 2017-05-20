@@ -53,7 +53,7 @@ sVector *vec_copy(const sVector *v) {
 
 void *vec_get(sVector *v,size_t i) {
 	assert(i < v->count);
-	return *(void**)((char*)v->_elements + i * v->_elSize);
+	return *(void**)((uintptr_t)v->_elements + i * v->_elSize);
 }
 
 void vec_add(sVector *v,const void *p) {
@@ -109,7 +109,7 @@ void vec_destroy(sVector *v,bool freeElements) {
 	if(freeElements) {
 		size_t i,count = v->count;
 		for(i = 0; i < count; i++)
-			efree(*(void**)((char*)v->_elements + i * v->_elSize));
+			efree(*(void**)((uintptr_t)v->_elements + i * v->_elSize));
 	}
 	efree(v->_elements);
 	efree(v);

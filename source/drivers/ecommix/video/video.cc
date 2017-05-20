@@ -80,7 +80,8 @@ public:
 
 		ulong *screen = screenData + y * MAX_COLS + x;
 		for(size_t h = 0; h < height; h++) {
-			uint16_t *buf = (uint16_t*)(c->fb->addr() + (y + h) * c->mode->cols * 2 + x * 2);
+			// always 16-bit aligned
+			uint16_t *buf = (uint16_t*)(void*)(c->fb->addr() + (y + h) * c->mode->cols * 2 + x * 2);
 			for(size_t w = 0; w < width; w++) {
 				uint16_t d = *buf++;
 				screen[w] = (d >> 8) | (d & 0xFF) << 8;

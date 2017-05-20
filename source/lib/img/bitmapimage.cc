@@ -49,7 +49,8 @@ void BitmapImage::paintRGB(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 		for(gpos_t cy = y + height - 1; cy >= y; cy--) {
 			gpos_t xend = x + width;
 			for(gpos_t cx = x; cx < xend; cx++) {
-				uint32_t col = *(uint16_t*)(data + (cx << 1));
+				// always 16-bit aligned
+				uint32_t col = *(uint16_t*)(void*)(data + (cx << 1));
 				if(EXPECT_TRUE(col != TRANSPARENT))
 					_painter->paintPixel(cx,height - 1 - cy,col);
 			}
@@ -73,7 +74,8 @@ void BitmapImage::paintRGB(gpos_t x,gpos_t y,gsize_t width,gsize_t height) {
 		for(gpos_t cy = y + height - 1; cy >= y; cy--) {
 			gpos_t xend = x + width;
 			for(gpos_t cx = x; cx < xend; cx++) {
-				uint32_t col = *(uint32_t*)(data + (cx << 2));
+				// always 32-bit aligned
+				uint32_t col = *(uint32_t*)(void*)(data + (cx << 2));
 				if(EXPECT_TRUE(col != TRANSPARENT))
 					_painter->paintPixel(cx,height - 1 - cy,col);
 			}
@@ -102,7 +104,8 @@ void BitmapImage::paintBitfields(gpos_t x,gpos_t y,gsize_t width,gsize_t height)
 	for(gpos_t cy = y + height - 1; cy >= y; cy--) {
 		gpos_t xend = x + width;
 		for(gpos_t cx = x; cx < xend; cx++) {
-			uint32_t col = *(uint32_t*)(data + (cx << 2));
+			// always 32-bit aligned
+			uint32_t col = *(uint32_t*)(void*)(data + (cx << 2));
 			uint32_t red = (col & redmask) >> redshift;
 			uint32_t green = (col & greenmask) >> greenshift;
 			uint32_t blue = (col & bluemask) >> blueshift;

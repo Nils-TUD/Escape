@@ -174,10 +174,6 @@ int VFS::hasAccess(pid_t pid,const VFSNode *n,ushort flags) {
 }
 
 int VFS::hasAccess(pid_t pid,mode_t mode,uid_t uid,gid_t gid,ushort flags) {
-	/* kernel is allmighty :P */
-	if(pid == KERNEL_PID)
-		return 0;
-
 	const Proc *p = Proc::getByPid(pid);
 	if(p == NULL)
 		return -ESRCH;

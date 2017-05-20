@@ -45,7 +45,6 @@
 
 /* for marking unused */
 #define INVALID_PID			(MAX_PROC_COUNT + 1)
-#define KERNEL_PID			MAX_PROC_COUNT
 #define INIT_PID			1
 
 #define ROOT_UID			0

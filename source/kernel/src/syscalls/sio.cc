@@ -157,7 +157,7 @@ int Syscalls::tell(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(!file))
 		SYSC_ERROR(stack,-EBADF);
 	/* this may fail, but we're requested the file, so it will be released on our termination */
-	*pos = file->tell(p->getPid());
+	*pos = file->tell();
 	SYSC_SUCCESS(stack,0);
 }
 

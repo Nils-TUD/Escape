@@ -201,10 +201,9 @@ public:
 	/**
 	 * Returns the current file-position
 	 *
-	 * @param pid the process-id
 	 * @return the current file-position
 	 */
-	off_t tell(A_UNUSED pid_t pid) const {
+	off_t tell() const {
 		return position;
 	}
 

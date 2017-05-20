@@ -125,23 +125,23 @@ static void test_vfs_node_file() {
 		OpenFile *f1,*f2;
 		test_assertInt(VFS::openPath(pid,VFS_READ | VFS_WRITE | VFS_CREATE,0,"/tmp/foobar",NULL,&f1),0);
 
-		test_assertSSize(f1->read(pid,buf1,sizeof(buf1)),0);
-		test_assertSSize(f1->write(pid,buf1,strlen(buf1) + 1),strlen(buf1) + 1);
+		test_assertSSize(f1->read(buf1,sizeof(buf1)),0);
+		test_assertSSize(f1->write(buf1,strlen(buf1) + 1),strlen(buf1) + 1);
 		f1->seek(0,SEEK_SET);
-		test_assertSSize(f1->read(pid,buf2,sizeof(buf2)),strlen(buf1) + 1);
+		test_assertSSize(f1->read(buf2,sizeof(buf2)),strlen(buf1) + 1);
 		test_assertStr(buf2,buf1);
 
 		test_assertInt(f1->truncate(8 * 1024 * 1024),0);
 		f1->seek(0,SEEK_SET);
-		test_assertSSize(f1->write(pid,buf1,strlen(buf1) + 1),strlen(buf1) + 1);
+		test_assertSSize(f1->write(buf1,strlen(buf1) + 1),strlen(buf1) + 1);
 		f1->seek(8 * 1024,SEEK_SET);
-		test_assertSSize(f1->write(pid,buf1,strlen(buf1) + 1),strlen(buf1) + 1);
+		test_assertSSize(f1->write(buf1,strlen(buf1) + 1),strlen(buf1) + 1);
 		f1->seek(24 * 1024,SEEK_SET);
-		test_assertSSize(f1->write(pid,buf1,strlen(buf1) + 1),strlen(buf1) + 1);
+		test_assertSSize(f1->write(buf1,strlen(buf1) + 1),strlen(buf1) + 1);
 		f1->seek(512 * 1024,SEEK_SET);
-		test_assertSSize(f1->write(pid,buf1,strlen(buf1) + 1),strlen(buf1) + 1);
+		test_assertSSize(f1->write(buf1,strlen(buf1) + 1),strlen(buf1) + 1);
 		f1->seek(7 * 1024 * 1024,SEEK_SET);
-		test_assertSSize(f1->write(pid,buf1,strlen(buf1) + 1),strlen(buf1) + 1);
+		test_assertSSize(f1->write(buf1,strlen(buf1) + 1),strlen(buf1) + 1);
 
 		test_assertInt(VFS::openPath(pid,VFS_WRITE,0,"/tmp",NULL,&f2),0);
 		test_assertInt(f2->unlink("foobar"),0);
@@ -167,7 +167,7 @@ static void test_vfs_node_file_refs() {
 
 	test_assertInt(VFS::openPath(pid,VFS_WRITE | VFS_CREATE,0,"/sys/foobar",NULL,&f1),0);
 	n = f1->getNode();
-	test_assertSSize(f1->write(pid,buffer,strlen(buffer)),strlen(buffer));
+	test_assertSSize(f1->write(buffer,strlen(buffer)),strlen(buffer));
 	test_assertSize(n->getRefCount(),2);
 	f1->close();
 	test_assertSize(n->getRefCount(),1);
@@ -182,7 +182,7 @@ static void test_vfs_node_file_refs() {
 	test_assertSize(n->getRefCount(),1);
 	test_assertInt(VFS::openPath(pid,VFS_READ,0,"/sys/foobar",NULL,&f3),-ENOENT);
 	memclear(buffer,sizeof(buffer));
-	test_assertTrue(f2->read(pid,buffer,sizeof(buffer)) > 0);
+	test_assertTrue(f2->read(buffer,sizeof(buffer)) > 0);
 	test_assertStr(buffer,"This is a test!");
 	f2->close();
 

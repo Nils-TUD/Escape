@@ -132,7 +132,7 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 
 	/* receive a message */
 	ScopedFile cli(p,clifd);
-	int res = EXPECT_TRUE(cli) ? cli->receiveMsg(p->getPid(),&mid,data,size,VFS_SIGNALS) : -EBADF;
+	int res = EXPECT_TRUE(cli) ? cli->receiveMsg(&mid,data,size,VFS_SIGNALS) : -EBADF;
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 	*id = mid;

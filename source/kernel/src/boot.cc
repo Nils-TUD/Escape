@@ -156,9 +156,9 @@ void Boot::createModFiles() {
 			Util::panic("Unable to chmod mbmod-file for '%s'",modname);
 		VFSNode::release(n);
 
-		if(file->write(KERNEL_PID,mod->name,strlen(mod->name)) < 0)
+		if(file->write(mod->name,strlen(mod->name)) < 0)
 			Util::panic("Unable to write arguments to /sys/boot/arguments");
-		if(file->write(KERNEL_PID,"\n",1) < 0)
+		if(file->write("\n",1) < 0)
 			Util::panic("Unable to write arguments to /sys/boot/arguments");
 	}
 

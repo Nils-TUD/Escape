@@ -168,7 +168,6 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 	 * therefore, we have to prepare this again with the ELF-finisher. additionally, we have to
 	 * take care that we use ELF::finishFromMem() for boot-modules and ELF::finishFromFile() other-
 	 * wise. (e.g. fs depends on rtc -> rtc can't read it from file because fs is not ready) */
-	pid_t pid = t->getProc()->getPid();
 	/* TODO well, its not really nice that we have to read this stuff again for every started
 	 * thread :/ */
 	/* every process has a text-region from his binary */
@@ -184,7 +183,7 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 	}
 
 	/* read the header */
-	if((res = textreg->reg->getFile()->read(pid,&ehd,sizeof(sElfEHeader))) !=
+	if((res = textreg->reg->getFile()->read(&ehd,sizeof(sElfEHeader))) !=
 			sizeof(sElfEHeader)) {
 		Log::get().writef("[LOADER] Reading ELF-header of '%s' failed: %s\n",
 				t->getProc()->getProgram(),strerror(res));

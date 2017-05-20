@@ -499,14 +499,13 @@ public:
 	/**
 	 * Reads <count> bytes at <offset> into <buffer>.
 	 *
-	 * @param pid the process-id
 	 * @param file the open-file
 	 * @param buffer the target
 	 * @param offset the offset
 	 * @param count the number of bytes
 	 * @return the number of read bytes or a negative error-code
 	 */
-	virtual ssize_t read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,A_UNUSED void *buffer,
+	virtual ssize_t read(A_UNUSED OpenFile *file,A_UNUSED void *buffer,
 	                     A_UNUSED off_t offset,A_UNUSED size_t count) {
 		return -ENOTSUP;
 	}
@@ -514,14 +513,13 @@ public:
 	/**
 	 * Writes <count> bytes from <buffer> to <offset>.
 	 *
-	 * @param pid the process-id
 	 * @param file the open-file
 	 * @param buffer the source
 	 * @param offset the offset
 	 * @param count the number of bytes
 	 * @return the number of written bytes or a negative error-code
 	 */
-	virtual ssize_t write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,A_UNUSED const void *buffer,
+	virtual ssize_t write(A_UNUSED OpenFile *file,A_UNUSED const void *buffer,
 	                      A_UNUSED off_t offset,A_UNUSED size_t count) {
 		return -ENOTSUP;
 	}

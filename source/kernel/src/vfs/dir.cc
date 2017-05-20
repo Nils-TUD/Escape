@@ -78,8 +78,7 @@ void VFSDir::add(VFSDirEntry *&dirEntry,ino_t ino,const char *name,size_t len) {
 	dirEntry = (VFSDirEntry*)((uint8_t*)dirEntry + sizeof(VFSDirEntry) + len);
 }
 
-ssize_t VFSDir::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buffer,
-		off_t offset,size_t count) {
+ssize_t VFSDir::read(A_UNUSED OpenFile *file,USER void *buffer,off_t offset,size_t count) {
 	VFSDirEntry *fsBytes = NULL;
 	const VFSNode *n,*first;
 	assert(buffer != NULL);

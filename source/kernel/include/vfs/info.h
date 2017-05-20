@@ -36,12 +36,12 @@ class VFSInfo {
 		explicit className(const fs::User &u,VFSNode *parent,bool &success)							\
 			: className(u,parent,(char*)(fileName),0444,success) {									\
 		}																							\
-		virtual ssize_t read(pid_t,OpenFile *,void *buffer,off_t offset,size_t count) override {	\
+		virtual ssize_t read(OpenFile *,void *buffer,off_t offset,size_t count) override {			\
 			ssize_t res = VFSInfo::readHelper(this,buffer,offset,count,0,(callback));				\
 			acctime = Timer::getTime();																\
 			return res;																				\
 		}																							\
-		virtual ssize_t write(pid_t,OpenFile *,const void *,off_t,size_t) override {				\
+		virtual ssize_t write(OpenFile *,const void *,off_t,size_t) override {						\
 			return -ENOTSUP;																		\
 		}																							\
 		virtual int truncate(off_t) override {														\

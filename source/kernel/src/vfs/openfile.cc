@@ -328,47 +328,35 @@ off_t OpenFile::seek(off_t offset,uint whence) {
 	return res;
 }
 
-ssize_t OpenFile::read(pid_t pid,USER void *buffer,size_t count) {
+ssize_t OpenFile::read(USER void *buffer,size_t count) {
 	if(EXPECT_FALSE(!(flags & VFS_READ)))
 		return -EACCES;
 
 	/* use the read-handler */
-	ssize_t readBytes = node->read(pid,this,buffer,position,count);
+	ssize_t readBytes = node->read(this,buffer,position,count);
 	if(EXPECT_TRUE(readBytes > 0)) {
 		LockGuard<SpinLock> g(&lock);
 		position += readBytes;
 	}
 
-	if(EXPECT_TRUE(readBytes > 0 && pid != KERNEL_PID)) {
-		Proc *p = Proc::getByPid(pid);
-		/* no lock here because its not critical. we don't make decisions based on it or similar.
-		 * its just for statistics. therefore, it doesn't really hurt if we add a bit less in
-		 * very very rare cases. */
-		p->getStats().input += readBytes;
-	}
 	return readBytes;
 }
 
-ssize_t OpenFile::write(pid_t pid,USER const void *buffer,size_t count) {
+ssize_t OpenFile::write(USER const void *buffer,size_t count) {
 	if(EXPECT_FALSE(!(flags & VFS_WRITE)))
 		return -EACCES;
 
 	/* write to the node */
-	ssize_t writtenBytes = node->write(pid,this,buffer,position,count);
+	ssize_t writtenBytes = node->write(this,buffer,position,count);
 	if(EXPECT_TRUE(writtenBytes > 0)) {
 		LockGuard<SpinLock> g(&lock);
 		position += writtenBytes;
 	}
 
-	if(EXPECT_TRUE(writtenBytes > 0 && pid != KERNEL_PID)) {
-		Proc *p = Proc::getByPid(pid);
-		/* no lock; same reason as above */
-		p->getStats().output += writtenBytes;
-	}
 	return writtenBytes;
 }
 
-ssize_t OpenFile::sendMsg(pid_t pid,msgid_t id,USER const void *data1,size_t size1,
+int OpenFile::sendMsg(msgid_t id,USER const void *data1,size_t size1,
 		USER const void *data2,size_t size2) {
 	/* the device-messages (open, read, write, close) are always allowed and the driver can always
 	 * send messages */
@@ -378,27 +366,15 @@ ssize_t OpenFile::sendMsg(pid_t pid,msgid_t id,USER const void *data1,size_t siz
 	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))
 		return -ENOTSUP;
 
-	ssize_t err = static_cast<VFSChannel*>(node)->send(flags,id,data1,size1,data2,size2);
-	if(EXPECT_TRUE(err >= 0 && pid != KERNEL_PID)) {
-		Proc *p = Proc::getByPid(pid);
-		/* no lock; same reason as above */
-		p->getStats().output += size1 + size2;
-	}
-	return err;
+	return static_cast<VFSChannel*>(node)->send(flags,id,data1,size1,data2,size2);
 }
 
-ssize_t OpenFile::receiveMsg(pid_t pid,msgid_t *id,USER void *data,size_t size,uint fflags) {
+ssize_t OpenFile::receiveMsg(msgid_t *id,USER void *data,size_t size,uint fflags) {
 	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))
 		return -ENOTSUP;
 
 	uint newflags = (flags & ~fflags) | fflags;
-	ssize_t err = static_cast<VFSChannel*>(node)->receive(newflags,id,data,size);
-	if(EXPECT_TRUE(err > 0 && pid != KERNEL_PID)) {
-		Proc *p = Proc::getByPid(pid);
-		/* no lock; same reason as above */
-		p->getStats().input += err;
-	}
-	return err;
+	return static_cast<VFSChannel*>(node)->receive(newflags,id,data,size);
 }
 
 int OpenFile::truncate(off_t length) {
@@ -415,11 +391,11 @@ int OpenFile::truncate(off_t length) {
 	return res;
 }
 
-int OpenFile::cancel(pid_t pid,msgid_t mid) {
+int OpenFile::cancel(msgid_t mid) {
 	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))
 		return -ENOTSUP;
 
-	return static_cast<VFSChannel*>(node)->cancel(pid,this,mid);
+	return static_cast<VFSChannel*>(node)->cancel(this,mid);
 }
 
 int OpenFile::delegate(pid_t pid,OpenFile *file,uint perm,int arg) {

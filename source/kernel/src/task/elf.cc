@@ -45,7 +45,7 @@ int ELF::doLoad(OpenFile *file,int type,StartupInfo *info) {
 
 	/* first read the header */
 	sElfEHeader eheader;
-	if((readRes = file->read(p->getPid(),&eheader,sizeof(sElfEHeader))) != sizeof(sElfEHeader)) {
+	if((readRes = file->read(&eheader,sizeof(sElfEHeader))) != sizeof(sElfEHeader)) {
 		Log::get().writef("[LOADER] Reading ELF-header of '%s' failed: %s\n",
 			file->getPath(),strerror(readRes));
 		goto failed;
@@ -75,7 +75,7 @@ int ELF::doLoad(OpenFile *file,int type,StartupInfo *info) {
 		}
 		/* read pheader */
 		sElfPHeader pheader;
-		if((readRes = file->read(p->getPid(),&pheader,sizeof(sElfPHeader))) != sizeof(sElfPHeader)) {
+		if((readRes = file->read(&pheader,sizeof(sElfPHeader))) != sizeof(sElfPHeader)) {
 			Log::get().writef("[LOADER] Reading program-header %d of '%s' failed: %s\n",
 					j,file->getPath(),strerror(readRes));
 			goto failed;
@@ -97,7 +97,7 @@ int ELF::doLoad(OpenFile *file,int type,StartupInfo *info) {
 				Log::get().writef("[LOADER] Seeking to dynlinker name (%Ox) failed\n",pheader.p_offset);
 				goto failedInterpName;
 			}
-			if(file->read(p->getPid(),interpName,pheader.p_filesz) != (ssize_t)pheader.p_filesz) {
+			if(file->read(interpName,pheader.p_filesz) != (ssize_t)pheader.p_filesz) {
 				Log::get().writef("[LOADER] Reading dynlinker name failed\n");
 				goto failedInterpName;
 			}

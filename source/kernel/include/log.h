@@ -35,7 +35,7 @@ class Log : public OStream {
 		explicit LogFile(const fs::User &u,VFSNode *parent,bool &success)
 				: VFSFile(u,parent,(char*)"log",FILE_DEF_MODE,success) {
 		}
-		virtual ssize_t write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,size_t count);
+		virtual ssize_t write(OpenFile *file,const void *buffer,off_t offset,size_t count);
 	};
 
 	explicit Log() : OStream(), buf(), bufPos(), logToSer(true), logFile(), vfsReady(), lock() {

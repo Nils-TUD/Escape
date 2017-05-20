@@ -328,28 +328,25 @@ public:
 	 * Reads max. count bytes from this file into the given buffer and returns the number
 	 * of read bytes.
 	 *
-	 * @param pid will be used to check whether the device writes or a device-user
 	 * @param buffer the buffer to write to
 	 * @param count the max. number of bytes to read
 	 * @return the number of bytes read
 	 */
-	ssize_t read(pid_t pid,void *buffer,size_t count);
+	ssize_t read(void *buffer,size_t count);
 
 	/**
 	 * Writes count bytes from the given buffer into this file and returns the number of written
 	 * bytes.
 	 *
-	 * @param pid will be used to check whether the device writes or a device-user
 	 * @param buffer the buffer to read from
 	 * @param count the number of bytes to write
 	 * @return the number of bytes written
 	 */
-	ssize_t write(pid_t pid,const void *buffer,size_t count);
+	ssize_t write(const void *buffer,size_t count);
 
 	/**
 	 * Sends a message to the corresponding device
 	 *
-	 * @param pid the sender-process-id
 	 * @param id the message-id
 	 * @param data1 the message-data
 	 * @param size1 the data-size
@@ -357,19 +354,17 @@ public:
 	 * @param size2 the size of the second message
 	 * @return 0 on success
 	 */
-	ssize_t sendMsg(pid_t pid,msgid_t id,USER const void *data1,size_t size1,
-			USER const void *data2,size_t size2);
+	int sendMsg(msgid_t id,USER const void *data1,size_t size1,USER const void *data2,size_t size2);
 
 	/**
 	 * Receives a message from the corresponding device
 	 *
-	 * @param pid the receiver-process-id
 	 * @param id will be set to the fetched msg-id
 	 * @param data the message to write to
 	 * @param flags additional flags (overwrite flags in the file)
 	 * @return the number of written bytes (or < 0 if an error occurred)
 	 */
-	ssize_t receiveMsg(pid_t pid,msgid_t *id,void *data,size_t size,uint flags);
+	ssize_t receiveMsg(msgid_t *id,void *data,size_t size,uint flags);
 
 	/**
 	 * Truncates the file to <length> bytes by either extending it with 0-bytes or cutting it to
@@ -390,7 +385,7 @@ public:
 	 * @param mid the message-id to cancel
 	 * @return 0 if it has been canceled, 1 if the reply is already available or < 0 on errors
 	 */
-	int cancel(pid_t pid,msgid_t mid);
+	int cancel(msgid_t mid);
 
 	/**
 	 * Delegates <file> to the driver over this channel.

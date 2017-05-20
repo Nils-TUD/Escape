@@ -389,7 +389,7 @@ int VirtMem::populatePages(VMRegion *vm,size_t count) {
 	return 0;
 }
 
-void VirtMem::swapOut(pid_t pid,OpenFile *file,size_t count) {
+void VirtMem::swapOut(OpenFile *file,size_t count) {
 	while(count > 0) {
 		Region *reg = getLRURegion();
 		if(reg == NULL)
@@ -436,7 +436,7 @@ void VirtMem::swapOut(pid_t pid,OpenFile *file,size_t count) {
 
 			/* write out on disk */
 			sassert(file->seek(block * PAGE_SIZE,SEEK_SET) >= 0);
-			sassert(file->write(pid,buffer,PAGE_SIZE) == PAGE_SIZE);
+			sassert(file->write(buffer,PAGE_SIZE) == PAGE_SIZE);
 
 			count--;
 		}
@@ -444,7 +444,7 @@ void VirtMem::swapOut(pid_t pid,OpenFile *file,size_t count) {
 	}
 }
 
-bool VirtMem::swapIn(pid_t pid,OpenFile *file,Thread *t,uintptr_t addr) {
+bool VirtMem::swapIn(OpenFile *file,Thread *t,uintptr_t addr) {
 	VMRegion *vmreg = t->getProc()->getVM()->regtree.getByAddr(addr);
 	if(!vmreg)
 		return false;
@@ -461,7 +461,7 @@ bool VirtMem::swapIn(pid_t pid,OpenFile *file,Thread *t,uintptr_t addr) {
 	/* read into buffer (note that we can use the same for swap-in and swap-out because its both
 	 * done by the swapper-thread) */
 	sassert(file->seek(block * PAGE_SIZE,SEEK_SET) >= 0);
-	sassert(file->read(pid,buffer,PAGE_SIZE) == PAGE_SIZE);
+	sassert(file->read(buffer,PAGE_SIZE) == PAGE_SIZE);
 
 	/* copy into a new frame */
 	frameno_t frame = t->getFrame();
@@ -632,9 +632,8 @@ void VirtMem::sync(VMRegion *vm) const {
 	OpenFile *file = vm->reg->getFile();
 	if((vm->reg->getFlags() & RF_SHAREABLE) && (vm->reg->getFlags() & RF_WRITABLE) && file) {
 		size_t pcount = BYTES_2_PAGES(vm->reg->getByteCount());
-		pid_t pid = proc->getPid();
 		Proc *cur = Thread::getRunning()->getProc();
-		bool foreign = cur->getPid() != pid;
+		bool foreign = cur->getPid() != proc->getPid();
 
 		for(size_t i = 0; i < pcount; i++) {
 			size_t amount = i < pcount - 1 ? PAGE_SIZE : (vm->reg->getByteCount() - i * PAGE_SIZE);
@@ -650,11 +649,11 @@ void VirtMem::sync(VMRegion *vm) const {
 			if(foreign) {
 				frameno_t frm = getPageDir()->getFrameNo(vm->virt() + i * PAGE_SIZE);
 				uintptr_t virt = cur->getPageDir()->getAccess(frm);
-				file->write(pid,(void*)virt,amount);
+				file->write((void*)virt,amount);
 				cur->getPageDir()->removeAccess(frm);
 			}
 			else
-				file->write(pid,(void*)(vm->virt() + i * PAGE_SIZE),amount);
+				file->write((void*)(vm->virt() + i * PAGE_SIZE),amount);
 		}
 	}
 }
@@ -1272,7 +1271,7 @@ int VirtMem::loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount) {
 		err = -ENOMEM;
 		goto error;
 	}
-	err = vm->reg->getFile()->read(proc->getPid(),tempBuf,loadCount);
+	err = vm->reg->getFile()->read(tempBuf,loadCount);
 	if(err != (ssize_t)loadCount) {
 		if(err >= 0)
 			err = -ENOMEM;

@@ -92,8 +92,8 @@ public:
 	/**
 	 * Sends the given message to the channel <chan>, which belongs to this device.
 	 */
-	ssize_t send(VFSChannel *chan,ushort flags,msgid_t id,USER const void *data1,
-                 size_t size1,USER const void *data2,size_t size2);
+	int send(VFSChannel *chan,ushort flags,msgid_t id,USER const void *data1,
+             size_t size1,USER const void *data2,size_t size2);
 
 	/**
 	 * Receives a message from the channel <chan>, which belongs to this device.

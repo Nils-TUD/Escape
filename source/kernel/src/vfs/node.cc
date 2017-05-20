@@ -326,7 +326,7 @@ int VFSNode::symlink(const fs::User &u,const char *name,const char *target) {
 	if(res < 0)
 		return res;
 	/* write target path */
-	link->write(KERNEL_PID/*TODO*/,NULL,target,0,strlen(target));
+	link->write(NULL,target,0,strlen(target));
 	return res;
 }
 

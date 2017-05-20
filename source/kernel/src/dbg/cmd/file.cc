@@ -34,7 +34,6 @@
 static char buffer[512];
 
 int cons_cmd_file(OStream &os,size_t argc,char **argv) {
-	pid_t pid = Proc::getRunning();
 	Lines lines;
 
 	if(Console::isHelp(argc,argv) || argc != 2) {
@@ -45,11 +44,11 @@ int cons_cmd_file(OStream &os,size_t argc,char **argv) {
 	}
 
 	OpenFile *file = NULL;
-	int res = VFS::openPath(pid,VFS_READ | VFS_NOFOLLOW,0,argv[1],NULL,&file);
+	int res = VFS::openPath(Proc::getRunning(),VFS_READ | VFS_NOFOLLOW,0,argv[1],NULL,&file);
 	if(res < 0)
 		goto error;
 	ssize_t count;
-	while((count = file->read(pid,buffer,sizeof(buffer))) > 0) {
+	while((count = file->read(buffer,sizeof(buffer))) > 0) {
 		/* build lines from the read data */
 		for(ssize_t i = 0; i < count; i++) {
 			if(buffer[i] == '\n')

@@ -84,22 +84,20 @@ public:
 	/**
 	 * Swaps <count> pages out. It searches for the best suited page to swap out.
 	 *
-	 * @param pid the process-id for writing the page-content to <file>
 	 * @param file the file to write to
 	 * @param count the number of pages to swap out
 	 */
-	static void swapOut(pid_t pid,OpenFile *file,size_t count);
+	static void swapOut(OpenFile *file,size_t count);
 
 	/**
 	 * Swaps the page at given address of the given process in.
 	 *
-	 * @param pid the process-id for writing the page-content to <file>
 	 * @param file the file to write to
 	 * @param t the thread that wants to swap the page in (and has reserved the frame to do so)
 	 * @param addr the address of the page to swap in
 	 * @return true on success
 	 */
-	static bool swapIn(pid_t pid,OpenFile *file,Thread *t,uintptr_t addr);
+	static bool swapIn(OpenFile *file,Thread *t,uintptr_t addr);
 
 	/**
 	 * Sets the timestamp for all regions that are used by the given thread

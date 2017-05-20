@@ -33,10 +33,9 @@
 
 static const size_t DIRE_HEAD_SIZE	= sizeof(struct dirent) - (NAME_MAX + 1);
 
-static int cons_cmd_ls_read(pid_t pid,OpenFile *file,struct dirent *e);
+static int cons_cmd_ls_read(OpenFile *file,struct dirent *e);
 
 int cons_cmd_ls(OStream &os,size_t argc,char **argv) {
-	pid_t pid = Proc::getRunning();
 	Lines lines;
 	if(Console::isHelp(argc,argv) || argc != 2) {
 		os.writef("Usage: %s <dir>\n",argv[0]);
@@ -47,11 +46,11 @@ int cons_cmd_ls(OStream &os,size_t argc,char **argv) {
 
 	/* redirect prints */
 	OpenFile *file;
-	int res = VFS::openPath(pid,VFS_READ,0,argv[1],NULL,&file);
+	int res = VFS::openPath(Proc::getRunning(),VFS_READ,0,argv[1],NULL,&file);
 	if(res < 0)
 		return res;
 	struct dirent e;
-	while((res = cons_cmd_ls_read(pid,file,&e)) > 0) {
+	while((res = cons_cmd_ls_read(file,&e)) > 0) {
 		OStringStream ss;
 		ss.writef("%d %s",e.d_ino,e.d_name);
 		if(ss.getString())
@@ -68,10 +67,10 @@ int cons_cmd_ls(OStream &os,size_t argc,char **argv) {
 	return 0;
 }
 
-static int cons_cmd_ls_read(pid_t pid,OpenFile *file,struct dirent *e) {
+static int cons_cmd_ls_read(OpenFile *file,struct dirent *e) {
 	ssize_t res;
 	/* default way; read the entry without name first */
-	if((res = file->read(pid,e,DIRE_HEAD_SIZE)) < 0)
+	if((res = file->read(e,DIRE_HEAD_SIZE)) < 0)
 		return res;
 	/* EOF? */
 	if(res == 0)
@@ -86,7 +85,7 @@ static int cons_cmd_ls_read(pid_t pid,OpenFile *file,struct dirent *e) {
 		return -ENAMETOOLONG;
 
 	/* now read the name */
-	if((res = file->read(pid,e->d_name,len)) < 0)
+	if((res = file->read(e->d_name,len)) < 0)
 		return res;
 
 	/* if the record is longer, we have to skip the stuff until the next record */

@@ -51,7 +51,7 @@ int ELF::finish(OpenFile *file,const sElfEHeader *eheader,StartupInfo *info) {
 		goto error;
 	}
 
-	if((readRes = file->read(t->getProc()->getPid(),secHeaders,headerSize)) != headerSize) {
+	if((readRes = file->read(secHeaders,headerSize)) != headerSize) {
 		Log::get().writef("[LOADER] Unable to read ELF-header: %s\n",strerror(-readRes));
 		goto error;
 	}
@@ -93,8 +93,7 @@ static int doFinish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *head
 					Log::get().writef("[LOADER] Unable to seek to reg-section: %s\n",strerror(res));
 					return res;
 				}
-				if((res = file->read(t->getProc()->getPid(),stack,sheader->sh_size)) !=
-						(ssize_t)sheader->sh_size) {
+				if((res = file->read(stack,sheader->sh_size)) != (ssize_t)sheader->sh_size) {
 					Log::get().writef("[LOADER] Unable to read reg-section: %s\n",strerror(res));
 					return res;
 				}

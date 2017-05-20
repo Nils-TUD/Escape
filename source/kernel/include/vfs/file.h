@@ -69,8 +69,8 @@ public:
 
 	virtual ssize_t getSize();
 	virtual off_t seek(off_t position,off_t offset,uint whence) const;
-	virtual ssize_t read(pid_t pid,OpenFile *file,void *buffer,off_t offset,size_t count);
-	virtual ssize_t write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,size_t count);
+	virtual ssize_t read(OpenFile *file,void *buffer,off_t offset,size_t count);
+	virtual ssize_t write(OpenFile *file,const void *buffer,off_t offset,size_t count);
 	virtual int truncate(off_t length);
 
 	virtual void print(OStream &os) const;

@@ -188,7 +188,10 @@ int Syscalls::read(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	ScopedFile file(p,fd);
-	ssize_t readBytes = EXPECT_TRUE(file) ? file->read(p->getPid(),buffer,count) : -EBADF;
+	ssize_t readBytes = EXPECT_TRUE(file) ? file->read(buffer,count) : -EBADF;
+	// no lock here, because it's just statistics
+	if(readBytes > 0)
+		p->getStats().input += readBytes;
 	SYSC_RESULT(stack,readBytes);
 }
 
@@ -205,7 +208,9 @@ int Syscalls::write(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	ScopedFile file(p,fd);
-	ssize_t writtenBytes = EXPECT_TRUE(file) ? file->write(p->getPid(),buffer,count) : -EBADF;
+	ssize_t writtenBytes = EXPECT_TRUE(file) ? file->write(buffer,count) : -EBADF;
+	if(writtenBytes > 0)
+		p->getStats().output += writtenBytes;
 	SYSC_RESULT(stack,writtenBytes);
 }
 
@@ -227,7 +232,9 @@ int Syscalls::send(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(!file->isDevice() && isDeviceMsg(id & 0xFFFF)))
 		SYSC_ERROR(stack,-EPERM);
 
-	ssize_t res = file->sendMsg(p->getPid(),id,data,size,NULL,0);
+	int res = file->sendMsg(id,data,size,NULL,0);
+	if(res >= 0)
+		p->getStats().output += size;
 	SYSC_RESULT(stack,res);
 }
 
@@ -244,9 +251,11 @@ int Syscalls::receive(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	ScopedFile file(p,fd);
-	ssize_t res = EXPECT_TRUE(file) ? file->receiveMsg(p->getPid(),&mid,data,size,VFS_SIGNALS) : -EBADF;
+	ssize_t res = EXPECT_TRUE(file) ? file->receiveMsg(&mid,data,size,VFS_SIGNALS) : -EBADF;
 	if(id)
 		*id = mid;
+	if(res > 0)
+		p->getStats().input += res;
 	SYSC_RESULT(stack,res);
 }
 
@@ -272,14 +281,18 @@ int Syscalls::sendrecv(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EPERM);
 
 	/* send msg */
-	ssize_t res = file->sendMsg(p->getPid(),mid,data,size,NULL,0);
+	ssize_t res = file->sendMsg(mid,data,size,NULL,0);
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
 
 	/* receive response */
 	mid = res;
-	res = file->receiveMsg(p->getPid(),&mid,data,size,VFS_SIGNALS);
+	res = file->receiveMsg(&mid,data,size,VFS_SIGNALS);
 	*id = mid;
+	if(res > 0) {
+		p->getStats().output += size;
+		p->getStats().input += res;
+	}
 	SYSC_RESULT(stack,res);
 }
 
@@ -289,7 +302,7 @@ int Syscalls::cancel(Thread *t,IntrptStackFrame *stack) {
 	Proc *p = t->getProc();
 
 	ScopedFile file(p,fd);
-	int res = EXPECT_TRUE(file) ? file->cancel(p->getPid(),id) : -EBADF;
+	int res = EXPECT_TRUE(file) ? file->cancel(id) : -EBADF;
 	SYSC_RESULT(stack,res);
 }
 

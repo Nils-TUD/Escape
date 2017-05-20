@@ -45,18 +45,17 @@ void Util::panicArch() {
 }
 
 void Util::switchToVGA() {
-	pid_t pid = Proc::getRunning();
 	OpenFile *file;
-	if(VFS::openPath(pid,VFS_MSGS | VFS_NOBLOCK,0,"/dev/vga",NULL,&file) == 0) {
+	if(VFS::openPath(Proc::getRunning(),VFS_MSGS | VFS_NOBLOCK,0,"/dev/vga",NULL,&file) == 0) {
 		ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 		esc::IPCBuf ib(buffer,sizeof(buffer));
 		ib << 3 << 1 << true;
 
-		ssize_t res = file->sendMsg(pid,MSG_SCR_SETMODE,ib.buffer(),ib.pos(),NULL,0);
+		ssize_t res = file->sendMsg(MSG_SCR_SETMODE,ib.buffer(),ib.pos(),NULL,0);
 		if(res > 0) {
 			for(int i = 0; i < 100; i++) {
 				msgid_t mid = res;
-				res = file->receiveMsg(pid,&mid,NULL,0,VFS_NOBLOCK);
+				res = file->receiveMsg(&mid,NULL,0,VFS_NOBLOCK);
 				if(res >= 0)
 					break;
 				Thread::switchAway();

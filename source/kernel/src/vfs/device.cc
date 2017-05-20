@@ -171,8 +171,8 @@ searchBegin:
 	return -ENOCLIENT;
 }
 
-ssize_t VFSDevice::send(VFSChannel *chan,ushort flags,msgid_t id,USER const void *data1,
-                        size_t size1,USER const void *data2,size_t size2) {
+int VFSDevice::send(VFSChannel *chan,ushort flags,msgid_t id,USER const void *data1,
+                    size_t size1,USER const void *data2,size_t size2) {
 	esc::SList<VFSChannel::Message> *list;
 	VFSChannel::Message *msg1,*msg2 = NULL;
 	int res;

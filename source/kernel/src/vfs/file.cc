@@ -174,8 +174,7 @@ int VFSFile::truncate(off_t length) {
 	return 0;
 }
 
-ssize_t VFSFile::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buffer,
-                      off_t offset,size_t count) {
+ssize_t VFSFile::read(A_UNUSED OpenFile *file,USER void *buffer,off_t offset,size_t count) {
 	LockGuard<SpinLock> g(&lock);
 	if((off_t)(offset + count) < offset)
 		return -EINVAL;
@@ -205,8 +204,7 @@ ssize_t VFSFile::read(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER void *buff
 	return count;
 }
 
-ssize_t VFSFile::write(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,USER const void *buffer,
-                       off_t offset,size_t count) {
+ssize_t VFSFile::write(A_UNUSED OpenFile *file,USER const void *buffer,off_t offset,size_t count) {
 	/* need to create cache? */
 	LockGuard<SpinLock> g(&lock);
 	if((off_t)(offset + count) < offset)

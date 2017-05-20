@@ -34,12 +34,10 @@
 #include <string.h>
 
 static OpenFile *file;
-static pid_t pid;
 
 class DumpNaviBackend : public NaviBackend {
 public:
-	explicit DumpNaviBackend(const char *f,uintptr_t end)
-			: NaviBackend(0,end), pid(Proc::getRunning()) {
+	explicit DumpNaviBackend(const char *f,uintptr_t end) : NaviBackend(0,end) {
 		OStringStream os(filename,sizeof(filename));
 		os.writef("File %s",f);
 	}
@@ -55,7 +53,7 @@ public:
 			memclear(buffer,sizeof(buffer));
 			if(file->seek(addr,SEEK_SET) < 0)
 				valid = false;
-			if(valid && file->read(pid,buffer,sizeof(buffer)) < 0)
+			if(valid && file->read(buffer,sizeof(buffer)) < 0)
 				valid = false;
 			if(valid)
 				buffer[sizeof(buffer) - 1] = '\0';
@@ -78,7 +76,6 @@ public:
 	}
 
 private:
-	pid_t pid;
 	static uint8_t buffer[Console::BYTES_PER_LINE + 1];
 	static char filename[50];
 };
@@ -94,8 +91,7 @@ int cons_cmd_dump(OStream &os,size_t argc,char **argv) {
 		return 0;
 	}
 
-	pid = Proc::getRunning();
-	int res = VFS::openPath(pid,VFS_READ | VFS_NOFOLLOW,0,argv[1],NULL,&file);
+	int res = VFS::openPath(Proc::getRunning(),VFS_READ | VFS_NOFOLLOW,0,argv[1],NULL,&file);
 	if(res >= 0) {
 		off_t end = file->seek(0,SEEK_END);
 		DumpNaviBackend backend(argv[1],esc::Util::round_dn(end,Console::BYTES_PER_LINE));

@@ -212,7 +212,7 @@ uint VFSChannel::getReceiveFlags() const {
 	return flags;
 }
 
-ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset,size_t count) {
+ssize_t VFSChannel::read(OpenFile *file,USER void *buffer,off_t offset,size_t count) {
 	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(ibuffer,sizeof(ibuffer));
 	ssize_t res;
@@ -223,7 +223,7 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 	/* send msg to driver */
 	bool useshm = useSharedMem(shmem,shmemSize,buffer,count);
 	ib << esc::FileRead::Request(offset,count,useshm ? ((uintptr_t)buffer - (uintptr_t)shmem) : -1);
-	res = file->sendMsg(pid,esc::FileRead::MSG,ib.buffer(),ib.pos(),NULL,0);
+	res = file->sendMsg(esc::FileRead::MSG,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		return res;
 
@@ -233,10 +233,10 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 		/* read response and ensure that we don't get killed until we've received both messages
 		 * (otherwise the channel might get in an inconsistent state) */
 		ib.reset();
-		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),flags);
+		res = file->receiveMsg(&mid,ib.buffer(),ib.max(),flags);
 		if(res < 0) {
 			if(res == -EINTR || res == -EWOULDBLOCK) {
-				int cancelRes = cancel(pid,file,mid);
+				int cancelRes = cancel(file,mid);
 				if(cancelRes == esc::DevCancel::READY) {
 					/* if the result is already there, get it, but don't allow signals anymore
 					 * and force blocking */
@@ -255,13 +255,13 @@ ssize_t VFSChannel::read(pid_t pid,OpenFile *file,USER void *buffer,off_t offset
 
 		/* read data */
 		if(!useshm && r.res > 0)
-			r.res = file->receiveMsg(pid,&mid,buffer,count,0);
+			r.res = file->receiveMsg(&mid,buffer,count,0);
 		return r.res;
 	}
 	A_UNREACHED;
 }
 
-ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t offset,size_t count) {
+ssize_t VFSChannel::write(OpenFile *file,USER const void *buffer,off_t offset,size_t count) {
 	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(ibuffer,sizeof(ibuffer));
 	ssize_t res;
@@ -272,7 +272,7 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 
 	/* send msg and data to driver */
 	ib << esc::FileWrite::Request(offset,count,useshm ? ((uintptr_t)buffer - (uintptr_t)shmem) : -1);
-	res = file->sendMsg(pid,esc::FileWrite::MSG,ib.buffer(),ib.pos(),useshm ? NULL : buffer,count);
+	res = file->sendMsg(esc::FileWrite::MSG,ib.buffer(),ib.pos(),useshm ? NULL : buffer,count);
 	if(res < 0)
 		return res;
 
@@ -281,10 +281,10 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 	while(1) {
 		/* read response */
 		ib.reset();
-		res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),flags);
+		res = file->receiveMsg(&mid,ib.buffer(),ib.max(),flags);
 		if(res < 0) {
 			if(res == -EINTR || res == -EWOULDBLOCK) {
-				int cancelRes = cancel(pid,file,mid);
+				int cancelRes = cancel(file,mid);
 				if(cancelRes == esc::DevCancel::READY) {
 					/* if the result is already there, get it, but don't allow signals anymore
 					 * and force blocking */
@@ -304,7 +304,7 @@ ssize_t VFSChannel::write(pid_t pid,OpenFile *file,USER const void *buffer,off_t
 	A_UNREACHED;
 }
 
-int VFSChannel::cancel(pid_t pid,OpenFile *file,msgid_t mid) {
+int VFSChannel::cancel(OpenFile *file,msgid_t mid) {
 	ulong ibuffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(ibuffer,sizeof(ibuffer));
 
@@ -323,13 +323,13 @@ int VFSChannel::cancel(pid_t pid,OpenFile *file,msgid_t mid) {
 		return sent ? 0 : res;
 
 	ib << esc::DevCancel::Request(mid);
-	res = file->sendMsg(pid,esc::DevCancel::MSG,ib.buffer(),ib.pos(),NULL,0);
+	res = file->sendMsg(esc::DevCancel::MSG,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		return res;
 
 	ib.reset();
 	mid = res;
-	res = file->receiveMsg(pid,&mid,ib.buffer(),ib.max(),VFS_BLOCK);
+	res = file->receiveMsg(&mid,ib.buffer(),ib.max(),VFS_BLOCK);
 	if(res < 0)
 		return res;
 
@@ -378,14 +378,14 @@ int VFSChannel::delegate(pid_t pid,OpenFile *chan,OpenFile *file,uint perm,int a
 
 	/* send msg to driver */
 	ib << esc::DevDelegate::Request(nfd,arg);
-	res = chan->sendMsg(pid,esc::DevDelegate::MSG,ib.buffer(),ib.pos(),NULL,0);
+	res = chan->sendMsg(esc::DevDelegate::MSG,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		goto error;
 
 	/* read response */
 	ib.reset();
 	mid = res;
-	res = chan->receiveMsg(pid,&mid,ib.buffer(),ib.max(),0);
+	res = chan->receiveMsg(&mid,ib.buffer(),ib.max(),0);
 	if(res < 0)
 		goto error;
 
@@ -418,7 +418,7 @@ int VFSChannel::obtain(pid_t pid,OpenFile *chan,int arg) {
 
 	/* send msg to driver */
 	ib << esc::DevObtain::Request(arg);
-	res = chan->sendMsg(pid,esc::DevObtain::MSG,ib.buffer(),ib.pos(),NULL,0);
+	res = chan->sendMsg(esc::DevObtain::MSG,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		return res;
 
@@ -427,10 +427,10 @@ int VFSChannel::obtain(pid_t pid,OpenFile *chan,int arg) {
 	while(1) {
 		/* read response */
 		ib.reset();
-		res = chan->receiveMsg(pid,&mid,ib.buffer(),ib.max(),flags);
+		res = chan->receiveMsg(&mid,ib.buffer(),ib.max(),flags);
 		if(res < 0) {
 			if(res == -EINTR || res == -EWOULDBLOCK) {
-				int cancelRes = cancel(pid,chan,mid);
+				int cancelRes = cancel(chan,mid);
 				if(cancelRes == esc::DevCancel::READY) {
 					/* if the result is already there, get it, but don't allow signals anymore
 					 * and force blocking */
@@ -482,7 +482,7 @@ errorProc:
 	return res;
 }
 
-ssize_t VFSChannel::send(ushort flags,msgid_t id,USER const void *data1,
+int VFSChannel::send(ushort flags,msgid_t id,USER const void *data1,
 						 size_t size1,USER const void *data2,size_t size2) {
 	return static_cast<VFSDevice*>(parent)->send(this,flags,id,data1,size1,data2,size2);
 }

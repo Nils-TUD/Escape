@@ -447,7 +447,7 @@ void PhysMem::swapper() {
 			swapping = true;
 			defLock.up();
 
-			VirtMem::swapOut(pid,swapFile,amount);
+			VirtMem::swapOut(swapFile,amount);
 			swappedOut += amount;
 
 			defLock.down();
@@ -462,7 +462,7 @@ void PhysMem::swapper() {
 			swapping = true;
 			defLock.up();
 
-			if(VirtMem::swapIn(pid,swapFile,job->thread,job->addr))
+			if(VirtMem::swapIn(swapFile,job->thread,job->addr))
 				swappedIn++;
 
 			defLock.down();

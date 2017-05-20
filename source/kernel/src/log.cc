@@ -101,7 +101,7 @@ bool Log::escape(const char **str) {
 	return true;
 }
 
-ssize_t Log::LogFile::write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,size_t count) {
+ssize_t Log::LogFile::write(OpenFile *file,const void *buffer,off_t offset,size_t count) {
 	if(Config::get(Config::LOG) && Log::get().logToSer) {
 		const bool toVGA = Config::get(Config::LOG_TO_VGA);
 		char *str = (char*)buffer;
@@ -112,13 +112,13 @@ ssize_t Log::LogFile::write(pid_t pid,OpenFile *file,const void *buffer,off_t of
 		}
 	}
 	/* ignore errors here */
-	VFSFile::write(pid,file,buffer,offset,count);
+	VFSFile::write(file,buffer,offset,count);
 	return count;
 }
 
 void Log::flush() {
 	if(vfsReady && bufPos) {
-		logFile->write(KERNEL_PID,buf,bufPos);
+		logFile->write(buf,bufPos);
 		bufPos = 0;
 	}
 }

@@ -94,8 +94,8 @@ public:
 	 * @param size2 the size of the second message
 	 * @return 0 on success
 	 */
-	ssize_t send(ushort flags,msgid_t id,USER const void *data1,size_t size1,
-	             USER const void *data2,size_t size2);
+	int send(ushort flags,msgid_t id,USER const void *data1,size_t size1,
+	         USER const void *data2,size_t size2);
 
 	/**
 	 * Receives a message from the channel
@@ -118,7 +118,7 @@ public:
 	 * @param mid the message-id to cancel
 	 * @return 0 if it has been canceled, 1 if the reply is already available or < 0 on errors
 	 */
-	int cancel(pid_t pid,OpenFile *file,msgid_t mid);
+	int cancel(OpenFile *file,msgid_t mid);
 
 	/**
 	 * Delegates <file> to the driver over <chan>.
@@ -146,8 +146,8 @@ public:
 		int msgid,mode_t mode);
 	virtual off_t seek(off_t position,off_t offset,uint whence) const;
 	virtual ssize_t getSize();
-	virtual ssize_t read(pid_t pid,OpenFile *file,void *buffer,off_t offset,size_t count);
-	virtual ssize_t write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,size_t count);
+	virtual ssize_t read(OpenFile *file,void *buffer,off_t offset,size_t count);
+	virtual ssize_t write(OpenFile *file,const void *buffer,off_t offset,size_t count);
 	virtual void close(OpenFile *file,int msgid);
 	virtual void print(OStream &os) const;
 

@@ -27,7 +27,8 @@
             "-Wextra",
             "-Wpointer-arith",
             "-Wmissing-prototypes",
-            "-ferror-limit=0"
+            "-ferror-limit=0",
+            "-Wmissing-override"
         ]
     }
 }

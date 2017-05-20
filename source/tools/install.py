@@ -37,7 +37,7 @@ def _is_globbed(name, glob):
     return any( (fnmatch.fnmatchcase(name, i) for i in glob) )
 
 
-def _get_files(env, source, exclude, glob, recursive, reldir=os.curdir):
+def _get_files(env, source, exclude, glob, recursive, dirs, reldir=os.curdir):
     """
     Find files that match the criteria.
 
@@ -66,6 +66,9 @@ def _get_files(env, source, exclude, glob, recursive, reldir=os.curdir):
         return []
 
     results = []
+    if dirs:
+        results.append( (reldir, source) )
+
     for entry in os.listdir(source):
         fullpath = os.path.join(source, entry)
         if os.path.islink(fullpath):
@@ -82,7 +85,7 @@ def _get_files(env, source, exclude, glob, recursive, reldir=os.curdir):
         elif os.path.isdir(fullpath):
             if recursive:
                 newrel = os.path.join(reldir, entry)
-                results.extend(_get_files(env, fullpath, exclude, glob, recursive, newrel))
+                results.extend(_get_files(env, fullpath, exclude, glob, recursive, dirs, newrel))
 
     return results
 
@@ -140,7 +143,7 @@ def _get_built_files(env, source, exclude, glob, recursive, reldir=os.curdir):
     return results
 
 
-def _get_both(env, source, exclude, glob, recursive, scan):
+def _get_both(env, source, exclude, glob, recursive, dirs, scan):
     """
     Get both the built and source files that match the criteria.  Built
     files take priority over a source file of the same path and name.
@@ -158,16 +161,20 @@ def _get_both(env, source, exclude, glob, recursive, scan):
 
     # Get source files
     if scan == 1 or scan == 2:
-        files = _get_files(env, source.srcnode().abspath, exclude, glob, recursive)
+        files = _get_files(env, source.srcnode().abspath, exclude, glob, recursive, dirs)
         for (relsrc, src) in files:
-            node = env.File(src)
+            if os.path.isdir(src):
+                node = env.Dir(src)
+            else:
+                node = env.File(src)
             if not node in src_nodes:
                 results.append( (relsrc, src) )
 
     return results
-                
 
-def InstallFiles(env, target, source, exclude=None, glob=None, recursive=True, scan=2):
+
+
+def InstallFiles(env, target, source, exclude=None, glob=None, recursive=True, dirs=False, scan=2):
     """
     InstallFiles pseudo-builder
 
@@ -211,7 +218,7 @@ def InstallFiles(env, target, source, exclude=None, glob=None, recursive=True, s
         if not isinstance(s, SCons.Node.FS.Base):
             s = env.Entry(s)
 
-        for (relsrc, src) in _get_both(env, s, exclude, glob, recursive, scan):
+        for (relsrc, src) in _get_both(env, s, exclude, glob, recursive, dirs, scan):
             dest = os.path.normpath(os.path.join(t.abspath, relsrc))
             files.append( (dest, src) )
 

@@ -47,7 +47,7 @@ int cons_cmd_node(OStream &os,size_t argc,char **argv) {
 	file->getNode()->print(los);
 	lines.endLine();
 
-	file->close(p->getPid());
+	file->close();
 	file = NULL;
 
 	/* now display lines */
@@ -57,6 +57,6 @@ int cons_cmd_node(OStream &os,size_t argc,char **argv) {
 error:
 	/* clean up */
 	if(file != NULL)
-		file->close(p->getPid());
+		file->close();
 	return res;
 }

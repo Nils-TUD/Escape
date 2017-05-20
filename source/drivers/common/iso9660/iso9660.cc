@@ -50,10 +50,7 @@ int main(int argc,char *argv[]) {
 	/* otherwise try all possible ATAPI-drives */
 	else {
 		char path[SSTRLEN("/dev/cda1") + 1];
-		fs::User u;
-		u.uid = ROOT_UID;
-		u.gid = ROOT_GID;
-		u.pid = getpid();
+		fs::User u(ROOT_UID,ROOT_GID);
 		int i;
 		for(i = 0; i < 4; i++) {
 			snprintf(path,sizeof(path),"/dev/cd%c1",'a' + (int)i);
@@ -67,8 +64,9 @@ int main(int argc,char *argv[]) {
 				if(ino >= 0)
 					break;
 			}
-			catch(...) {
+			catch(const std::exception &e) {
 				// if the device isn't present, try the next one
+				print(e.what());
 				continue;
 			}
 		}
@@ -123,7 +121,7 @@ ino_t ISO9660FileSystem::open(fs::User *u,const char *path,ssize_t *,ino_t root,
 	ino_t ino = ISO9660Dir::resolve(this,u,path,root,flags);
 	if(ino < 0)
 		return ino;
-	*file = new fs::OpenFile(fd,ino);
+	*file = new fs::OpenFile(fd,*u,ino);
 	return ino;
 }
 
@@ -165,31 +163,31 @@ ssize_t ISO9660FileSystem::write(fs::OpenFile *,const void *,off_t,size_t) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::link(fs::User *,fs::OpenFile *,fs::OpenFile *,const char *) {
+int ISO9660FileSystem::link(fs::OpenFile *,fs::OpenFile *,const char *) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::unlink(fs::User *,fs::OpenFile *,const char *) {
+int ISO9660FileSystem::unlink(fs::OpenFile *,const char *) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::mkdir(fs::User *,fs::OpenFile *,const char *,mode_t) {
+int ISO9660FileSystem::mkdir(fs::OpenFile *,const char *,mode_t) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::rmdir(fs::User *,fs::OpenFile *,const char *) {
+int ISO9660FileSystem::rmdir(fs::OpenFile *,const char *) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::chmod(fs::User *,fs::OpenFile *,mode_t) {
+int ISO9660FileSystem::chmod(fs::OpenFile *,mode_t) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::chown(fs::User *,fs::OpenFile *,uid_t,gid_t) {
+int ISO9660FileSystem::chown(fs::OpenFile *,uid_t,gid_t) {
 	return -EROFS;
 }
 
-int ISO9660FileSystem::utime(fs::User *,fs::OpenFile *,const struct utimbuf *) {
+int ISO9660FileSystem::utime(fs::OpenFile *,const struct utimbuf *) {
 	return -EROFS;
 }
 

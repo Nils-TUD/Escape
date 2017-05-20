@@ -63,8 +63,8 @@ size_t VFSNode::allocated;
 
 /* we have 2 refs at the beginning because we expect the creator to release the node if he's done
  * working with it */
-VFSNode::VFSNode(pid_t pid,char *n,uint m,bool &success)
-		: name(n), nameLen(), refCount(2), owner(pid), uid(), gid(), mode(m),
+VFSNode::VFSNode(const fs::User &u,char *n,uint m,bool &success)
+		: name(n), nameLen(), refCount(2), uid(u.uid), gid(u.gid), mode(m),
 		  parent(), prev(), firstChild(), next() {
 	if(this == nullptr || name == NULL || nameLen > NAME_MAX) {
 		success = false;
@@ -72,28 +72,16 @@ VFSNode::VFSNode(pid_t pid,char *n,uint m,bool &success)
 	}
 
 	nameLen = strlen(name);
-	const Proc *p = pid != INVALID_PID ? Proc::getRef(pid) : NULL;
-	if(p) {
-		uid = p->getUid();
-		gid = p->getGid();
-		Proc::relRef(p);
-	}
-	else {
-		uid = ROOT_UID;
-		gid = ROOT_GID;
-	}
-
 	modtime = acctime = crttime = Timer::getTime();
 }
 
 bool VFSNode::isDeletable() const {
-	return getOwner() != KERNEL_PID;
+	return uid != fs::KERNEL_UID;
 }
 
-ssize_t VFSNode::open(pid_t pid,A_UNUSED const char *path,ssize_t *,A_UNUSED ino_t root,uint flags,
-		A_UNUSED int msgid,A_UNUSED mode_t mode) {
+ssize_t VFSNode::open(const fs::User &u,const char *,ssize_t *,ino_t,uint flags,int,mode_t) {
 	int err;
-	if((err = VFS::hasAccess(pid,this,flags)) < 0)
+	if((err = VFS::hasAccess(u,this,flags)) < 0)
 		return err;
 	return 0;
 }
@@ -105,7 +93,7 @@ const VFSNode *VFSNode::openDir(bool locked,bool *valid) const {
 	return firstChild;
 }
 
-void VFSNode::getInfo(pid_t pid,struct stat *info) {
+void VFSNode::getInfo(struct stat *info) {
 	info->st_dev = VFS_DEV_NO;
 	info->st_atime = acctime;
 	info->st_mtime = modtime;
@@ -113,10 +101,11 @@ void VFSNode::getInfo(pid_t pid,struct stat *info) {
 	info->st_ino = getNo();
 	// TODO set that properly
 	info->st_nlink = 1;
-	info->st_uid = uid;
+	// we don't want to expose the kernel uid to userspace
+	info->st_uid = uid == fs::KERNEL_UID ? ROOT_UID : uid;
 	info->st_gid = gid;
 	info->st_mode = mode;
-	info->st_size = getSize(pid);
+	info->st_size = getSize();
 	info->st_blksize = 512;
 	info->st_blocks = info->st_size / 512;
 }
@@ -154,80 +143,65 @@ void VFSNode::getPathTo(char *dst,size_t size) const {
 	*(dst + len) = '\0';
 }
 
-int VFSNode::chmod(pid_t pid,mode_t m) {
-	int res = 0;
-	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getRef(pid);
-	if(p) {
-		fs::User u(p->getUid(),p->getGid(),p->getPid());
-		if(!fs::Permissions::canChmod(&u,uid))
-			res = -EPERM;
-		/* chmod is forbidden for symlinks */
-		else if(S_ISLNK(mode))
-			res = -ENOTSUP;
-		Proc::relRef(p);
-	}
-	if(res == 0)
+int VFSNode::chmod(const fs::User &u,mode_t m) {
+	int res;
+	if(!fs::Permissions::canChmod(&u,uid))
+		res = -EPERM;
+	/* chmod is forbidden for symlinks */
+	else if(S_ISLNK(mode))
+		res = -ENOTSUP;
+	else {
 		mode = (mode & ~MODE_PERM) | (m & MODE_PERM);
+		res = 0;
+	}
 	return res;
 }
 
-int VFSNode::chown(pid_t pid,uid_t nuid,gid_t ngid) {
-	int res = 0;
-	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getRef(pid);
-	if(p) {
-		fs::User u(p->getUid(),p->getGid(),p->getPid());
-		if(!fs::Permissions::canChown<Groups::contains>(&u,uid,gid,nuid,ngid))
-			res = -EPERM;
-		/* chown is forbidden for symlinks */
-		else if(S_ISLNK(mode))
-			res = -ENOTSUP;
-		Proc::relRef(p);
-	}
-
-	if(res == 0) {
+int VFSNode::chown(const fs::User &u,uid_t nuid,gid_t ngid) {
+	int res;
+	if(!fs::Permissions::canChown(&u,uid,gid,nuid,ngid))
+		res = -EPERM;
+	/* chown is forbidden for symlinks */
+	else if(S_ISLNK(mode))
+		res = -ENOTSUP;
+	else {
 		if(nuid != (uid_t)-1)
 			uid = nuid;
 		if(ngid != (gid_t)-1)
 			gid = ngid;
+		res = 0;
 	}
 	return res;
 }
 
-int VFSNode::utime(pid_t pid,const struct utimbuf *utimes) {
-	int res = 0;
-	const Proc *p = pid == KERNEL_PID ? NULL : Proc::getRef(pid);
-	if(p) {
-		fs::User u(p->getUid(),p->getGid(),p->getPid());
-		if(!fs::Permissions::canUtime(&u,uid))
-			res = -EPERM;
-		Proc::relRef(p);
-	}
-
-	if(res == 0) {
+int VFSNode::utime(const fs::User &u,const struct utimbuf *utimes) {
+	int res;
+	if(!fs::Permissions::canUtime(&u,uid))
+		res = -EPERM;
+	else {
 		modtime = utimes->modtime;
 		acctime = utimes->actime;
+		res = 0;
 	}
 	return res;
 }
 
-bool VFSNode::canRemove(pid_t pid,const VFSNode *node) const {
-	if(pid == KERNEL_PID)
+bool VFSNode::canRemove(const fs::User &u,const VFSNode *node) const {
+	if(u.isKernel())
 		return true;
 	if(!node->isDeletable())
 		return false;
 
-	Proc *p = Proc::getByPid(pid);
-	fs::User u(p->getUid(),p->getGid(),p->getPid());
 	return fs::Permissions::canRemove(&u,mode,uid,node->uid) == 0;
 }
 
-int VFSNode::unlink(pid_t pid,const char *name) {
+int VFSNode::unlink(const fs::User &u,const char *name) {
 	if(!S_ISDIR(mode))
 		return -ENOTDIR;
 
 	treeLock.down();
 	VFSNode *n = const_cast<VFSNode*>(findInDir(name,strlen(name),false));
-	if(!n || !canRemove(pid,n)) {
+	if(!n || !canRemove(u,n)) {
 		treeLock.up();
 		return n ? -EPERM : -ENOENT;
 	}
@@ -239,7 +213,7 @@ int VFSNode::unlink(pid_t pid,const char *name) {
 	return 0;
 }
 
-int VFSNode::rename(pid_t pid,const char *oldName,VFSNode *newDir,const char *newName) {
+int VFSNode::rename(const fs::User &u,const char *oldName,VFSNode *newDir,const char *newName) {
 	/* make copy of name */
 	char *namecpy = strdup(newName);
 	if(!namecpy)
@@ -248,7 +222,7 @@ int VFSNode::rename(pid_t pid,const char *oldName,VFSNode *newDir,const char *ne
 	/* get target */
 	treeLock.down();
 	VFSNode *target = const_cast<VFSNode*>(findInDir(oldName,strlen(oldName),false));
-	if(!target || !canRemove(pid,target)) {
+	if(!target || !canRemove(u,target)) {
 		Cache::free(namecpy);
 		treeLock.up();
 		return target ? -EPERM : -ENOENT;
@@ -270,7 +244,7 @@ int VFSNode::rename(pid_t pid,const char *oldName,VFSNode *newDir,const char *ne
 	return 0;
 }
 
-int VFSNode::mkdir(pid_t pid,const char *name,mode_t mode) {
+int VFSNode::mkdir(const fs::User &u,const char *name,mode_t mode) {
 	char *namecpy;
 	VFSNode *child;
 	int res;
@@ -289,7 +263,7 @@ int VFSNode::mkdir(pid_t pid,const char *name,mode_t mode) {
 		goto errorFree;
 	}
 
-	child = createObj<VFSDir>(pid,this,namecpy,S_IFDIR | (mode & MODE_PERM));
+	child = createObj<VFSDir>(u,this,namecpy,S_IFDIR | (mode & MODE_PERM));
 	if(child == NULL) {
 		res = -ENOMEM;
 		goto errorFree;
@@ -302,7 +276,7 @@ errorFree:
 	return res;
 }
 
-int VFSNode::rmdir(pid_t pid,const char *name) {
+int VFSNode::rmdir(const fs::User &u,const char *name) {
 	if(!S_ISDIR(this->mode))
 		return -ENOTDIR;
 
@@ -321,7 +295,7 @@ int VFSNode::rmdir(pid_t pid,const char *name) {
 	}
 
 	/* check permissions */
-	if(dir->getOwner() == KERNEL_PID || !canRemove(pid,dir)) {
+	if(!canRemove(u,dir)) {
 		res = -EPERM;
 		goto error;
 	}
@@ -337,7 +311,7 @@ error:
 	return res;
 }
 
-int VFSNode::symlink(pid_t pid,const char *name,const char *target) {
+int VFSNode::symlink(const fs::User &u,const char *name,const char *target) {
 	/* ensure its a directory */
 	if(!S_ISDIR(mode))
 		return -ENOTDIR;
@@ -348,15 +322,15 @@ int VFSNode::symlink(pid_t pid,const char *name,const char *target) {
 
 	/* create link */
 	VFSNode *link;
-	int res = createFile(pid,name,this,&link,VFS_SYMLINK,LNK_DEF_MODE);
+	int res = createFile(u,name,this,&link,VFS_SYMLINK,LNK_DEF_MODE);
 	if(res < 0)
 		return res;
 	/* write target path */
-	link->write(pid,NULL,target,0,strlen(target));
+	link->write(KERNEL_PID/*TODO*/,NULL,target,0,strlen(target));
 	return res;
 }
 
-int VFSNode::createdev(pid_t pid,const char *name,mode_t mode,uint type,uint ops,VFSNode **node) {
+int VFSNode::createdev(const fs::User &u,const char *name,mode_t mode,uint type,uint ops,VFSNode **node) {
 	/* ensure its a directory */
 	if(!S_ISDIR(this->mode))
 		return -ENOTDIR;
@@ -371,7 +345,7 @@ int VFSNode::createdev(pid_t pid,const char *name,mode_t mode,uint type,uint ops
 		return -ENOMEM;
 
 	/* create node */
-	*node = createObj<VFSDevice>(pid,this,namecpy,mode,type,ops);
+	*node = createObj<VFSDevice>(u,this,namecpy,mode,type,ops);
 	if(!*node) {
 		Cache::free(namecpy);
 		return -ENOMEM;
@@ -379,20 +353,18 @@ int VFSNode::createdev(pid_t pid,const char *name,mode_t mode,uint type,uint ops
 	return 0;
 }
 
-int VFSNode::request(const char *path,VFSNode **node,uint flags,mode_t mode) {
+int VFSNode::request(const fs::User &u,const char *path,VFSNode **node,uint flags,mode_t mode) {
 	RequestResult res;
-	int err = request(path,*node,&res,flags | VFS_NOFOLLOW,mode);
+	int err = request(u,path,*node,&res,flags | VFS_NOFOLLOW,mode);
 	if(err < 0)
 		return err;
 	*node = res.node;
 	return err;
 }
 
-int VFSNode::request(const char *path,VFSNode *node,RequestResult *res,uint flags,mode_t mode) {
+int VFSNode::request(const fs::User &u,const char *path,VFSNode *node,RequestResult *res,
+		uint flags,mode_t mode) {
 	const VFSNode *dir,*n = node;
-	const Thread *t = Thread::getRunning();
-	/* at the beginning, t might be NULL */
-	pid_t pid = t ? t->getProc()->getPid() : KERNEL_PID;
 	const char *opath = path,*lastpath = path;
 	int pos = 0,err,depth,lastdepth;
 	bool valid;
@@ -425,7 +397,7 @@ int VFSNode::request(const char *path,VFSNode *node,RequestResult *res,uint flag
 			if(depth != lastdepth) {
 				char c;
 				/* check if we can access this directory */
-				if((err = VFS::hasAccess(pid,dir,VFS_EXEC)) < 0)
+				if((err = VFS::hasAccess(u,dir,VFS_EXEC)) < 0)
 					goto done;
 
 				pos = 0;
@@ -486,7 +458,10 @@ int VFSNode::request(const char *path,VFSNode *node,RequestResult *res,uint flag
 		dir->closeDir(true);
 		/* should we create a default-file? */
 		if((flags & VFS_CREATE) && S_ISDIR(dir->mode)) {
-			err = createFile(pid,path,const_cast<VFSNode*>(dir),&res->node,flags,mode);
+			/* can we create files in this directory? */
+			if((err = VFS::hasAccess(u,dir,VFS_WRITE)) < 0)
+				return err;
+			err = createFile(u,path,const_cast<VFSNode*>(dir),&res->node,flags,mode);
 			if(err == 0)
 				res->created = true;
 		}
@@ -639,7 +614,7 @@ ushort VFSNode::doUnref(bool force) {
 	return remRefs;
 }
 
-char *VFSNode::generateId(pid_t pid) {
+char *VFSNode::generateId() {
 	/* we want a id in the form <pid>.<x>, i.e. 2 ints, a '.' and '\0'. thus, allowing up to 31
 	 * digits per int is enough, even for 64-bit ints */
 	const size_t size = 64;
@@ -648,7 +623,7 @@ char *VFSNode::generateId(pid_t pid) {
 		return NULL;
 
 	/* create usage-node */
-	itoa(name,size,pid);
+	itoa(name,size,Proc::getRunning());
 	size_t len = strlen(name);
 	*(name + len) = '.';
 	uint id;
@@ -660,12 +635,9 @@ char *VFSNode::generateId(pid_t pid) {
 	return name;
 }
 
-int VFSNode::createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,uint flags,mode_t mode) {
+int VFSNode::createFile(const fs::User &u,const char *path,VFSNode *dir,VFSNode **child,
+		uint flags,mode_t mode) {
 	size_t nameLen;
-	int err;
-	/* can we create files in this directory? */
-	if((err = VFS::hasAccess(pid,dir,VFS_WRITE)) < 0)
-		return err;
 
 	char *nextSlash = strchr(path,'/');
 	if(nextSlash) {
@@ -685,9 +657,9 @@ int VFSNode::createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,
 
 	/* now create the node and pass the node-number back */
 	if(flags & VFS_SYMLINK)
-		*child = createObj<VFSFile>(pid,dir,nameCpy,S_IFLNK | LNK_DEF_MODE);
+		*child = createObj<VFSFile>(u,dir,nameCpy,S_IFLNK | LNK_DEF_MODE);
 	else
-		*child = createObj<VFSFile>(pid,dir,nameCpy,S_IFREG | (mode & MODE_PERM));
+		*child = createObj<VFSFile>(u,dir,nameCpy,S_IFREG | (mode & MODE_PERM));
 	if(*child == NULL) {
 		Cache::free(nameCpy);
 		return -ENOMEM;
@@ -722,7 +694,6 @@ void VFSNode::operator delete(void *ptr) throw() {
 	/* mark unused */
 	node->name = NULL;
 	node->nameLen = 0;
-	node->owner = INVALID_PID;
 	LockGuard<SpinLock> g(&nodesLock);
 	node->next = freeList;
 	freeList = node;
@@ -743,7 +714,6 @@ void VFSNode::print(OStream &os) const {
 		os.writef("\tfirstChild: %p\n",firstChild);
 		os.writef("\tnext: %p\n",next);
 		os.writef("\tprev: %p\n",prev);
-		os.writef("\towner: %d\n",owner);
 	}
 }
 

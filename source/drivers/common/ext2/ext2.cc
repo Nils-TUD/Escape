@@ -91,7 +91,7 @@ Ext2FileSystem::~Ext2FileSystem() {
 	::close(fd);
 }
 
-ino_t Ext2FileSystem::find(fs::User *u,fs::OpenFile *dir,const char *name) {
+ino_t Ext2FileSystem::find(fs::OpenFile *dir,const char *name) {
 	Ext2CInode *cdir = inodeCache.request(dir->ino,IMODE_READ);
 	if(cdir == NULL)
 		return -ENOBUFS;
@@ -101,7 +101,7 @@ ino_t Ext2FileSystem::find(fs::User *u,fs::OpenFile *dir,const char *name) {
 		ino = -ENOTDIR;
 		goto error;
 	}
-	if((ino = hasPermission(cdir,u,MODE_EXEC)) < 0)
+	if((ino = hasPermission(cdir,&dir->user,MODE_EXEC)) < 0)
 		goto error;
 
 	ino = Ext2Dir::find(this,cdir,name,strlen(name));
@@ -151,7 +151,7 @@ ino_t Ext2FileSystem::open(fs::User *u,const char *path,ssize_t *sympos,ino_t ro
 			inodeCache.release(cnode);
 		}
 	}
-	*file = new fs::OpenFile(fd,ino);
+	*file = new fs::OpenFile(fd,*u,ino);
 	return ino;
 }
 
@@ -183,19 +183,19 @@ int Ext2FileSystem::stat(fs::OpenFile *file,struct stat *info) {
 	return 0;
 }
 
-int Ext2FileSystem::chmod(fs::User *u,fs::OpenFile *file,mode_t mode) {
-	return Ext2INode::chmod(this,u,file->ino,mode);
+int Ext2FileSystem::chmod(fs::OpenFile *file,mode_t mode) {
+	return Ext2INode::chmod(this,&file->user,file->ino,mode);
 }
 
-int Ext2FileSystem::chown(fs::User *u,fs::OpenFile *file,uid_t uid,gid_t gid) {
-	return Ext2INode::chown(this,u,file->ino,uid,gid);
+int Ext2FileSystem::chown(fs::OpenFile *file,uid_t uid,gid_t gid) {
+	return Ext2INode::chown(this,&file->user,file->ino,uid,gid);
 }
 
-int Ext2FileSystem::utime(fs::User *u,fs::OpenFile *file,const struct utimbuf *utimes) {
-	return Ext2INode::utime(this,u,file->ino,utimes);
+int Ext2FileSystem::utime(fs::OpenFile *file,const struct utimbuf *utimes) {
+	return Ext2INode::utime(this,&file->user,file->ino,utimes);
 }
 
-int Ext2FileSystem::truncate(A_UNUSED fs::User *u,fs::OpenFile *file,off_t length) {
+int Ext2FileSystem::truncate(fs::OpenFile *file,off_t length) {
 	// TODO implement me!
 	if(length > 0)
 		return -ENOTSUP;
@@ -216,11 +216,11 @@ ssize_t Ext2FileSystem::write(fs::OpenFile *file,const void *buffer,off_t offset
 	return Ext2File::write(this,file->ino,buffer,offset,count);
 }
 
-int Ext2FileSystem::link(fs::User *u,fs::OpenFile *dst,fs::OpenFile *dir,const char *name) {
-	return linkIno(u,dst->ino,dir,name,false);
+int Ext2FileSystem::link(fs::OpenFile *dst,fs::OpenFile *dir,const char *name) {
+	return linkIno(dst->ino,dir,name,false);
 }
 
-int Ext2FileSystem::linkIno(fs::User *u,ino_t dst,fs::OpenFile *dir,const char *name,bool isdir) {
+int Ext2FileSystem::linkIno(ino_t dst,fs::OpenFile *dir,const char *name,bool isdir) {
 	int res;
 	Ext2CInode *cdir,*cdst;
 	cdir = inodeCache.request(dir->ino,IMODE_WRITE);
@@ -230,38 +230,38 @@ int Ext2FileSystem::linkIno(fs::User *u,ino_t dst,fs::OpenFile *dir,const char *
 	else if(!isdir && S_ISDIR(le16tocpu(cdst->inode.mode)))
 		res = -EISDIR;
 	else
-		res = Ext2Link::create(this,u,cdir,cdst,name);
+		res = Ext2Link::create(this,&dir->user,cdir,cdst,name);
 	inodeCache.release(cdir);
 	inodeCache.release(cdst);
 	return res;
 }
 
-int Ext2FileSystem::doUnlink(fs::User *u,fs::OpenFile *dir,const char *name,bool isdir) {
+int Ext2FileSystem::doUnlink(fs::OpenFile *dir,const char *name,bool isdir) {
 	int res;
 	Ext2CInode *cdir = inodeCache.request(dir->ino,IMODE_WRITE);
 	if(cdir == NULL)
 		return -ENOBUFS;
 
-	res = Ext2Link::remove(this,u,NULL,cdir,name,isdir);
+	res = Ext2Link::remove(this,&dir->user,NULL,cdir,name,isdir);
 	inodeCache.release(cdir);
 	return res;
 }
 
-int Ext2FileSystem::unlink(fs::User *u,fs::OpenFile *dir,const char *name) {
-	return doUnlink(u,dir,name,false);
+int Ext2FileSystem::unlink(fs::OpenFile *dir,const char *name) {
+	return doUnlink(dir,name,false);
 }
 
-int Ext2FileSystem::mkdir(fs::User *u,fs::OpenFile *dir,const char *name,mode_t mode) {
+int Ext2FileSystem::mkdir(fs::OpenFile *dir,const char *name,mode_t mode) {
 	int res;
 	Ext2CInode *cdir = inodeCache.request(dir->ino,IMODE_WRITE);
 	if(cdir == NULL)
 		return -ENOBUFS;
-	res = Ext2Dir::create(this,u,cdir,name,mode);
+	res = Ext2Dir::create(this,&dir->user,cdir,name,mode);
 	inodeCache.release(cdir);
 	return res;
 }
 
-int Ext2FileSystem::rmdir(fs::User *u,fs::OpenFile *dir,const char *name) {
+int Ext2FileSystem::rmdir(fs::OpenFile *dir,const char *name) {
 	int res;
 	Ext2CInode *cdir = inodeCache.request(dir->ino,IMODE_WRITE);
 	if(cdir == NULL)
@@ -269,12 +269,12 @@ int Ext2FileSystem::rmdir(fs::User *u,fs::OpenFile *dir,const char *name) {
 	if(!S_ISDIR(le16tocpu(cdir->inode.mode)))
 		res = -ENOTDIR;
 	else
-		res = Ext2Dir::remove(this,u,cdir,name);
+		res = Ext2Dir::remove(this,&dir->user,cdir,name);
 	inodeCache.release(cdir);
 	return res;
 }
 
-int Ext2FileSystem::symlink(fs::User *u,fs::OpenFile *dir,const char *name,const char *target) {
+int Ext2FileSystem::symlink(fs::OpenFile *dir,const char *name,const char *target) {
 	int res;
 	Ext2CInode *cdir = inodeCache.request(dir->ino,IMODE_WRITE);
 	if(cdir == NULL)
@@ -284,7 +284,7 @@ int Ext2FileSystem::symlink(fs::User *u,fs::OpenFile *dir,const char *name,const
 		res = -ENOTDIR;
 	else {
 		ino_t ino;
-		res = Ext2File::create(this,u,cdir,name,&ino,S_IFLNK | LNK_DEF_MODE);
+		res = Ext2File::create(this,&dir->user,cdir,name,&ino,S_IFLNK | LNK_DEF_MODE);
 		if(res == 0) {
 			res = Ext2File::write(this,ino,target,0,strlen(target));
 			if(res > 0)
@@ -295,9 +295,9 @@ int Ext2FileSystem::symlink(fs::User *u,fs::OpenFile *dir,const char *name,const
 	return res;
 }
 
-int Ext2FileSystem::rename(fs::User *u,fs::OpenFile *oldDir,const char *oldName,fs::OpenFile *newDir,
+int Ext2FileSystem::rename(fs::OpenFile *oldDir,const char *oldName,fs::OpenFile *newDir,
 		const char *newName) {
-	ino_t oldFile = find(u,oldDir,oldName);
+	ino_t oldFile = find(oldDir,oldName);
 	if(oldFile < 0)
 		return oldFile;
 	else {
@@ -308,9 +308,9 @@ int Ext2FileSystem::rename(fs::User *u,fs::OpenFile *oldDir,const char *oldName,
 		bool dir = S_ISDIR(le16tocpu(oldino->inode.mode));
 		inodeCache.release(oldino);
 
-		int res = linkIno(u,oldFile,newDir,newName,dir);
+		int res = linkIno(oldFile,newDir,newName,dir);
 		if(res == 0)
-			res = doUnlink(u,oldDir,oldName,dir);
+			res = doUnlink(oldDir,oldName,dir);
 		return res;
 	}
 }

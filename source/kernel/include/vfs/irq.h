@@ -32,14 +32,14 @@ public:
 	/**
 	 * Creates an IRQ file.
 	 *
-	 * @param pid the process-id to use
+	 * @param u the user
 	 * @param parent the parent-node
 	 * @param irq the IRQ number
 	 * @param mode the mode to set
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	explicit VFSIRQ(pid_t pid,VFSNode *parent,int irq,uint mode,bool &success)
-		: VFSNode(pid,buildName(irq),S_IFIRQ | (mode & MODE_PERM),success), _irq(irq) {
+	explicit VFSIRQ(const fs::User &u,VFSNode *parent,int irq,uint mode,bool &success)
+		: VFSNode(u,buildName(irq),S_IFIRQ | (mode & MODE_PERM),success), _irq(irq) {
 		if(!success)
 			return;
 
@@ -57,8 +57,8 @@ public:
 		return false;
 	}
 
-	virtual ssize_t read(pid_t pid,OpenFile *,void *buffer,off_t offset,size_t count) {
-		ssize_t res = VFSInfo::readHelper(pid,this,buffer,offset,count,0,readCallback);
+	virtual ssize_t read(pid_t,OpenFile *,void *buffer,off_t offset,size_t count) {
+		ssize_t res = VFSInfo::readHelper(this,buffer,offset,count,0,readCallback);
 		acctime = Timer::getTime();
 		return res;
 	}

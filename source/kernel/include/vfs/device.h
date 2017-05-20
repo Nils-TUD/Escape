@@ -31,7 +31,7 @@ public:
 	/**
 	 * Creates a server-node
 	 *
-	 * @param pid the process-id to use
+	 * @param u the user
 	 * @param parent the parent-node
 	 * @param name the node-name
 	 * @param mode the mode to set
@@ -39,7 +39,7 @@ public:
 	 * @param ops the supported operations
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	explicit VFSDevice(pid_t pid,VFSNode *parent,char *name,uint mode,uint type,uint ops,bool &success);
+	explicit VFSDevice(const fs::User &u,VFSNode *parent,char *name,uint mode,uint type,uint ops,bool &success);
 
 	virtual bool isDeletable() const {
 		return false;
@@ -53,6 +53,12 @@ public:
 		return (this->funcs & funcs) != 0;
 	}
 
+	/**
+	 * @return the pid of the owner
+	 */
+	pid_t getOwner() const {
+		return owner;
+	}
 	/**
 	 * @return the thread-id of the creator
 	 */
@@ -94,8 +100,8 @@ public:
 	 */
 	ssize_t receive(VFSChannel *chan,ushort flags,msgid_t *id,USER void *data,size_t size);
 
-	virtual ssize_t getSize(pid_t pid);
-	virtual void close(pid_t pid,OpenFile *file,int msgid);
+	virtual ssize_t getSize();
+	virtual void close(OpenFile *file,int msgid);
 	virtual void print(OStream &os) const;
 
 private:
@@ -113,6 +119,8 @@ private:
 	static uint buildMode(uint type);
 	static VFSChannel::Message *getMsg(esc::SList<VFSChannel::Message> *list,msgid_t mid,ushort flags);
 
+	/* the process that receives the file descriptors */
+	pid_t owner;
 	/* the thread that created this device. all channels will initially get bound to this one */
 	tid_t creator;
 	/* implemented functions */

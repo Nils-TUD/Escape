@@ -69,6 +69,16 @@ public:
 	static int joinMS(Proc *p,MntSpace *src);
 
 	/**
+	 * Checks whether the given user has permission to use <n> with the given flags
+	 *
+	 * @param u the user
+	 * @param n the node
+	 * @param flags the flags (VFS_*)
+	 * @return 0 if successfull, negative if the process has no permission
+	 */
+	static int hasAccess(const fs::User &u,const VFSNode *n,ushort flags);
+
+	/**
 	 * Checks whether the process with given id has permission to use <n> with the given flags
 	 *
 	 * @param pid the process-id
@@ -110,7 +120,7 @@ public:
 	 * file table and searches for a free entry or an entry for that file.
 	 * Note that multiple processs may read from the same file simultaneously but NOT write!
 	 *
-	 * @param pid the process-id with which the file should be opened
+	 * @param u the user
 	 * @param mntperms the permissions for the mountpoint
 	 * @param flags whether it is a virtual or real file and whether you want to read or write
 	 * @param node the node if its virtual or NULL otherwise.
@@ -119,8 +129,8 @@ public:
 	 * @param file will be set to the opened file
 	 * @return 0 if successfull or < 0
 	 */
-	static int openFile(pid_t pid,uint8_t mntperms,ushort flags,const VFSNode *node,ino_t nodeNo,dev_t devNo,
-	                    OpenFile **file);
+	static int openFile(const fs::User &u,uint8_t mntperms,ushort flags,const VFSNode *node,
+		ino_t nodeNo,dev_t devNo,OpenFile **file);
 
 	/**
 	 * Opens the given file for process <pid> and associates a file descriptor for the process

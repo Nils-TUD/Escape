@@ -435,7 +435,7 @@ void VirtMem::swapOut(pid_t pid,OpenFile *file,size_t count) {
 			PhysMem::free(frameNo,PhysMem::USR);
 
 			/* write out on disk */
-			sassert(file->seek(pid,block * PAGE_SIZE,SEEK_SET) >= 0);
+			sassert(file->seek(block * PAGE_SIZE,SEEK_SET) >= 0);
 			sassert(file->write(pid,buffer,PAGE_SIZE) == PAGE_SIZE);
 
 			count--;
@@ -460,7 +460,7 @@ bool VirtMem::swapIn(pid_t pid,OpenFile *file,Thread *t,uintptr_t addr) {
 
 	/* read into buffer (note that we can use the same for swap-in and swap-out because its both
 	 * done by the swapper-thread) */
-	sassert(file->seek(pid,block * PAGE_SIZE,SEEK_SET) >= 0);
+	sassert(file->seek(block * PAGE_SIZE,SEEK_SET) >= 0);
 	sassert(file->read(pid,buffer,PAGE_SIZE) == PAGE_SIZE);
 
 	/* copy into a new frame */
@@ -643,7 +643,7 @@ void VirtMem::sync(VMRegion *vm) const {
 				continue;
 
 			/* just ignore the write-back if we can't seek */
-			if(file->seek(pid,vm->reg->getOffset() + i * PAGE_SIZE,SEEK_SET) < 0)
+			if(file->seek(vm->reg->getOffset() + i * PAGE_SIZE,SEEK_SET) < 0)
 				return;
 
 			/* write our mapped memory to file */
@@ -1261,7 +1261,7 @@ int VirtMem::loadFromFile(VMRegion *vm,uintptr_t addr,size_t loadCount) {
 	/* note that we currently ignore that the file might have changed in the meantime */
 	ssize_t err;
 	off_t pos = vm->reg->getOffset() + (addr - vm->virt());
-	if((err = vm->reg->getFile()->seek(proc->getPid(),pos,SEEK_SET)) < 0)
+	if((err = vm->reg->getFile()->seek(pos,SEEK_SET)) < 0)
 		goto error;
 
 	/* first read into a temp-buffer because we can't mark the page as present until

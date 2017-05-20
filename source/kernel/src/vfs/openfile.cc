@@ -47,10 +47,10 @@ void OpenFile::decUsages() {
 	/* if it should be closed in the meanwhile, we have to close it now, because it wasn't possible
 	 * previously because of our usage */
 	if(EXPECT_FALSE(usageCount == 0 && refCount == 0))
-		doClose(Proc::getRunning());
+		doClose();
 }
 
-int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
+int OpenFile::fcntl(uint cmd,int arg) {
 	switch(cmd) {
 		case F_GETACCESS:
 			return flags & (VFS_READ | VFS_WRITE | VFS_MSGS);
@@ -94,62 +94,62 @@ int OpenFile::fcntl(A_UNUSED pid_t pid,uint cmd,int arg) {
 	return -EINVAL;
 }
 
-int OpenFile::fstat(pid_t pid,struct stat *info) const {
+int OpenFile::fstat(struct stat *info) const {
 	int res = 0;
 	if(devNo == VFS_DEV_NO)
-		node->getInfo(pid,info);
+		node->getInfo(info);
 	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
-		res = VFSFS::fstat(pid,chan,info);
+		res = VFSFS::fstat(chan,info);
 	}
 	else
 		res = -EINVAL;
 	return res;
 }
 
-int OpenFile::chmod(pid_t pid,mode_t mode) {
+int OpenFile::chmod(mode_t mode) {
 	if(~mntperm & VFS_WRITE)
 		return -EPERM;
 
 	int err = -EINVAL;
 	if(devNo == VFS_DEV_NO)
-		err = node->chmod(pid,mode);
+		err = node->chmod(user,mode);
 	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
-		err = VFSFS::chmod(pid,chan,mode);
+		err = VFSFS::chmod(chan,mode);
 	}
 	return err;
 }
 
-int OpenFile::chown(pid_t pid,uid_t uid,gid_t gid) {
+int OpenFile::chown(uid_t uid,gid_t gid) {
 	if(~mntperm & VFS_WRITE)
 		return -EPERM;
 
 	int err = -EINVAL;
 	if(devNo == VFS_DEV_NO)
-		err = node->chown(pid,uid,gid);
+		err = node->chown(user,uid,gid);
 	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
-		err = VFSFS::chown(pid,chan,uid,gid);
+		err = VFSFS::chown(chan,uid,gid);
 	}
 	return err;
 }
 
-int OpenFile::utime(pid_t pid,const struct utimbuf *utimes) {
+int OpenFile::utime(const struct utimbuf *utimes) {
 	if(~mntperm & VFS_WRITE)
 		return -EPERM;
 
 	int err = -EINVAL;
 	if(devNo == VFS_DEV_NO)
-		err = node->utime(pid,utimes);
+		err = node->utime(user,utimes);
 	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
-		err = VFSFS::utime(pid,chan,utimes);
+		err = VFSFS::utime(chan,utimes);
 	}
 	return err;
 }
 
-int OpenFile::link(pid_t pid,OpenFile *dir,const char *name) {
+int OpenFile::link(OpenFile *dir,const char *name) {
 	if(devNo != dir->devNo)
 		return -EXDEV;
 	if(!(dir->flags & VFS_WRITE))
@@ -161,26 +161,26 @@ int OpenFile::link(pid_t pid,OpenFile *dir,const char *name) {
 	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *targetChan = static_cast<VFSChannel*>(node);
 		VFSChannel *dirChan = static_cast<VFSChannel*>(dir->node);
-		err = VFSFS::link(pid,targetChan,dirChan,name);
+		err = VFSFS::link(targetChan,dirChan,name);
 	}
 	return err;
 }
 
-int OpenFile::unlink(pid_t pid,const char *name) {
+int OpenFile::unlink(const char *name) {
 	if(!(flags & VFS_WRITE))
 		return -EACCES;
 
 	int err = -EINVAL;
 	if(devNo == VFS_DEV_NO)
-		err = node->unlink(pid,name);
+		err = node->unlink(user,name);
 	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
-		err = VFSFS::unlink(pid,chan,name);
+		err = VFSFS::unlink(chan,name);
 	}
 	return err;
 }
 
-int OpenFile::rename(pid_t pid,const char *oldName,OpenFile *newDir,const char *newName) {
+int OpenFile::rename(const char *oldName,OpenFile *newDir,const char *newName) {
 	if(devNo != newDir->devNo)
 		return -EXDEV;
 	if(!(flags & VFS_WRITE) || !(newDir->flags & VFS_WRITE))
@@ -188,69 +188,69 @@ int OpenFile::rename(pid_t pid,const char *oldName,OpenFile *newDir,const char *
 
 	int err = -EINVAL;
 	if(devNo == VFS_DEV_NO)
-		err = node->rename(pid,oldName,newDir->node,newName);
+		err = node->rename(user,oldName,newDir->node,newName);
 	else if(IS_CHANNEL(node->getMode()) && IS_CHANNEL(newDir->node->getMode())) {
 		VFSChannel *oldChan = static_cast<VFSChannel*>(node);
 		VFSChannel *newChan = static_cast<VFSChannel*>(newDir->node);
-		err = VFSFS::rename(pid,oldChan,oldName,newChan,newName);
+		err = VFSFS::rename(oldChan,oldName,newChan,newName);
 	}
 	return err;
 }
 
-int OpenFile::mkdir(pid_t pid,const char *name,mode_t mode) {
+int OpenFile::mkdir(const char *name,mode_t mode) {
 	if(!(flags & VFS_WRITE))
 		return -EACCES;
 
 	int err = -EINVAL;
 	if(devNo == VFS_DEV_NO)
-		err = node->mkdir(pid,name,mode);
+		err = node->mkdir(user,name,mode);
 	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
-		err = VFSFS::mkdir(pid,chan,name,S_IFDIR | (mode & MODE_PERM));
+		err = VFSFS::mkdir(chan,name,S_IFDIR | (mode & MODE_PERM));
 	}
 	return err;
 }
 
-int OpenFile::rmdir(pid_t pid,const char *name) {
+int OpenFile::rmdir(const char *name) {
 	if(!(flags & VFS_WRITE))
 		return -EACCES;
 
 	int err = -EINVAL;
 	if(devNo == VFS_DEV_NO)
-		err = node->rmdir(pid,name);
+		err = node->rmdir(user,name);
 	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
-		err = VFSFS::rmdir(pid,chan,name);
+		err = VFSFS::rmdir(chan,name);
 	}
 	return err;
 }
 
-int OpenFile::symlink(pid_t pid,const char *name,const char *target) {
+int OpenFile::symlink(const char *name,const char *target) {
 	if(!(flags & VFS_WRITE))
 		return -EACCES;
 
 	int err = -EINVAL;
 	if(devNo == VFS_DEV_NO)
-		err = node->symlink(pid,name,target);
+		err = node->symlink(user,name,target);
 	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
-		err = VFSFS::symlink(pid,chan,name,target);
+		err = VFSFS::symlink(chan,name,target);
 	}
 	return err;
 }
 
-int OpenFile::createdev(pid_t pid,const char *name,mode_t mode,uint type,uint ops,OpenFile **file) {
+int OpenFile::createdev(const char *name,mode_t mode,uint type,uint ops,OpenFile **file) {
 	if(devNo != VFS_DEV_NO)
 		return -ENOTSUP;
 	if(!(flags & VFS_WRITE))
 		return -EACCES;
 
 	VFSNode *srv;
-	int res = node->createdev(pid,name,mode,type,ops,&srv);
+	int res = node->createdev(user,name,mode,type,ops,&srv);
 	if(res < 0)
 		return res;
 
-	res = VFS::openFile(pid,mntperm,VFS_DEVICE,srv,srv->getNo(),VFS_DEV_NO,file);
+	res = VFS::openFile(user,mntperm,VFS_DEVICE,srv,srv->getNo(),VFS_DEV_NO,file);
 	/* if an error occurred, release it twice to destroy the node */
 	if(res < 0)
 		VFSNode::release(srv);
@@ -258,19 +258,19 @@ int OpenFile::createdev(pid_t pid,const char *name,mode_t mode,uint type,uint op
 	return res;
 }
 
-int OpenFile::createchan(pid_t pid,uint perm,OpenFile **chan) {
+int OpenFile::createchan(uint perm,OpenFile **chan) {
 	if(!IS_DEVICE(node->getMode()))
 		return -ENOTSUP;
 	if(!(flags & VFS_DEVICE))
 		return -EPERM;
 
 	/* create new channel */
-	VFSChannel *chnode = createObj<VFSChannel>(pid,node);
+	VFSChannel *chnode = createObj<VFSChannel>(user,node);
 	if(chnode == NULL)
 		return -ENOMEM;
 
 	/* open new file for the channel */
-	int res = VFS::openFile(pid,0,VFS_DEVICE | perm,chnode,chnode->getNo(),VFS_DEV_NO,chan);
+	int res = VFS::openFile(user,0,VFS_DEVICE | perm,chnode,chnode->getNo(),VFS_DEV_NO,chan);
 	if(res < 0) {
 		VFSNode::release(chnode);
 		VFSNode::release(chnode);
@@ -282,7 +282,7 @@ int OpenFile::createchan(pid_t pid,uint perm,OpenFile **chan) {
 	return 0;
 }
 
-off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
+off_t OpenFile::seek(off_t offset,uint whence) {
 	off_t res;
 
 	/* don't lock it during VFSFS::istat(). we don't need it in this case because position is
@@ -292,7 +292,7 @@ off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
 
 	off_t oldPos = position;
 	if(devNo == VFS_DEV_NO) {
-		res = node->seek(pid,position,offset,whence);
+		res = node->seek(position,offset,whence);
 		if(EXPECT_FALSE(res < 0)) {
 			lock.up();
 			return res;
@@ -302,7 +302,7 @@ off_t OpenFile::seek(pid_t pid,off_t offset,uint whence) {
 	else {
 		if(whence == SEEK_END) {
 			struct stat info;
-			res = fstat(pid,&info);
+			res = fstat(&info);
 			if(EXPECT_FALSE(res < 0))
 				return res;
 			/* can't be < 0, therefore it will always be kept */
@@ -378,7 +378,7 @@ ssize_t OpenFile::sendMsg(pid_t pid,msgid_t id,USER const void *data1,size_t siz
 	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))
 		return -ENOTSUP;
 
-	ssize_t err = static_cast<VFSChannel*>(node)->send(pid,flags,id,data1,size1,data2,size2);
+	ssize_t err = static_cast<VFSChannel*>(node)->send(flags,id,data1,size1,data2,size2);
 	if(EXPECT_TRUE(err >= 0 && pid != KERNEL_PID)) {
 		Proc *p = Proc::getByPid(pid);
 		/* no lock; same reason as above */
@@ -392,7 +392,7 @@ ssize_t OpenFile::receiveMsg(pid_t pid,msgid_t *id,USER void *data,size_t size,u
 		return -ENOTSUP;
 
 	uint newflags = (flags & ~fflags) | fflags;
-	ssize_t err = static_cast<VFSChannel*>(node)->receive(pid,newflags,id,data,size);
+	ssize_t err = static_cast<VFSChannel*>(node)->receive(newflags,id,data,size);
 	if(EXPECT_TRUE(err > 0 && pid != KERNEL_PID)) {
 		Proc *p = Proc::getByPid(pid);
 		/* no lock; same reason as above */
@@ -401,16 +401,16 @@ ssize_t OpenFile::receiveMsg(pid_t pid,msgid_t *id,USER void *data,size_t size,u
 	return err;
 }
 
-int OpenFile::truncate(pid_t pid,off_t length) {
+int OpenFile::truncate(off_t length) {
 	if(EXPECT_FALSE(!(flags & VFS_WRITE)))
 		return -EACCES;
 
 	int res = -EINVAL;
 	if(devNo == VFS_DEV_NO)
-		res = node->truncate(pid,length);
+		res = node->truncate(length);
 	else if(IS_CHANNEL(node->getMode())) {
 		VFSChannel *chan = static_cast<VFSChannel*>(node);
-		res = VFSFS::truncate(pid,chan,length);
+		res = VFSFS::truncate(chan,length);
 	}
 	return res;
 }
@@ -454,22 +454,22 @@ int OpenFile::bindto(tid_t tid) {
 	return -ENOTSUP;
 }
 
-int OpenFile::syncfs(pid_t pid) {
+int OpenFile::syncfs() {
 	if(EXPECT_FALSE(devNo == VFS_DEV_NO))
 		return -EPERM;
 	if(EXPECT_FALSE(!IS_CHANNEL(node->getMode())))
 		return -ENOTSUP;
 
 	VFSChannel *chan = static_cast<VFSChannel*>(node);
-	return VFSFS::syncfs(pid,chan);
+	return VFSFS::syncfs(chan);
 }
 
-bool OpenFile::close(pid_t pid) {
+bool OpenFile::close() {
 	LockGuard<SpinLock> g(&lock);
-	return doClose(pid);
+	return doClose();
 }
 
-bool OpenFile::doClose(pid_t pid) {
+bool OpenFile::doClose() {
 	/* decrement references; it may be already zero if we have closed the file previously but
 	 * couldn't free it because there was still a user of it. */
 	if(EXPECT_TRUE(refCount > 0))
@@ -480,7 +480,7 @@ bool OpenFile::doClose(pid_t pid) {
 		/* if we have used a file-descriptor to get here, the usages are at least 1; otherwise it is
 		 * 0, because it is used kernel-intern only and not passed to other "users". */
 		if(usageCount <= 1) {
-			node->close(pid,this,devNo == VFS_DEV_NO ? MSG_FILE_CLOSE : MSG_FS_CLOSE);
+			node->close(this,devNo == VFS_DEV_NO ? MSG_FILE_CLOSE : MSG_FS_CLOSE);
 
 			/* free it */
 			releaseFile(this);
@@ -536,14 +536,17 @@ void OpenFile::printAll(OStream &os) {
 			os.writef("\t\tpos: %Od\n",f->position);
 			os.writef("\t\trefCount: %d\n",f->refCount);
 			os.writef("\t\tusageCount: %d\n",f->usageCount);
+			os.writef("\t\tuid: %u\n",f->user.uid);
+			os.writef("\t\tgid: %u\n",f->user.gid);
+			os.writef("\t\tgids: ");
+			for(size_t i = 0; i < f->user.groupCount; ++i) {
+				os.writef("%u",f->user.gids[i]);
+				if(i + 1 < f->user.groupCount)
+					os.writef(",");
+			}
+			os.writef("\n");
 			if(f->sem)
 				os.writef("\t\tsem: %d\n",f->sem->sem.getValue());
-			if(f->owner == KERNEL_PID)
-				os.writef("\t\towner: %d (kernel)\n",f->owner);
-			else {
-				const Proc *p = Proc::getByPid(f->owner);
-				os.writef("\t\towner: %d:%s\n",f->owner,p ? p->getProgram() : "???");
-			}
 			if(f->devNo == VFS_DEV_NO) {
 				VFSNode *n = f->node;
 				if(!n->isAlive())
@@ -569,7 +572,7 @@ size_t OpenFile::getCount() {
 	return count;
 }
 
-int OpenFile::getFree(pid_t pid,uint8_t mntperm,ushort flags,ino_t nodeNo,dev_t devNo,
+int OpenFile::getFree(const fs::User &u,uint8_t mntperm,ushort flags,ino_t nodeNo,dev_t devNo,
 		const VFSNode *n,OpenFile **f,bool clone) {
 	A_UNUSED uint userFlags = VFS_READ | VFS_WRITE | VFS_MSGS | VFS_NOCHAN | VFS_NOBLOCK |
 							  VFS_DEVICE | VFS_LONELY;
@@ -651,7 +654,7 @@ int OpenFile::getFree(pid_t pid,uint8_t mntperm,ushort flags,ino_t nodeNo,dev_t 
 	/* count references of virtual nodes */
 	e->node = const_cast<VFSNode*>(n);
 	e->node->ref();
-	e->owner = pid;
+	e->user = u;
 	e->mntperm = mntperm;
 	e->flags = flags;
 	e->refCount = 1;

@@ -30,21 +30,21 @@ class VFSInfo {
 #define GEN_INFO_FILECLASS(className,fileName,callback)												\
 	class className : public VFSFile {																\
 	public:																							\
-		explicit className(pid_t pid,VFSNode *parent,char *name,uint mode,bool &success)			\
-			: VFSFile(pid,parent,name,NULL,0,mode,success) {										\
+		explicit className(const fs::User &u,VFSNode *parent,char *name,uint mode,bool &success)	\
+			: VFSFile(u,parent,name,NULL,0,mode,success) {											\
 		}																							\
-		explicit className(pid_t pid,VFSNode *parent,bool &success)									\
-			: className(pid,parent,(char*)(fileName),0444,success) {								\
+		explicit className(const fs::User &u,VFSNode *parent,bool &success)							\
+			: className(u,parent,(char*)(fileName),0444,success) {									\
 		}																							\
-		virtual ssize_t read(pid_t pid,OpenFile *,void *buffer,off_t offset,size_t count) override {\
-			ssize_t res = VFSInfo::readHelper(pid,this,buffer,offset,count,0,(callback));			\
+		virtual ssize_t read(pid_t,OpenFile *,void *buffer,off_t offset,size_t count) override {	\
+			ssize_t res = VFSInfo::readHelper(this,buffer,offset,count,0,(callback));				\
 			acctime = Timer::getTime();																\
 			return res;																				\
 		}																							\
 		virtual ssize_t write(pid_t,OpenFile *,const void *,off_t,size_t) override {				\
 			return -ENOTSUP;																		\
 		}																							\
-		virtual int truncate(pid_t,off_t) override {												\
+		virtual int truncate(off_t) override {														\
 			return -ENOTSUP;																		\
 		}																							\
 	};
@@ -83,8 +83,8 @@ public:
 	GEN_INFO_FILECLASS(MountsFile,"info",mountsReadCallback);
 	GEN_INFO_FILECLASS(MSLinkFile,"ms",msLinkReadCallback);
 
-	static ssize_t readHelper(pid_t pid,VFSNode *node,void *buffer,off_t offset,
-			size_t count,size_t dataSize,read_func callback);
+	static ssize_t readHelper(VFSNode *node,void *buffer,off_t offset,size_t count,
+		size_t dataSize,read_func callback);
 
 private:
 	static Proc *getProc(VFSNode *node,size_t *dataSize,void **buffer);

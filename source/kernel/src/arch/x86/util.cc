@@ -62,7 +62,7 @@ void Util::switchToVGA() {
 				Thread::switchAway();
 			}
 		}
-		file->close(pid);
+		file->close();
 	}
 }
 

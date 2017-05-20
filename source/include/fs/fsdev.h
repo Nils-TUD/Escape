@@ -34,9 +34,10 @@ class FileSystem;
 struct OpenFile : public esc::Client {
 	explicit OpenFile(int fd) : Client(fd), ino() {
 	}
-	explicit OpenFile(int fd,ino_t _ino) : Client(fd), ino(_ino) {
+	explicit OpenFile(int fd,const fs::User &u,ino_t _ino) : Client(fd), user(u), ino(_ino) {
 	}
 
+	fs::User user;
 	ino_t ino;
 };
 
@@ -177,7 +178,7 @@ public:
 		F *targetFile = (*this)[is.fd()];
 		F *dirFile = (*this)[r.dirFd];
 
-		int res = _fs->link(&r.u,targetFile,dirFile,r.name.str());
+		int res = _fs->link(targetFile,dirFile,r.name.str());
 		is << esc::FSLink::Response(res) << esc::Reply();
 	}
 
@@ -188,7 +189,7 @@ public:
 
 		F *dir = (*this)[is.fd()];
 
-		int res = _fs->unlink(&r.u,dir,r.name.str());
+		int res = _fs->unlink(dir,r.name.str());
 		is << esc::FSUnlink::Response(res) << esc::Reply();
 	}
 
@@ -201,7 +202,7 @@ public:
 		F *oldDir = (*this)[is.fd()];
 		F *newDir = (*this)[r.newDirFd];
 
-		int res = _fs->rename(&r.u,oldDir,r.oldName.str(),newDir,r.newName.str());
+		int res = _fs->rename(oldDir,r.oldName.str(),newDir,r.newName.str());
 		is << esc::FSRename::Response(res) << esc::Reply();
 	}
 
@@ -212,7 +213,7 @@ public:
 
 		F *file = (*this)[is.fd()];
 
-		int res = _fs->mkdir(&r.u,file,r.name.str(),r.mode);
+		int res = _fs->mkdir(file,r.name.str(),r.mode);
 		is << esc::FSMkdir::Response(res) << esc::Reply();
 	}
 
@@ -223,7 +224,7 @@ public:
 
 		F *file = (*this)[is.fd()];
 
-		int res = _fs->rmdir(&r.u,file,r.name.str());
+		int res = _fs->rmdir(file,r.name.str());
 		is << esc::FSRmdir::Response(res) << esc::Reply();
 	}
 
@@ -235,7 +236,7 @@ public:
 
 		F *file = (*this)[is.fd()];
 
-		int res = _fs->symlink(&r.u,file,r.name.str(),r.target.str());
+		int res = _fs->symlink(file,r.name.str(),r.target.str());
 		is << esc::FSSymlink::Response(res) << esc::Reply();
 	}
 
@@ -245,7 +246,7 @@ public:
 
 		F *file = (*this)[is.fd()];
 
-		int res = _fs->chmod(&r.u,file,r.mode);
+		int res = _fs->chmod(file,r.mode);
 		is << esc::FSChmod::Response(res) << esc::Reply();
 	}
 
@@ -255,7 +256,7 @@ public:
 
 		F *file = (*this)[is.fd()];
 
-		int res = _fs->chown(&r.u,file,r.uid,r.gid);
+		int res = _fs->chown(file,r.uid,r.gid);
 		is << esc::FSChown::Response(res) << esc::Reply();
 	}
 
@@ -265,7 +266,7 @@ public:
 
 		F *file = (*this)[is.fd()];
 
-		int res = _fs->utime(&r.u,file,&r.time);
+		int res = _fs->utime(file,&r.time);
 		is << esc::FSUtime::Response(res) << esc::Reply();
 	}
 
@@ -275,7 +276,7 @@ public:
 
 		F *file = (*this)[is.fd()];
 
-		int res = _fs->truncate(&r.u,file,r.length);
+		int res = _fs->truncate(file,r.length);
 		is << esc::FSTruncate::Response(res) << esc::Reply();
 	}
 

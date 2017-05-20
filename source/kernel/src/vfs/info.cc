@@ -46,9 +46,10 @@
 #include <util.h>
 
 void VFSInfo::init(VFSNode *sysNode) {
-	VFSNode::release(createObj<MemUsageFile>(KERNEL_PID,sysNode));
-	VFSNode::release(createObj<CPUFile>(KERNEL_PID,sysNode));
-	VFSNode::release(createObj<StatsFile>(KERNEL_PID,sysNode));
+	const fs::User kern = fs::User::kernel();
+	VFSNode::release(createObj<MemUsageFile>(kern,sysNode));
+	VFSNode::release(createObj<CPUFile>(kern,sysNode));
+	VFSNode::release(createObj<StatsFile>(kern,sysNode));
 }
 
 void VFSInfo::traceReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
@@ -385,8 +386,8 @@ Thread *VFSInfo::getThread(VFSNode *node,size_t *dataSize,void **buffer) {
 	return t;
 }
 
-ssize_t VFSInfo::readHelper(A_UNUSED pid_t pid,VFSNode *node,USER void *buffer,off_t offset,
-		size_t count,size_t dataSize,read_func callback) {
+ssize_t VFSInfo::readHelper(VFSNode *node,USER void *buffer,off_t offset,size_t count,
+		size_t dataSize,read_func callback) {
 	void *mem = NULL;
 	vassert(node != NULL,"node == NULL");
 	vassert(buffer != NULL,"buffer == NULL");

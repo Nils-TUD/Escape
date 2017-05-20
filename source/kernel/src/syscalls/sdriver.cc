@@ -59,7 +59,7 @@ int Syscalls::createdev(Thread *t,IntrptStackFrame *stack) {
 	OpenFile *file;
 	{
 		ScopedFile dir(p,fd);
-		int res = EXPECT_TRUE(dir) ? dir->createdev(p->getPid(),name,mode,type,ops,&file) : -EBADF;
+		int res = EXPECT_TRUE(dir) ? dir->createdev(name,mode,type,ops,&file) : -EBADF;
 		if(EXPECT_FALSE(res < 0))
 			SYSC_ERROR(stack,res);
 	}
@@ -81,7 +81,7 @@ int Syscalls::createchan(Thread *t,IntrptStackFrame *stack) {
 	OpenFile *chan;
 	{
 		ScopedFile file(p,dev);
-		int res = EXPECT_TRUE(file) ? file->createchan(p->getPid(),perm,&chan) : -EBADF;
+		int res = EXPECT_TRUE(file) ? file->createchan(perm,&chan) : -EBADF;
 		if(EXPECT_FALSE(res < 0))
 			SYSC_ERROR(stack,res);
 	}
@@ -89,7 +89,7 @@ int Syscalls::createchan(Thread *t,IntrptStackFrame *stack) {
 	/* give it a file descriptor */
 	int nfd = FileDesc::assoc(p,chan);
 	if(nfd < 0) {
-		chan->close(p->getPid());
+		chan->close();
 		SYSC_ERROR(stack,nfd);
 	}
 	static_cast<VFSChannel*>(chan->getNode())->setFd(nfd);

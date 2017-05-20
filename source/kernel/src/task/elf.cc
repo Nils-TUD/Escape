@@ -69,7 +69,7 @@ int ELF::doLoad(OpenFile *file,int type,StartupInfo *info) {
 	datPtr = eheader.e_phoff;
 	for(size_t j = 0; j < eheader.e_phnum; datPtr += eheader.e_phentsize, j++) {
 		/* go to header */
-		if(file->seek(p->getPid(),(off_t)datPtr,SEEK_SET) < 0) {
+		if(file->seek((off_t)datPtr,SEEK_SET) < 0) {
 			Log::get().writef("[LOADER] Seeking to position 0x%Ox failed\n",(off_t)datPtr);
 			goto failed;
 		}
@@ -93,7 +93,7 @@ int ELF::doLoad(OpenFile *file,int type,StartupInfo *info) {
 				Log::get().writef("[LOADER] Allocating memory for dynamic linker name failed\n");
 				goto failed;
 			}
-			if(file->seek(p->getPid(),pheader.p_offset,SEEK_SET) < 0) {
+			if(file->seek(pheader.p_offset,SEEK_SET) < 0) {
 				Log::get().writef("[LOADER] Seeking to dynlinker name (%Ox) failed\n",pheader.p_offset);
 				goto failedInterpName;
 			}
@@ -109,7 +109,7 @@ int ELF::doLoad(OpenFile *file,int type,StartupInfo *info) {
 			if(res < 0)
 				return res;
 			res = doLoad(interf,TYPE_INTERP,info);
-			interf->close(p->getPid());
+			interf->close();
 			return res;
 		}
 

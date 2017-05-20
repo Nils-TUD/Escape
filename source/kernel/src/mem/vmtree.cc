@@ -99,7 +99,7 @@ VMRegion *VMTree::add(Region *reg,uintptr_t addr) {
 void VMTree::remove(VMRegion *reg) {
 	/* close file */
 	if(reg->reg->getFile())
-		reg->reg->getFile()->close(virtmem->getProc()->getPid());
+		reg->reg->getFile()->close();
 	regs.remove(reg);
 	delete reg;
 }

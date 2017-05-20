@@ -47,11 +47,11 @@ public:
 	/**
 	 * Creates a new channel for given process
 	 *
-	 * @param pid the process-id
+	 * @param u the user
 	 * @param parent the parent-node
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	explicit VFSChannel(pid_t pid,VFSNode *parent,bool &success);
+	explicit VFSChannel(const fs::User &u,VFSNode *parent,bool &success);
 
 	/**
 	 * @return the file-descriptor for the driver to communicate with this channel
@@ -86,7 +86,6 @@ public:
 	/**
 	 * Sends the given message to the channel
 	 *
-	 * @param pid the process-id
 	 * @param flags the flags of the file
 	 * @param id the message-id
 	 * @param data1 the message-data
@@ -95,20 +94,19 @@ public:
 	 * @param size2 the size of the second message
 	 * @return 0 on success
 	 */
-	ssize_t send(pid_t pid,ushort flags,msgid_t id,USER const void *data1,size_t size1,
+	ssize_t send(ushort flags,msgid_t id,USER const void *data1,size_t size1,
 	             USER const void *data2,size_t size2);
 
 	/**
 	 * Receives a message from the channel
 	 *
-	 * @param pid the process-id
 	 * @param flags the flags of the file
 	 * @param id will be set to the message-id (if not NULL)
 	 * @param data the buffer to write the message to
 	 * @param size the size of the buffer
 	 * @return the number of written bytes on success
 	 */
-	ssize_t receive(pid_t pid,ushort flags,msgid_t *id,void *data,size_t size);
+	ssize_t receive(ushort flags,msgid_t *id,void *data,size_t size);
 
 	/**
 	 * Cancels the message <mid> that is currently in flight. If the device supports it, it waits
@@ -144,18 +142,20 @@ public:
 	 */
 	int obtain(pid_t pid,OpenFile *chan,int arg);
 
-	virtual ssize_t open(pid_t pid,const char *path,ssize_t *sympos,ino_t root,uint flags,int msgid,mode_t mode);
-	virtual off_t seek(pid_t pid,off_t position,off_t offset,uint whence) const;
-	virtual ssize_t getSize(pid_t pid);
+	virtual ssize_t open(const fs::User &u,const char *path,ssize_t *sympos,ino_t root,uint flags,
+		int msgid,mode_t mode);
+	virtual off_t seek(off_t position,off_t offset,uint whence) const;
+	virtual ssize_t getSize();
 	virtual ssize_t read(pid_t pid,OpenFile *file,void *buffer,off_t offset,size_t count);
 	virtual ssize_t write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,size_t count);
-	virtual void close(pid_t pid,OpenFile *file,int msgid);
+	virtual void close(OpenFile *file,int msgid);
 	virtual void print(OStream &os) const;
 
 protected:
 	virtual void invalidate();
 
 private:
+	pid_t getDeviceProc() const;
 	uint getReceiveFlags() const;
 	int isSupported(int op) const;
 

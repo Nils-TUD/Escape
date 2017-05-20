@@ -43,10 +43,10 @@ struct FileOpen {
 		}
 
 		friend IPCBuf &operator<<(IPCBuf &ib,const Request &r) {
-			return ib << r.flags << r.u.uid << r.u.gid << r.u.pid << r.path << r.root << r.mode;
+			return ib << r.flags << r.u << r.path << r.root << r.mode;
 		}
 		friend IPCStream &operator>>(IPCStream &is,Request &r) {
-			return is >> r.flags >> r.u.uid >> r.u.gid >> r.u.pid >> r.path >> r.root >> r.mode;
+			return is >> r.flags >> r.u >> r.path >> r.root >> r.mode;
 		}
 
 		uint flags;

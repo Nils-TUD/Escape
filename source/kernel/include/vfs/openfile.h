@@ -20,6 +20,7 @@
 #pragma once
 
 #include <esc/col/treap.h>
+#include <fs/common.h>
 #include <mem/dynarray.h>
 #include <vfs/fileid.h>
 #include <vfs/node.h>
@@ -170,6 +171,12 @@ public:
 		return mntperm;
 	}
 	/**
+	 * @return the user with which the file has been opened
+	 */
+	const fs::User &getUser() const {
+		return user;
+	}
+	/**
 	 * @return true if the file was created for a device (and not a client of the device)
 	 */
 	bool isDevice() const {
@@ -185,12 +192,11 @@ public:
 	/**
 	 * Manipulates this file, depending on the command
 	 *
-	 * @param pid the process-id
 	 * @param cmd the command (F_GETFL or F_SETFL)
 	 * @param arg the argument (just used for F_SETFL)
 	 * @return >= 0 on success
 	 */
-	int fcntl(pid_t pid,uint cmd,int arg);
+	int fcntl(uint cmd,int arg);
 
 	/**
 	 * Returns the current file-position
@@ -205,103 +211,92 @@ public:
 	/**
 	 * Retrieves information about this file
 	 *
-	 * @param pid the process-id
 	 * @param info the info to fill
 	 * @return 0 on success
 	 */
-	int fstat(pid_t pid,struct stat *info) const;
+	int fstat(struct stat *info) const;
 
 	/**
 	 * Sets the permissions of this file to <mode>.
 	 *
-	 * @param pid the process-id
 	 * @param mode the new mode
 	 * @return 0 on success
 	 */
-	int chmod(pid_t pid,mode_t mode);
+	int chmod(mode_t mode);
 
 	/**
 	 * Sets the owner and group of this file.
 	 *
-	 * @param pid the process-id
 	 * @param uid the new user-id
 	 * @param gid the new group-id
 	 * @return 0 on success
 	 */
-	int chown(pid_t pid,uid_t uid,gid_t gid);
+	int chown(uid_t uid,gid_t gid);
 
 	/**
 	 * Sets the access and modification times of this file.
 	 *
-	 * @param pid the process-id
 	 * @param utimes the new access and modification times
 	 * @return 0 on success
 	 */
-	int utime(pid_t pid,const struct utimbuf *utimes);
+	int utime(const struct utimbuf *utimes);
 
 	/**
 	 * Creates a link @ <dir>/<name> to <this>
 	 *
-	 * @param pid the process-id
 	 * @param dir the directory
 	 * @param name the name of the link to create
 	 * @return 0 on success
 	 */
-	int link(pid_t pid,OpenFile *dir,const char *name);
+	int link(OpenFile *dir,const char *name);
 
 	/**
 	 * Unlinks <this>/<name>
 	 *
-	 * @param pid the process-id
 	 * @param name the name of the file to remove
 	 * @return 0 on success
 	 */
-	int unlink(pid_t pid,const char *name);
+	int unlink(const char *name);
 
 	/**
 	 * Renames <this>/<oldName> to <newDir>/<newName>.
 	 *
-	 * @param pid the process-id
 	 * @param oldName the name of the old file
 	 * @param newDir the new directory
 	 * @param newName the name of the file to create
 	 * @return 0 on success
 	 */
-	int rename(pid_t pid,const char *oldName,OpenFile *newDir,const char *newName);
+	int rename(const char *oldName,OpenFile *newDir,const char *newName);
 
 	/**
 	 * Creates the directory named <name> in this directory.
 	 *
-	 * @param pid the process-id
 	 * @param name the directory path
 	 * @param mode the mode to set
 	 * @return 0 on success
 	 */
-	int mkdir(pid_t pid,const char *name,mode_t mode);
+	int mkdir(const char *name,mode_t mode);
 
 	/**
 	 * Removes the directory named <name> in this directory.
 	 *
-	 * @param pid the process-id
 	 * @param name the filename
 	 * @return 0 on success
 	 */
-	int rmdir(pid_t pid,const char *name);
+	int rmdir(const char *name);
 
 	/**
 	 * Creates a symlink named <name> in this directory, pointing to <target>.
 	 *
-	 * @param pid the process-id
 	 * @param name the filename
 	 * @param target the target path
 	 * @return 0 on success
 	 */
-	int symlink(pid_t pid,const char *name,const char *target);
+	int symlink(const char *name,const char *target);
 
 	/**
 	 * Creates a device-node for the given process at <this>/<name> and opens a file for it.
 	 *
-	 * @param pid the process-id
 	 * @param name the name of the device
 	 * @param mode the mode to set
 	 * @param type the device-type (DEV_TYPE_*)
@@ -309,28 +304,26 @@ public:
 	 * @param file will be set to opened file
 	 * @return 0 if ok, negative if an error occurred
 	 */
-	int createdev(pid_t pid,const char *name,mode_t mode,uint type,uint ops,OpenFile **file);
+	int createdev(const char *name,mode_t mode,uint type,uint ops,OpenFile **file);
 
 	/**
 	 * Creates a new channel for <file>.
 	 *
-	 * @param pid the process-id
 	 * @param file the device
 	 * @param perm the permissions
 	 * @param chan will be set to the created channel
 	 * @return 0 on success
 	 */
-	int createchan(pid_t pid,uint perm,OpenFile **chan);
+	int createchan(uint perm,OpenFile **chan);
 
 	/**
 	 * Sets the position for this file
 	 *
-	 * @param pid the process-id
 	 * @param offset the offset
 	 * @param whence the seek-type
 	 * @return the new position on success
 	 */
-	off_t seek(pid_t pid,off_t offset,uint whence);
+	off_t seek(off_t offset,uint whence);
 
 	/**
 	 * Reads max. count bytes from this file into the given buffer and returns the number
@@ -387,7 +380,7 @@ public:
 	 * @param length the length of the file
 	 * @return 0 on success
 	 */
-	int truncate(pid_t pid,off_t length);
+	int truncate(off_t length);
 
 	/**
 	 * Cancels the message <mid> that is currently in flight. If the device supports it, it waits
@@ -430,19 +423,16 @@ public:
 
 	/**
 	 * Writes all cached blocks of the affected filesystem to disk.
-	 *
-	 * @param pid the process-id
 	 */
-	int syncfs(pid_t pid);
+	int syncfs();
 
 	/**
-	 * Closes this file. That means it calls Proc::closeFile() and decrements the reference-count
-	 * in the global file table. If there are no references anymore it releases the slot.
+	 * Closes this file. That means it decrements the reference-count in the global file table. If
+	 * there are no references anymore it releases the slot.
 	 *
-	 * @param pid the process-id
 	 * @return true if the file has really been closed
 	 */
-	bool close(pid_t pid);
+	bool close();
 
 	/**
 	 * Prints information to this file
@@ -490,7 +480,7 @@ private:
 	/**
 	 * Requests a new file or reuses an existing file for the given node+dev to open.
 	 *
-	 * @param pid the process-id
+	 * @param u the user
 	 * @param mntperm the permissions for the mountpoint
 	 * @param flags the flags
 	 * @param nodeNo the node-number
@@ -500,19 +490,17 @@ private:
 	 * @param clone whether this is a clone of an existing OpenFile (no exclusive/lonely check)
 	 * @return 0 on success
 	 */
-	static int getFree(pid_t pid,uint8_t mntperm,ushort flags,ino_t nodeNo,dev_t devNo,const VFSNode *n,
-		OpenFile **f,bool clone);
+	static int getFree(const fs::User &u,uint8_t mntperm,ushort flags,ino_t nodeNo,dev_t devNo,
+		const VFSNode *n,OpenFile **f,bool clone);
 
 	static void releaseFile(OpenFile *file);
-	bool doClose(pid_t pid);
+	bool doClose();
 
 	SpinLock lock;
 	/* the permissions for the mountpoint */
 	uint8_t mntperm;
 	/* read OR write; flags = 0 => entry unused */
 	ushort flags;
-	/* the owner of this file */
-	pid_t owner;
 	/* number of references (file-descriptors) */
 	ushort refCount;
 	/* number of threads that are currently using this file (reading, writing, ...) */
@@ -525,6 +513,8 @@ private:
 	VFSNode *node;
 	/* the device-number */
 	dev_t devNo;
+	/* the user and groups (for meta operations) */
+	fs::User user;
 	/* for real files: the path; for virt files: NULL */
 	char *path;
 	SemTreapNode *sem;

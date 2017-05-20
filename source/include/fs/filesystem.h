@@ -51,34 +51,34 @@ public:
 	virtual ssize_t write(F *,const void *,off_t,size_t) {
 		return -ENOTSUP;
 	}
-	virtual int link(User *,F *,F *,const char *) {
+	virtual int link(F *,F *,const char *) {
 		return -ENOTSUP;
 	}
-	virtual int unlink(User *,F *,const char *) {
+	virtual int unlink(F *,const char *) {
 		return -ENOTSUP;
 	}
-	virtual int mkdir(User *,F *,const char *,mode_t) {
+	virtual int mkdir(F *,const char *,mode_t) {
 		return -ENOTSUP;
 	}
-	virtual int rmdir(User *,F *,const char *) {
+	virtual int rmdir(F *,const char *) {
 		return -ENOTSUP;
 	}
-	virtual int symlink(User *,F *,const char *,const char *) {
+	virtual int symlink(F *,const char *,const char *) {
 		return -ENOTSUP;
 	}
-	virtual int rename(User *,F *,const char *,F *,const char *) {
+	virtual int rename(F *,const char *,F *,const char *) {
 		return -ENOTSUP;
 	}
-	virtual int chmod(User *,F *,mode_t) {
+	virtual int chmod(F *,mode_t) {
 		return -ENOTSUP;
 	}
-	virtual int chown(User *,F *,uid_t,gid_t) {
+	virtual int chown(F *,uid_t,gid_t) {
 		return -ENOTSUP;
 	}
-	virtual int utime(User *,F *,const struct utimbuf *) {
+	virtual int utime(F *,const struct utimbuf *) {
 		return -ENOTSUP;
 	}
-	virtual int truncate(User *,F *,off_t) {
+	virtual int truncate(F *,off_t) {
 		return -ENOTSUP;
 	}
 	virtual void sync() {

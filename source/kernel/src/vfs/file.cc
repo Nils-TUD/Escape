@@ -30,15 +30,15 @@
 #include <spinlock.h>
 #include <string.h>
 
-VFSFile::VFSFile(pid_t pid,VFSNode *p,char *n,uint m,bool &success)
-		: VFSNode(pid,n,m,success), dynamic(true), size(), direct(), indirect(), dblindir() {
+VFSFile::VFSFile(const fs::User &u,VFSNode *p,char *n,uint m,bool &success)
+		: VFSNode(u,n,m,success), dynamic(true), size(), direct(), indirect(), dblindir() {
 	if(!success)
 		return;
 	append(p);
 }
 
-VFSFile::VFSFile(pid_t pid,VFSNode *p,char *n,void *buffer,size_t len,uint m,bool &success)
-		: VFSNode(pid,n,m,success), dynamic(false), size(len), data(buffer) {
+VFSFile::VFSFile(const fs::User &u,VFSNode *p,char *n,void *buffer,size_t len,uint m,bool &success)
+		: VFSNode(u,n,m,success), dynamic(false), size(len), data(buffer) {
 	if(!success)
 		return;
 	append(p);
@@ -46,10 +46,10 @@ VFSFile::VFSFile(pid_t pid,VFSNode *p,char *n,void *buffer,size_t len,uint m,boo
 
 VFSFile::~VFSFile() {
 	if(dynamic)
-		truncate(KERNEL_PID,0);
+		truncate(0);
 }
 
-off_t VFSFile::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whence) const {
+off_t VFSFile::seek(off_t position,off_t offset,uint whence) const {
 	switch(whence) {
 		case SEEK_SET:
 			return offset;
@@ -63,7 +63,7 @@ off_t VFSFile::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whence) 
 	}
 }
 
-ssize_t VFSFile::getSize(A_UNUSED pid_t pid) {
+ssize_t VFSFile::getSize() {
 	return size;
 }
 
@@ -146,7 +146,7 @@ static void doTruncate(void **table,size_t count,int level) {
 	}
 }
 
-int VFSFile::truncate(A_UNUSED pid_t pid,off_t length) {
+int VFSFile::truncate(off_t length) {
 	LockGuard<SpinLock> g(&lock);
 	if(length > size) {
 		size_t blksPerPage = PAGE_SIZE / sizeof(void*);

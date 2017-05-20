@@ -116,10 +116,11 @@ void ProcBase::init() {
 	p->depth = 0;
 
 	/* create boot mountspace */
-	MntSpace *ms = MntSpace::create(p->getPid(),VFS::getMSDir(),(char*)"boot");
+	const fs::User user(p->getUid(),p->getGid());
+	MntSpace *ms = MntSpace::create(user,VFS::getMSDir(),(char*)"boot");
 	if(ms == NULL)
 		Util::panic("Unable to create initial mountspace");
-	if(ms->getNode()->chmod(KERNEL_PID,0755) < 0)
+	if(ms->getNode()->chmod(user,0755) < 0)
 		Util::panic("Unable to chmdo initial mountspace");
 	ms->join(p);
 
@@ -501,7 +502,7 @@ int ProcBase::exec(OpenFile *file,int fd,USER const char *const *args,USER const
 	/* if we have no dynamic linker, close the file descriptor */
 	if(info.linkerEntry == info.progEntry) {
 		FileDesc::unassoc(p,fd);
-		file->close(p->getPid());
+		file->close();
 		fd = -1;
 	}
 

@@ -56,7 +56,7 @@ uintptr_t procstart(uintptr_t *usp) {
 			Util::panic("Unable to open initloader");
 		if(ELF::load(file,&info) < 0)
 			Util::panic("Unable to load initloader");
-		file->close(pid);
+		file->close();
 
 		/* give the process some stack pages */
 		if(!t->reserveFrames(INITIAL_STACK_PAGES))

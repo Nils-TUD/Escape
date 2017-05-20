@@ -38,8 +38,9 @@ SpinLock VFSDevice::msgLock;
 uint16_t VFSDevice::nextRid = 1;
 
 /* block- and file-devices are none-empty by default, because their data is always available */
-VFSDevice::VFSDevice(pid_t pid,VFSNode *p,char *n,uint m,uint type,uint ops,bool &success)
-		: VFSNode(pid,n,buildMode(type) | (m & MODE_PERM),success), creator(Thread::getRunning()->getTid()),
+VFSDevice::VFSDevice(const fs::User &u,VFSNode *p,char *n,uint m,uint type,uint ops,bool &success)
+		: VFSNode(u,n,buildMode(type) | (m & MODE_PERM),success),
+		  owner(Proc::getRunning()), creator(Thread::getRunning()->getTid()),
 		  funcs(ops), msgCount(0), lastClient() {
 	if(!success)
 		return;
@@ -66,11 +67,11 @@ uint VFSDevice::buildMode(uint type) {
 	return mode;
 }
 
-ssize_t VFSDevice::getSize(A_UNUSED pid_t pid) {
+ssize_t VFSDevice::getSize() {
 	return msgCount;
 }
 
-void VFSDevice::close(A_UNUSED pid_t pid,OpenFile *file,A_UNUSED int msgid) {
+void VFSDevice::close(OpenFile *file,A_UNUSED int msgid) {
 	if(file->getFlags() & VFS_DEVICE) {
 		/* wakeup all threads that may be waiting for this node so they can check
 		 * whether they are affected by the remove of this device and perform the corresponding

@@ -26,15 +26,27 @@
 
 namespace fs {
 
+static const uid_t KERNEL_UID	= -1;
+static const size_t MAX_GROUPS	= 32;
+
 struct User {
-	explicit User() : uid(), gid(), pid() {
+	static User kernel() {
+		return User(KERNEL_UID,0);
 	}
-	explicit User(uid_t _uid,gid_t _gid,pid_t _pid) : uid(_uid), gid(_gid), pid(_pid) {
+
+	explicit User() : uid(), gid(), groupCount() {
+	}
+	explicit User(uid_t _uid,gid_t _gid) : uid(_uid), gid(_gid), groupCount() {
+	}
+
+	bool isKernel() const {
+		return uid == KERNEL_UID;
 	}
 
 	uid_t uid;
 	gid_t gid;
-	pid_t pid;
+	size_t groupCount;
+	gid_t gids[MAX_GROUPS];
 };
 
 }

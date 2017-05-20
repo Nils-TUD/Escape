@@ -419,10 +419,10 @@ void PhysMem::swapper() {
 	/* get device-size and init swap-map */
 	struct stat info;
 	assert(swapFile);
-	sassert(swapFile->fstat(pid,&info) == 0);
+	sassert(swapFile->fstat(&info) == 0);
 	if(!SwapMap::init(info.st_size)) {
 		Log::get().writef("Unable to init swap map\n");
-		swapFile->close(pid);
+		swapFile->close();
 		goto error;
 	}
 

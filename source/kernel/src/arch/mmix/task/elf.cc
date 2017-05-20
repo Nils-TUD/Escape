@@ -46,7 +46,7 @@ int ELF::finish(OpenFile *file,const sElfEHeader *eheader,StartupInfo *info) {
 		return -ENOEXEC;
 	}
 
-	if(file->seek(t->getProc()->getPid(),eheader->e_shoff,SEEK_SET) < 0) {
+	if(file->seek(eheader->e_shoff,SEEK_SET) < 0) {
 		Log::get().writef("[LOADER] Unable to seek to ELF-header\n");
 		goto error;
 	}
@@ -89,7 +89,7 @@ static int doFinish(Thread *t,const sElfEHeader *eheader,const sElfSHeader *head
 			/* append global registers */
 			if(file != NULL) {
 				ssize_t res;
-				if((res = file->seek(t->getProc()->getPid(),sheader->sh_offset,SEEK_SET)) < 0) {
+				if((res = file->seek(sheader->sh_offset,SEEK_SET)) < 0) {
 					Log::get().writef("[LOADER] Unable to seek to reg-section: %s\n",strerror(res));
 					return res;
 				}

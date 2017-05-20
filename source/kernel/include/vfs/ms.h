@@ -31,14 +31,14 @@ public:
 	/**
 	 * Creates an empty mountspace file.
 	 *
-	 * @param pid the process-id to use
+	 * @param u the user
 	 * @param parent the parent-node
 	 * @param id the mountspace id
 	 * @param name the node-name
 	 * @param mode the mode to set
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	explicit VFSMS(pid_t pid,VFSNode *parent,uint64_t id,char *name,uint mode,bool &success);
+	explicit VFSMS(const fs::User &u,VFSNode *parent,uint64_t id,char *name,uint mode,bool &success);
 
 	virtual bool isDeletable() const {
 		return false;

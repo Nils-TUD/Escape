@@ -24,12 +24,12 @@
 #include <ostringstream.h>
 #include <util.h>
 
-VFSMS::VFSMS(pid_t pid,VFSNode *parent,uint64_t id,char *name,uint mode,bool &success)
-	: VFSDir(pid,parent,name,MODE_TYPE_MOUNTSPC | mode,success), _id(id) {
+VFSMS::VFSMS(const fs::User &u,VFSNode *parent,uint64_t id,char *name,uint mode,bool &success)
+	: VFSDir(u,parent,name,MODE_TYPE_MOUNTSPC | mode,success), _id(id) {
 	if(!success)
 		return;
 
-	VFSNode *info = createObj<VFSInfo::MountsFile>(KERNEL_PID,this);
+	VFSNode *info = createObj<VFSInfo::MountsFile>(u,this);
 	if(info == NULL) {
 		success = false;
 		return;

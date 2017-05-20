@@ -130,27 +130,29 @@ static char *filename(const char *path) {
 }
 
 void Boot::createModFiles() {
+	const fs::User kern = fs::User::kernel();
+
 	VFSNode *node = NULL;
-	int res = VFSNode::request("/sys/boot",&node,VFS_WRITE,0);
+	int res = VFSNode::request(kern,"/sys/boot",&node,VFS_WRITE,0);
 	if(res < 0)
 		Util::panic("Unable to resolve /sys/boot");
 
-	VFSNode *args = createObj<VFSFile>(KERNEL_PID,node,strdup("arguments"),S_IFREG | S_IRUSR | S_IRGRP | S_IROTH);
+	VFSNode *args = createObj<VFSFile>(kern,node,strdup("arguments"),S_IFREG | S_IRUSR | S_IRGRP | S_IROTH);
 	if(!args)
 		Util::panic("Unable to create /sys/boot/arguments");
 
 	OpenFile *file;
-	if(VFS::openFile(KERNEL_PID,0,VFS_WRITE,args,args->getNo(),VFS_DEV_NO,&file) < 0)
+	if(VFS::openFile(kern,0,VFS_WRITE,args,args->getNo(),VFS_DEV_NO,&file) < 0)
 		Util::panic("Unable to open /sys/boot/arguments");
 
 	for(auto mod = modsBegin(); mod != modsEnd(); ++mod) {
 		char *modname = filename(mod->name);
-		VFSNode *n = createObj<VFSFile>(KERNEL_PID,node,modname,(void*)mod->virt,mod->size,FILE_DEF_MODE);
+		VFSNode *n = createObj<VFSFile>(kern,node,modname,(void*)mod->virt,mod->size,FILE_DEF_MODE);
 		if(!n)
 			Util::panic("Unable to create mbmod-file for '%s'",modname);
-		if(n->chown(KERNEL_PID,ROOT_UID,GROUP_DRIVER) != 0)
+		if(n->chown(kern,ROOT_UID,GROUP_DRIVER) != 0)
 			Util::panic("Unable to chown mbmod-file for '%s'",modname);
-		if(n->chmod(KERNEL_PID,S_IRUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH) != 0)
+		if(n->chmod(kern,S_IRUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH) != 0)
 			Util::panic("Unable to chmod mbmod-file for '%s'",modname);
 		VFSNode::release(n);
 
@@ -162,7 +164,7 @@ void Boot::createModFiles() {
 
 	VFSNode::release(args);
 	VFSNode::release(node);
-	file->close(KERNEL_PID);
+	file->close();
 }
 
 void Boot::parseCmdline() {

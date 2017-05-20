@@ -58,23 +58,22 @@ public:
 	ino_t open(fs::User *u,const char *path,ssize_t *pos,ino_t root,uint flags,mode_t mode,int fd,
 		fs::OpenFile **file) override;
 	void close(fs::OpenFile *file) override;
-	ino_t find(fs::User *u,fs::OpenFile *dir,const char *name);
+	ino_t find(fs::OpenFile *dir,const char *name);
 	int stat(fs::OpenFile *file,struct ::stat *info) override;
 	ssize_t read(fs::OpenFile *file,void *buffer,off_t offset,size_t size) override;
 	ssize_t write(fs::OpenFile *file,const void *buffer,off_t offset,size_t size) override;
-	int link(fs::User *u,fs::OpenFile *dst,fs::OpenFile *dir,const char *name) override;
-	int linkIno(fs::User *u,ino_t dst,fs::OpenFile *dir,const char *name,bool isdir);
-	int doUnlink(fs::User *u,fs::OpenFile *dir,const char *name,bool isdir);
-	int unlink(fs::User *u,fs::OpenFile *dir,const char *name) override;
-	int mkdir(fs::User *u,fs::OpenFile *dir,const char *name,mode_t mode) override;
-	int rmdir(fs::User *u,fs::OpenFile *dir,const char *name) override;
-	int symlink(fs::User *u,fs::OpenFile *dir,const char *name,const char *target) override;
-	int rename(fs::User *u,fs::OpenFile *oldDir,const char *oldName,fs::OpenFile *newDir,
-		const char *newName) override;
-	int chmod(fs::User *u,fs::OpenFile *file,mode_t mode) override;
-	int chown(fs::User *u,fs::OpenFile *file,uid_t uid,gid_t gid) override;
-	int utime(fs::User *u,fs::OpenFile *file,const struct utimbuf *utimes) override;
-	int truncate(fs::User *u,fs::OpenFile *file,off_t length) override;
+	int link(fs::OpenFile *dst,fs::OpenFile *dir,const char *name) override;
+	int linkIno(ino_t dst,fs::OpenFile *dir,const char *name,bool isdir);
+	int doUnlink(fs::OpenFile *dir,const char *name,bool isdir);
+	int unlink(fs::OpenFile *dir,const char *name) override;
+	int mkdir(fs::OpenFile *dir,const char *name,mode_t mode) override;
+	int rmdir(fs::OpenFile *dir,const char *name) override;
+	int symlink(fs::OpenFile *dir,const char *name,const char *target) override;
+	int rename(fs::OpenFile *oldDir,const char *oldName,fs::OpenFile *newDir,const char *newName) override;
+	int chmod(fs::OpenFile *file,mode_t mode) override;
+	int chown(fs::OpenFile *file,uid_t uid,gid_t gid) override;
+	int utime(fs::OpenFile *file,const struct utimbuf *utimes) override;
+	int truncate(fs::OpenFile *file,off_t length) override;
 	void sync() override;
 	void print(FILE *f) override;
 

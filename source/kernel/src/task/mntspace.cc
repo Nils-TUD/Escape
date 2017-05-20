@@ -87,8 +87,8 @@ MntSpace::id_t MntSpace::_nextId = 0;
 SpinLock MntSpace::_tableLock;
 MntSpace *MntSpace::_table[MAX_MNT_SPACES];
 
-MntSpace::MntSpace(id_t id,pid_t pid,VFSNode *parent,char *name)
-	: _id(id), _refs(), _lock(), _tree(), _node(createObj<VFSMS>(pid,parent,id,name,0700)) {
+MntSpace::MntSpace(id_t id,const fs::User &u,VFSNode *parent,char *name)
+	: _id(id), _refs(), _lock(), _tree(), _node(createObj<VFSMS>(u,parent,id,name,0700)) {
 }
 
 MntSpace::~MntSpace() {
@@ -96,11 +96,11 @@ MntSpace::~MntSpace() {
 	_node->destroy();
 }
 
-MntSpace *MntSpace::create(pid_t pid,VFSNode *parent,char *name) {
+MntSpace *MntSpace::create(const fs::User &u,VFSNode *parent,char *name) {
 	LockGuard<SpinLock> guard(&_tableLock);
 	for(size_t i = 0; i < MAX_MNT_SPACES; ++i) {
 		if(_table[i] == NULL) {
-			_table[i] = new MntSpace(_nextId++,pid,parent,name);
+			_table[i] = new MntSpace(_nextId++,u,parent,name);
 			return _table[i];
 		}
 	}
@@ -131,9 +131,9 @@ void MntSpace::release(MntSpace *ms) {
 	}
 }
 
-MntSpace *MntSpace::clone(pid_t pid,char *name) {
+MntSpace *MntSpace::clone(const fs::User &u,char *name) {
 	LockGuard<SpinLock> guard(&_lock);
-	MntSpace *ms = create(pid,_node,name);
+	MntSpace *ms = create(u,_node,name);
 	if(!ms)
 		return NULL;
 
@@ -162,13 +162,13 @@ void MntSpace::release(OpenFile *file) {
 	file->decUsages();
 }
 
-int MntSpace::mount(Proc *,const char *path,OpenFile *file) {
+int MntSpace::mount(const char *path,OpenFile *file) {
 	file->incRefs();
 	LockGuard<SpinLock> guard(&_lock);
 	return _tree.insert(path,file);
 }
 
-int MntSpace::remount(Proc *p,const char *path,OpenFile *dir,uint flags) {
+int MntSpace::remount(const fs::User &u,const char *path,OpenFile *dir,uint flags) {
 	LockGuard<SpinLock> guard(&_lock);
 	const char *end;
 	MSTreeItem *match = _tree.find(path,&end);
@@ -187,7 +187,7 @@ int MntSpace::remount(Proc *p,const char *path,OpenFile *dir,uint flags) {
 
 	if(newrwx != oldrwx) {
 		flags = (old->getFlags() & ~rwx) | newrwx;
-		int res = OpenFile::getFree(p->getPid(),flags,flags,old->getNodeNo(),old->getDev(),
+		int res = OpenFile::getFree(u,flags,flags,old->getNodeNo(),old->getDev(),
 			old->getNode(),&nfile,true);
 		if(res < 0)
 			return res;
@@ -200,13 +200,13 @@ int MntSpace::remount(Proc *p,const char *path,OpenFile *dir,uint flags) {
 	/* if we remount at the same place, remove the old one */
 	if(end[0] == '\0') {
 		_tree.remove(path);
-		old->close(p->getPid());
+		old->close();
 	}
 
 	/* mount it */
 	int res = _tree.insert(path,nfile);
 	if(res < 0) {
-		nfile->close(p->getPid());
+		nfile->close();
 		return res;
 	}
 
@@ -221,7 +221,7 @@ int MntSpace::remount(Proc *p,const char *path,OpenFile *dir,uint flags) {
 	return 0;
 }
 
-int MntSpace::unmount(Proc *p,const char *path) {
+int MntSpace::unmount(const char *path) {
 	OpenFile *file;
 	{
 		LockGuard<SpinLock> guard(&_lock);
@@ -241,7 +241,7 @@ int MntSpace::unmount(Proc *p,const char *path) {
 		assert(file != NULL);
 	}
 
-	file->close(p->getPid());
+	file->close();
 	return 0;
 }
 

@@ -59,10 +59,10 @@ public:
 private:
 	static const size_t MAX_MNT_SPACES	= 32;
 
-	explicit MntSpace(id_t id,pid_t pid,VFSNode *parent,char *name);
+	explicit MntSpace(id_t id,const fs::User &u,VFSNode *parent,char *name);
 
 public:
-	static MntSpace *create(pid_t pid,VFSNode *parent,char *name);
+	static MntSpace *create(const fs::User &u,VFSNode *parent,char *name);
 	static MntSpace *request(id_t id);
 	static void release(MntSpace *ms);
 
@@ -71,11 +71,11 @@ public:
 	/**
 	 * Clones this mountspace into a new one.
 	 *
-	 * @param pid the calling process
+	 * @param u the user
 	 * @param name the name of the VFSNode
 	 * @return the new mountspace
 	 */
-	MntSpace *clone(pid_t pid,char *name);
+	MntSpace *clone(const fs::User &u,char *name);
 
 	/**
 	 * Resolves the given path for given process, i.e. it searches for the mountpoint in which
@@ -106,32 +106,30 @@ public:
 	/**
 	 * Mounts the filesystem, handled by <file>, at <path>.
 	 *
-	 * @param p the process
 	 * @param path the path to mount it at
 	 * @param file the file that points to the channel over which the fs is handled
 	 * @return 0 on success
 	 */
-	int mount(Proc *p,const char *path,OpenFile *file);
+	int mount(const char *path,OpenFile *file);
 
 	/**
 	 * Remounts <dir> at <path> with given permissions.
 	 *
-	 * @param p the process
+	 * @param u the user
 	 * @param path the path to mount it at
 	 * @param dir the directory to remount
 	 * @param flags the flags (rwx) to use; only downgrading is allowed
 	 * @return 0 on success
 	 */
-	int remount(Proc *p,const char *path,OpenFile *dir,uint flags);
+	int remount(const fs::User &u,const char *path,OpenFile *dir,uint flags);
 
 	/**
 	 * Unmounts the filesystem that is mounted at <path>.
 	 *
-	 * @param p the process
 	 * @param path the path
 	 * @return 0 on success
 	 */
-	int unmount(Proc *p,const char *path);
+	int unmount(const char *path);
 
 	/**
 	 * Leaves the current mountspace and joins this.

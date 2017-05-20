@@ -40,11 +40,11 @@
 #include <string.h>
 #include <video.h>
 
-VFSChannel::VFSChannel(pid_t pid,VFSNode *p,bool &success)
+VFSChannel::VFSChannel(const fs::User &u,VFSNode *p,bool &success)
 		/* permissions are basically irrelevant here since the userland can't open a channel directly. */
 		/* but in order to allow devices to be created by non-root users, give permissions for everyone */
 		/* otherwise, if root uses that device, the driver is unable to open this channel. */
-		: VFSNode(pid,generateId(pid),MODE_TYPE_CHANNEL | 0777,success), fd(-1),
+		: VFSNode(u,generateId(),MODE_TYPE_CHANNEL | 0777,success), fd(-1),
 		  handler(), closed(false),
 		  shmem(NULL), shmemSize(0), sendList(), recvList() {
 	if(!success)
@@ -81,16 +81,20 @@ int VFSChannel::isSupported(int op) const {
 	return 0;
 }
 
-ssize_t VFSChannel::open(pid_t pid,const char *path,ssize_t *sympos,ino_t root,uint flags,int msgid,mode_t mode) {
+pid_t VFSChannel::getDeviceProc() const {
+	return static_cast<const VFSDevice*>(getParent())->getOwner();
+}
+
+ssize_t VFSChannel::open(const fs::User &u,const char *path,ssize_t *sympos,ino_t root,uint flags,
+		int msgid,mode_t mode) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 	ssize_t res;
-	Proc *p;
 	msgid_t mid;
 
 	/* give the driver a file-descriptor for this new client; note that we have to do that
 	 * immediatly because in close() we assume that the device has already one reference to it */
-	res = VFS::openFileDesc(getParent()->getOwner(),0,VFS_MSGS | VFS_DEVICE,this,getNo(),VFS_DEV_NO);
+	res = VFS::openFileDesc(getDeviceProc(),0,VFS_MSGS | VFS_DEVICE,this,getNo(),VFS_DEV_NO);
 	if(res < 0)
 		return res;
 	fd = res;
@@ -102,24 +106,20 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,ssize_t *sympos,ino_t root,u
 	if(res < 0)
 		goto error;
 
-	p = Proc::getByPid(pid);
-	assert(p != NULL);
-
 	/* send msg to driver */
-	ib << esc::FileOpen::Request(flags,fs::User(p->getUid(),p->getGid(),p->getPid()),
-		esc::CString(path),root,mode);
+	ib << esc::FileOpen::Request(flags,u,esc::CString(path),root,mode);
 	if(ib.error()) {
 		res = -EINVAL;
 		goto error;
 	}
-	res = send(pid,0,msgid,ib.buffer(),ib.pos(),NULL,0);
+	res = send(0,msgid,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		goto error;
 
 	/* receive response */
 	ib.reset();
 	mid = res;
-	res = receive(pid,0,&mid,ib.buffer(),ib.max());
+	res = receive(0,&mid,ib.buffer(),ib.max());
 	if(res < 0)
 		goto error;
 
@@ -136,11 +136,11 @@ ssize_t VFSChannel::open(pid_t pid,const char *path,ssize_t *sympos,ino_t root,u
 	}
 
 error:
-	VFS::closeFileDesc(getParent()->getOwner(),fd);
+	VFS::closeFileDesc(getDeviceProc(),fd);
 	return res;
 }
 
-void VFSChannel::close(pid_t pid,OpenFile *file,int msgid) {
+void VFSChannel::close(OpenFile *file,int msgid) {
 	if(!isAlive())
 		unref();
 	else {
@@ -150,13 +150,13 @@ void VFSChannel::close(pid_t pid,OpenFile *file,int msgid) {
 		}
 		/* if there is only the device left, do the real close */
 		else if(unref() == 1) {
-			send(pid,0,msgid,NULL,0,NULL,0);
+			send(0,msgid,NULL,0,NULL,0);
 			closed = true;
 		}
 	}
 }
 
-off_t VFSChannel::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whence) const {
+off_t VFSChannel::seek(off_t position,off_t offset,uint whence) const {
 	switch(whence) {
 		case SEEK_SET:
 			return offset;
@@ -169,7 +169,7 @@ off_t VFSChannel::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whenc
 	}
 }
 
-ssize_t VFSChannel::getSize(pid_t pid) {
+ssize_t VFSChannel::getSize() {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
@@ -177,13 +177,13 @@ ssize_t VFSChannel::getSize(pid_t pid) {
 		return 0;
 
 	/* send msg to device */
-	ssize_t res = send(pid,0,esc::FileSize::MSG,NULL,0,NULL,0);
+	ssize_t res = send(0,esc::FileSize::MSG,NULL,0,NULL,0);
 	if(res < 0)
 		return res;
 
 	/* receive response */
 	msgid_t mid = res;
-	res = receive(pid,0,&mid,ib.buffer(),ib.max());
+	res = receive(0,&mid,ib.buffer(),ib.max());
 	if(res < 0)
 		return res;
 
@@ -362,7 +362,7 @@ int VFSChannel::delegate(pid_t pid,OpenFile *chan,OpenFile *file,uint perm,int a
 		if(!addr)
 			return -ENXIO;
 		struct stat info;
-		if((res = file->fstat(pid,&info)) < 0)
+		if((res = file->fstat(&info)) < 0)
 			return res;
 		shmem = reinterpret_cast<void*>(addr);
 		shmemSize = info.st_size;
@@ -370,7 +370,7 @@ int VFSChannel::delegate(pid_t pid,OpenFile *chan,OpenFile *file,uint perm,int a
 
 	/* first, give the driver a file-descriptor for the new channel */
 	uint flags = (file->getFlags() & ~O_ACCMODE) | perm;
-	res = VFS::openFileDesc(getParent()->getOwner(),file->getMntPerms(),flags,
+	res = VFS::openFileDesc(getDeviceProc(),file->getMntPerms(),flags,
 		file->getNode(),file->getNodeNo(),file->getDev());
 	if(res < 0)
 		goto errorShm;
@@ -401,7 +401,7 @@ int VFSChannel::delegate(pid_t pid,OpenFile *chan,OpenFile *file,uint perm,int a
 	return 0;
 
 error:
-	VFS::closeFileDesc(getParent()->getOwner(),nfd);
+	VFS::closeFileDesc(getDeviceProc(),nfd);
 errorShm:
 	if(arg == DEL_ARG_SHFILE)
 		shmem = NULL;
@@ -449,7 +449,7 @@ int VFSChannel::obtain(pid_t pid,OpenFile *chan,int arg) {
 		return r.err;
 
 	/* request file from driver */
-	Proc *pp = Proc::getRef(getParent()->getOwner());
+	Proc *pp = Proc::getRef(getDeviceProc());
 	if(!pp)
 		return -ESRCH;
 	OpenFile *ofile = FileDesc::request(pp,r.fd);
@@ -482,12 +482,12 @@ errorProc:
 	return res;
 }
 
-ssize_t VFSChannel::send(A_UNUSED pid_t pid,ushort flags,msgid_t id,USER const void *data1,
+ssize_t VFSChannel::send(ushort flags,msgid_t id,USER const void *data1,
 						 size_t size1,USER const void *data2,size_t size2) {
 	return static_cast<VFSDevice*>(parent)->send(this,flags,id,data1,size1,data2,size2);
 }
 
-ssize_t VFSChannel::receive(A_UNUSED pid_t pid,ushort flags,msgid_t *id,void *data,size_t size) {
+ssize_t VFSChannel::receive(ushort flags,msgid_t *id,void *data,size_t size) {
 	return static_cast<VFSDevice*>(parent)->receive(this,flags,id,data,size);
 }
 

@@ -38,20 +38,20 @@
 #include <util.h>
 #include <video.h>
 
-static int communicateOverChan(pid_t pid,VFSChannel *chan,msgid_t cmd,esc::IPCBuf &ib) {
+static int communicateOverChan(VFSChannel *chan,msgid_t cmd,esc::IPCBuf &ib) {
 	ssize_t res;
 	if(ib.error())
 		return -EINVAL;
 
 	/* send msg */
-	res = chan->send(pid,0,cmd,ib.buffer(),ib.pos(),NULL,0);
+	res = chan->send(0,cmd,ib.buffer(),ib.pos(),NULL,0);
 	if(res < 0)
 		return res;
 
 	/* read response */
 	ib.reset();
 	msgid_t mid = res;
-	res = chan->receive(pid,0,&mid,ib.buffer(),ib.max());
+	res = chan->receive(0,&mid,ib.buffer(),ib.max());
 	if(res < 0)
 		return res;
 
@@ -60,121 +60,101 @@ static int communicateOverChan(pid_t pid,VFSChannel *chan,msgid_t cmd,esc::IPCBu
 	return ib.error() ? -EINVAL : err;
 }
 
-int VFSFS::fstat(pid_t pid,VFSChannel *chan,struct stat *info) {
+int VFSFS::fstat(VFSChannel *chan,struct stat *info) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
-	int res = communicateOverChan(pid,chan,esc::FSStat::MSG,ib);
+	int res = communicateOverChan(chan,esc::FSStat::MSG,ib);
 	ib >> *info;
 	/* set device id */
 	info->st_dev = chan->getParent()->getNo();
 	return res;
 }
 
-int VFSFS::truncate(pid_t pid,VFSChannel *chan,off_t length) {
+int VFSFS::truncate(VFSChannel *chan,off_t length) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
-	const Proc *p = Proc::getByPid(pid);
-	fs::User user(p->getUid(),p->getGid(),p->getPid());
-	ib << esc::FSTruncate::Request(user,length);
-	return communicateOverChan(pid,chan,esc::FSTruncate::MSG,ib);
+	ib << esc::FSTruncate::Request(length);
+	return communicateOverChan(chan,esc::FSTruncate::MSG,ib);
 }
 
-int VFSFS::syncfs(pid_t pid,VFSChannel *chan) {
+int VFSFS::syncfs(VFSChannel *chan) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
-	return communicateOverChan(pid,chan,esc::FSSync::MSG,ib);
+	return communicateOverChan(chan,esc::FSSync::MSG,ib);
 }
 
-int VFSFS::chmod(pid_t pid,VFSChannel *chan,mode_t mode) {
+int VFSFS::chmod(VFSChannel *chan,mode_t mode) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
-	const Proc *p = Proc::getByPid(pid);
-	fs::User user(p->getUid(),p->getGid(),p->getPid());
-	ib << esc::FSChmod::Request(user,mode);
-	return communicateOverChan(pid,chan,esc::FSChmod::MSG,ib);
+	ib << esc::FSChmod::Request(mode);
+	return communicateOverChan(chan,esc::FSChmod::MSG,ib);
 }
 
-int VFSFS::chown(pid_t pid,VFSChannel *chan,uid_t uid,gid_t gid) {
+int VFSFS::chown(VFSChannel *chan,uid_t uid,gid_t gid) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
-	const Proc *p = Proc::getByPid(pid);
-	fs::User user(p->getUid(),p->getGid(),p->getPid());
-	ib << esc::FSChown::Request(user,uid,gid);
-	return communicateOverChan(pid,chan,esc::FSChown::MSG,ib);
+	ib << esc::FSChown::Request(uid,gid);
+	return communicateOverChan(chan,esc::FSChown::MSG,ib);
 }
 
-int VFSFS::utime(pid_t pid,VFSChannel *chan,const struct utimbuf *utimes) {
+int VFSFS::utime(VFSChannel *chan,const struct utimbuf *utimes) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
-	const Proc *p = Proc::getByPid(pid);
-	fs::User user(p->getUid(),p->getGid(),p->getPid());
-	ib << esc::FSUtime::Request(user,*utimes);
-	return communicateOverChan(pid,chan,esc::FSUtime::MSG,ib);
+	ib << esc::FSUtime::Request(*utimes);
+	return communicateOverChan(chan,esc::FSUtime::MSG,ib);
 }
 
-int VFSFS::link(pid_t pid,VFSChannel *target,VFSChannel *dir,const char *name) {
+int VFSFS::link(VFSChannel *target,VFSChannel *dir,const char *name) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
-	const Proc *p = Proc::getByPid(pid);
-	fs::User user(p->getUid(),p->getGid(),p->getPid());
-	ib << esc::FSLink::Request(user,dir->getFd(),esc::CString(name));
-	return communicateOverChan(pid,target,esc::FSLink::MSG,ib);
+	ib << esc::FSLink::Request(dir->getFd(),esc::CString(name));
+	return communicateOverChan(target,esc::FSLink::MSG,ib);
 }
 
-int VFSFS::unlink(pid_t pid,VFSChannel *chan,const char *name) {
+int VFSFS::unlink(VFSChannel *chan,const char *name) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
-	const Proc *p = Proc::getByPid(pid);
-	fs::User user(p->getUid(),p->getGid(),p->getPid());
-	ib << esc::FSUnlink::Request(user,esc::CString(name));
-	return communicateOverChan(pid,chan,esc::FSUnlink::MSG,ib);
+	ib << esc::FSUnlink::Request(esc::CString(name));
+	return communicateOverChan(chan,esc::FSUnlink::MSG,ib);
 }
 
-int VFSFS::rename(pid_t pid,VFSChannel *oldDir,const char *oldName,VFSChannel *newDir,
+int VFSFS::rename(VFSChannel *oldDir,const char *oldName,VFSChannel *newDir,
 		const char *newName) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
-	const Proc *p = Proc::getByPid(pid);
-	fs::User user(p->getUid(),p->getGid(),p->getPid());
-	ib << esc::FSRename::Request(user,esc::CString(oldName),newDir->getFd(),esc::CString(newName));
-	return communicateOverChan(pid,oldDir,esc::FSRename::MSG,ib);
+	ib << esc::FSRename::Request(esc::CString(oldName),newDir->getFd(),esc::CString(newName));
+	return communicateOverChan(oldDir,esc::FSRename::MSG,ib);
 }
 
-int VFSFS::mkdir(pid_t pid,VFSChannel *chan,const char *name,mode_t mode) {
+int VFSFS::mkdir(VFSChannel *chan,const char *name,mode_t mode) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
-	const Proc *p = Proc::getByPid(pid);
-	fs::User user(p->getUid(),p->getGid(),p->getPid());
-	ib << esc::FSMkdir::Request(user,esc::CString(name),mode);
-	return communicateOverChan(pid,chan,esc::FSMkdir::MSG,ib);
+	ib << esc::FSMkdir::Request(esc::CString(name),mode);
+	return communicateOverChan(chan,esc::FSMkdir::MSG,ib);
 }
 
-int VFSFS::rmdir(pid_t pid,VFSChannel *chan,const char *name) {
+int VFSFS::rmdir(VFSChannel *chan,const char *name) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
-	const Proc *p = Proc::getByPid(pid);
-	fs::User user(p->getUid(),p->getGid(),p->getPid());
-	ib << esc::FSRmdir::Request(user,esc::CString(name));
-	return communicateOverChan(pid,chan,esc::FSRmdir::MSG,ib);
+	ib << esc::FSRmdir::Request(esc::CString(name));
+	return communicateOverChan(chan,esc::FSRmdir::MSG,ib);
 }
 
-int VFSFS::symlink(pid_t pid,VFSChannel *chan,const char *name,const char *target) {
+int VFSFS::symlink(VFSChannel *chan,const char *name,const char *target) {
 	ulong buffer[IPC_DEF_SIZE / sizeof(ulong)];
 	esc::IPCBuf ib(buffer,sizeof(buffer));
 
-	const Proc *p = Proc::getByPid(pid);
-	fs::User user(p->getUid(),p->getGid(),p->getPid());
-	ib << esc::FSSymlink::Request(user,esc::CString(name),esc::CString(target));
-	return communicateOverChan(pid,chan,esc::FSSymlink::MSG,ib);
+	ib << esc::FSSymlink::Request(esc::CString(name),esc::CString(target));
+	return communicateOverChan(chan,esc::FSSymlink::MSG,ib);
 }

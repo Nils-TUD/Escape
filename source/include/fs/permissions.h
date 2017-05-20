@@ -34,9 +34,18 @@ class Permissions {
 	Permissions() = delete;
 
 public:
-	template<int (*INGROUP)(pid_t,gid_t) = isingroup>
-	static int canAccess(User *u,mode_t mode,uid_t uid,gid_t gid,uint perms) {
+	static bool contains_group(const User *u,gid_t gid) {
+		for(size_t i = 0; i < u->groupCount; ++i) {
+			if(u->gids[i] == gid)
+				return true;
+		}
+		return false;
+	}
+
+	static int canAccess(const User *u,mode_t mode,uid_t uid,gid_t gid,uint perms) {
 		int mask;
+		if(u->isKernel())
+			return 0;
 		if(u->uid == ROOT_UID) {
 			/* root has exec-permission if at least one has exec-permission */
 			if(perms & MODE_EXEC)
@@ -48,7 +57,7 @@ public:
 		/* determine mask */
 		if(uid == u->uid)
 			mask = mode & S_IRWXU;
-		else if(gid == u->gid || INGROUP(u->pid,gid) == 1)
+		else if(gid == u->gid || contains_group(u,gid) == 1)
 			mask = mode & S_IRWXG;
 		else
 			mask = mode & S_IRWXO;
@@ -63,7 +72,9 @@ public:
 		return 0;
 	}
 
-	static int canRemove(User *u,mode_t dirmode,uid_t diruid,uid_t fileuid) {
+	static int canRemove(const User *u,mode_t dirmode,uid_t diruid,uid_t fileuid) {
+		if(u->isKernel())
+			return 0;
 		/* if the sticky flag is set, we need to be owner of the dir or the file to unlink */
 		if(dirmode & S_ISSTICKY) {
 			if(u->uid != ROOT_UID && diruid != u->uid && fileuid != u->uid)
@@ -72,19 +83,22 @@ public:
 		return 0;
 	}
 
-	static bool canChmod(User *u,uid_t uid) {
+	static bool canChmod(const User *u,uid_t uid) {
+		if(u->isKernel())
+			return true;
 		/* root can chmod all files; otherwise it has to be the owner */
 		if(u->uid != uid && u->uid != ROOT_UID)
 			return false;
 		return true;
 	}
 
-	static bool canUtime(User *u,uid_t uid) {
+	static bool canUtime(const User *u,uid_t uid) {
 		return canChmod(u,uid);
 	}
 
-	template<int (*INGROUP)(pid_t,gid_t) = isingroup>
-	static bool canChown(User *u,uid_t oldUid,gid_t oldGid,uid_t newUid,gid_t newGid) {
+	static bool canChown(const User *u,uid_t oldUid,gid_t oldGid,uid_t newUid,gid_t newGid) {
+		if(u->isKernel())
+			return true;
 		/* root can chown everything; others can only chown their own files */
 		if(u->uid != oldUid && u->uid != ROOT_UID)
 			return false;
@@ -93,7 +107,7 @@ public:
 			if(newUid != (uid_t)-1 && newUid != oldUid && newUid != u->uid)
 				return false;
 			/* users can change the group only to a group they're a member of */
-			if(newGid != (gid_t)-1 && newGid != oldGid && newGid != u->gid && !INGROUP(u->pid,newGid))
+			if(newGid != (gid_t)-1 && newGid != oldGid && newGid != u->gid && !contains_group(u,newGid))
 				return false;
 		}
 		return true;

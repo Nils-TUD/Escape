@@ -58,7 +58,7 @@ int cons_cmd_ls(OStream &os,size_t argc,char **argv) {
 			lines.appendStr(ss.getString());
 		lines.newLine();
 	}
-	file->close(pid);
+	file->close();
 	if(res < 0)
 		return res;
 	lines.endLine();
@@ -92,7 +92,7 @@ static int cons_cmd_ls_read(pid_t pid,OpenFile *file,struct dirent *e) {
 	/* if the record is longer, we have to skip the stuff until the next record */
 	if(e->d_reclen - DIRE_HEAD_SIZE > len) {
 		len = (e->d_reclen - DIRE_HEAD_SIZE - len);
-		if((res = file->seek(pid,len,SEEK_CUR)) < 0)
+		if((res = file->seek(len,SEEK_CUR)) < 0)
 			return res;
 	}
 

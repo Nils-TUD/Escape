@@ -121,23 +121,22 @@ public:
 		return file->write(data,pos,count);
 	}
 
-	int unlink(User *,OpenFTPFile *dir,const char *name) override {
+	int unlink(OpenFTPFile *dir,const char *name) override {
 		dirCmd(dir,name,CtrlCon::CMD_DELE);
 		return 0;
 	}
 
-	int mkdir(User *,OpenFTPFile *dir,const char *name,mode_t) override {
+	int mkdir(OpenFTPFile *dir,const char *name,mode_t) override {
 		dirCmd(dir,name,CtrlCon::CMD_MKD);
 		return 0;
 	}
 
-	int rmdir(User *,OpenFTPFile *dir,const char *name) override {
+	int rmdir(OpenFTPFile *dir,const char *name) override {
 		dirCmd(dir,name,CtrlCon::CMD_RMD);
 		return 0;
 	}
 
-	int rename(User *,OpenFTPFile *oldDir,const char *oldName,OpenFTPFile *newDir,
-			const char *newName) override {
+	int rename(OpenFTPFile *oldDir,const char *oldName,OpenFTPFile *newDir,const char *newName) override {
 		char oldPath[MAX_PATH_LEN];
 		char newPath[MAX_PATH_LEN];
 

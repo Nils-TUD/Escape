@@ -52,7 +52,7 @@ uintptr_t bspstart(BootInfo *bootinfo,uint64_t *stackBegin,uint64_t *rss) {
 		Util::panic("Unable to load initloader");
 	if(!UEnv::setupProc(0,0,NULL,0,&info,info.progEntry,-1))
 		Util::panic("Unable to setup initloader");
-	file->close(pid);
+	file->close();
 	*stackBegin = info.stackBegin;
 	*rss = DIR_MAP_AREA | (t->getKernelStack() * PAGE_SIZE);
 	return info.progEntry;

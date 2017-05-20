@@ -36,12 +36,12 @@
 #include <errno.h>
 #include <string.h>
 
-VFSDir::VFSDir(pid_t pid,VFSNode *p,char *n,uint m,bool &success)
-		: VFSNode(pid,n,m,success) {
+VFSDir::VFSDir(const fs::User &u,VFSNode *p,char *n,uint m,bool &success)
+		: VFSNode(u,n,m,success) {
 	append(p);
 }
 
-off_t VFSDir::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whence) const {
+off_t VFSDir::seek(off_t position,off_t offset,uint whence) const {
 	switch(whence) {
 		case SEEK_SET:
 			return offset;
@@ -55,7 +55,7 @@ off_t VFSDir::seek(A_UNUSED pid_t pid,off_t position,off_t offset,uint whence) c
 	}
 }
 
-ssize_t VFSDir::getSize(A_UNUSED pid_t pid) {
+ssize_t VFSDir::getSize() {
 	bool valid;
 	size_t byteCount = 0;
 	/* node is already locked */

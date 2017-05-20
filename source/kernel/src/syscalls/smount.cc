@@ -39,7 +39,7 @@ static int getMS(Proc *p,int ms,Syscalls::ScopedFile *msfile,VFSMS **msobj,uint 
 	*msobj = static_cast<VFSMS*>((*msfile)->getNode());
 
 	int res;
-	if((res = VFS::hasAccess(p->getPid(),*msobj,perm)) < 0)
+	if((res = VFS::hasAccess((*msfile)->getUser(),*msobj,perm)) < 0)
 		return res;
 	return 0;
 }
@@ -75,7 +75,7 @@ int Syscalls::mount(Thread *t,IntrptStackFrame *stack) {
 		if(!msobj)
 			SYSC_ERROR(stack,-EDESTROYED);
 
-		res = msobj->mount(p,abspath,&*fsfile);
+		res = msobj->mount(abspath,&*fsfile);
 		MntSpace::release(msobj);
 	}
 	else {
@@ -84,7 +84,7 @@ int Syscalls::mount(Thread *t,IntrptStackFrame *stack) {
 
 		/* otherwise, remount the directory */
 		struct stat info;
-		if((res = fsfile->fstat(p->getPid(),&info)) < 0)
+		if((res = fsfile->fstat(&info)) < 0)
 			SYSC_ERROR(stack,res);
 		if(!S_ISDIR(info.st_mode))
 			SYSC_ERROR(stack,-ENOTDIR);
@@ -93,7 +93,7 @@ int Syscalls::mount(Thread *t,IntrptStackFrame *stack) {
 		if(!msobj)
 			SYSC_ERROR(stack,-EDESTROYED);
 
-		res = msobj->remount(p,abspath,&*fsfile,flags);
+		res = msobj->remount(msfile->getUser(),abspath,&*fsfile,flags);
 		MntSpace::release(msobj);
 	}
 
@@ -119,7 +119,7 @@ int Syscalls::unmount(Thread *t,IntrptStackFrame *stack) {
 	if(!msobj)
 		SYSC_ERROR(stack,-EDESTROYED);
 
-	res = msobj->unmount(p,abspath);
+	res = msobj->unmount(abspath);
 	MntSpace::release(msobj);
 	SYSC_RESULT(stack,res);
 }

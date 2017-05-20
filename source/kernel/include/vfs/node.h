@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <fs/common.h>
 #include <mem/dynarray.h>
 #include <sys/stat.h>
 #include <atomic.h>
@@ -149,13 +150,14 @@ public:
 	 * Convenience wrapper for the more complicated request method. It passes <node> as the starting
 	 * point and sets <node> to the resulting node on success.
 	 *
+	 * @param u the user
 	 * @param path the path to resolve
 	 * @param node the starting node (NULL = root) and resulting node
 	 * @param flags the flags (VFS_*) with which to resolve the path (create file,...)
 	 * @param mode the mode to set (if a file is created)
 	 * @return 0 if successfull or the error-code
 	 */
-	static int request(const char *path,VFSNode **node,uint flags,mode_t mode);
+	static int request(const fs::User &u,const char *path,VFSNode **node,uint flags,mode_t mode);
 
 	/**
 	 * Resolves the given path to a VFS-node and requests it, i.e. increments the references.
@@ -163,6 +165,7 @@ public:
 	 * you call release(). On the other hand, it might get detached from the tree if you don't
 	 * prevent that by acquiring the tree-lock.
 	 *
+	 * @param u the user
 	 * @param path the path to resolve
 	 * @param node the starting node (NULL = root)
 	 * @param res will be filled with the result
@@ -170,7 +173,7 @@ public:
 	 * @param mode the mode to set (if a file is created)
 	 * @return 0 if successfull or the error-code
 	 */
-	static int request(const char *path,VFSNode *node,RequestResult *res,uint flags,mode_t mode);
+	static int request(const fs::User &u,const char *path,VFSNode *node,RequestResult *res,uint flags,mode_t mode);
 
 	/**
 	 * Releases the given node, i.e. unlocks it.
@@ -223,14 +226,14 @@ public:
 	static void dirname(char *path,size_t len);
 
 	/**
-	 * Creates a new node with given owner and name
+	 * Creates a new node with given user and name
 	 *
-	 * @param pid the owner
+	 * @param u the user
 	 * @param name the node-name
 	 * @param mode the mode
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	explicit VFSNode(pid_t pid,char *name,uint mode,bool &success);
+	explicit VFSNode(const fs::User &u,char *name,uint mode,bool &success);
 
 	/**
 	 * Destructor
@@ -283,12 +286,6 @@ public:
 		return gid;
 	}
 	/**
-	 * @return the owner (creator) of this node
-	 */
-	pid_t getOwner() const {
-		return owner;
-	}
-	/**
 	 * @return the parent node
 	 */
 	VFSNode *getParent() {
@@ -328,10 +325,9 @@ public:
 	/**
 	 * Retrieves information about this node
 	 *
-	 * @param pid the process-id
 	 * @param info will be filled
 	 */
-	void getInfo(pid_t pid,struct stat *info);
+	void getInfo(struct stat *info);
 
 	/**
 	 * Determines the path for this node. Note that static memory will be used for that!
@@ -355,84 +351,84 @@ public:
 	/**
 	 * Changes the mode of this node
 	 *
-	 * @param pid the process-id
+	 * @param u the user
 	 * @param mode the new mode
 	 * @return 0 on success
 	 */
-	int chmod(pid_t pid,mode_t mode);
+	int chmod(const fs::User &u,mode_t mode);
 
 	/**
 	 * Changes the owner and group of this node
 	 *
-	 * @param pid the process-id
+	 * @param u the user
 	 * @param uid the new user
 	 * @param gid the new group
 	 * @return 0 on success
 	 */
-	int chown(pid_t pid,uid_t uid,gid_t gid);
+	int chown(const fs::User &u,uid_t uid,gid_t gid);
 
 	/**
 	 * Sets the access and modification times of this node
 	 *
-	 * @param pid the process-id
+	 * @param u the user
 	 * @param utimes the new access and modification times
 	 * @return 0 on success
 	 */
-	int utime(pid_t pid,const struct utimbuf *utimes);
+	int utime(const fs::User &u,const struct utimbuf *utimes);
 
 	/**
 	 * Unlinks <this>/<name>
 	 *
-	 * @param pid the process-id
+	 * @param u the user
 	 * @param name the name of the file to remove
 	 * @return 0 on success
 	 */
-	int unlink(pid_t pid,const char *name);
+	int unlink(const fs::User &u,const char *name);
 
 	/**
 	 * Renames <this> to <dir>/<name>.
 	 *
-	 * @param pid the process-id
+	 * @param u the user
 	 * @param oldName the name of the old file
 	 * @param newDir the new directory
 	 * @param newName the name of the file to create
 	 * @return 0 on success
 	 */
-	int rename(pid_t pid,const char *oldName,VFSNode *newDir,const char *newName);
+	int rename(const fs::User &u,const char *oldName,VFSNode *newDir,const char *newName);
 
 	/**
 	 * Creates a directory named <name> in <this> with <mode> mode.
 	 *
-	 * @param pid the process-id
+	 * @param u the user
 	 * @param name the name
 	 * @param mode the mode
 	 * @return 0 on success
 	 */
-	int mkdir(pid_t pid,const char *name,mode_t mode);
+	int mkdir(const fs::User &u,const char *name,mode_t mode);
 
 	/**
 	 * Removes the directory <this>/<name>
 	 *
-	 * @param pid the process-id
+	 * @param u the user
 	 * @param name the name of the directory to remove
 	 * @return 0 on success
 	 */
-	int rmdir(pid_t pid,const char *name);
+	int rmdir(const fs::User &u,const char *name);
 
 	/**
 	 * Creates a symlink named <name> in this directory, pointing to <target>.
 	 *
-	 * @param pid the process-id
+	 * @param u the user
 	 * @param name the filename
 	 * @param target the target path
 	 * @return 0 on success
 	 */
-	int symlink(pid_t pid,const char *name,const char *target);
+	int symlink(const fs::User &u,const char *name,const char *target);
 
 	/**
 	 * Creates a device-node for the given process at <this>/<name>
 	 *
-	 * @param pid the process-id
+	 * @param u the user
 	 * @param name the name of the device
 	 * @param mode the mode to set
 	 * @param type the device-type (DEV_TYPE_*)
@@ -440,7 +436,7 @@ public:
 	 * @param node will be set to the created node (with a reference; so you have to call release!)
 	 * @return 0 if ok, negative if an error occurred
 	 */
-	int createdev(pid_t pid,const char *name,mode_t mode,uint type,uint ops,VFSNode **node);
+	int createdev(const fs::User &u,const char *name,mode_t mode,uint type,uint ops,VFSNode **node);
 
 	/**
 	 * Finds the child-node with name <name>
@@ -482,7 +478,7 @@ public:
 	/**
 	 * Gives the implementation a chance to react on a open of this node.
 	 *
-	 * @param pid the process-id
+	 * @param u the user
 	 * @param path the path (behind the mountpoint)
 	 * @param sympos will be set to the position within the path if a symlink is encountered
 	 * @param root the root inode
@@ -490,13 +486,13 @@ public:
 	 * @param msgid the message-id to use (only important for channel)
 	 * @param mode the mode to set
 	 */
-	virtual ssize_t open(pid_t pid,const char *path,ssize_t *sympos,ino_t root,uint flags,int msgid,mode_t mode);
+	virtual ssize_t open(const fs::User &u,const char *path,ssize_t *sympos,ino_t root,uint flags,
+		int msgid,mode_t mode);
 
 	/**
-	 * @param pid the process-id
 	 * @return the size of the file
 	 */
-	virtual ssize_t getSize(A_UNUSED pid_t pid) {
+	virtual ssize_t getSize() {
 		return 0;
 	}
 
@@ -534,14 +530,12 @@ public:
 	 * Determines the position to set if we are at <position> and want to do a seek to <offset> of
 	 * type <whence>.
 	 *
-	 * @param pid the process-id
 	 * @param position the current position
 	 * @param the offset to set
 	 * @param whence the type of seek
 	 * @return the position to set
 	 */
-	virtual off_t seek(A_UNUSED pid_t pid,A_UNUSED off_t position,A_UNUSED off_t offset,
-	                   A_UNUSED uint whence) const {
+	virtual off_t seek(A_UNUSED off_t position,A_UNUSED off_t offset,A_UNUSED uint whence) const {
 		return -ENOTSUP;
 	}
 
@@ -549,22 +543,20 @@ public:
 	 * Truncates the file to <length> bytes by either extending it with 0-bytes or cutting it to
 	 * that length.
 	 *
-	 * @param pid the process-id
 	 * @param length the desired length
 	 * @return 0 on success
 	 */
-	virtual int truncate(A_UNUSED pid_t pid,A_UNUSED off_t length) {
+	virtual int truncate(A_UNUSED off_t length) {
 		return -ENOTSUP;
 	}
 
 	/**
 	 * Closes this file
 	 *
-	 * @param pid the process-id
 	 * @param file the open-file
 	 * @param msgid the message-id to use (only important for channel)
 	 */
-	virtual void close(A_UNUSED pid_t pid,A_UNUSED OpenFile *file,A_UNUSED int msgid) {
+	virtual void close(A_UNUSED OpenFile *file,A_UNUSED int msgid) {
 		unref();
 	}
 
@@ -589,12 +581,11 @@ protected:
 	}
 
 	/**
-	 * Generates a unique id for given pid
+	 * Generates a unique id
 	 *
-	 * @param pid the process-id
 	 * @return the name, allocated on the heap or NULL
 	 */
-	static char *generateId(pid_t pid);
+	static char *generateId();
 	/**
 	 * Appends this node to <parent>.
 	 *
@@ -606,9 +597,9 @@ protected:
 	}
 
 private:
-	static int createFile(pid_t pid,const char *path,VFSNode *dir,VFSNode **child,uint flags,mode_t mode);
+	static int createFile(const fs::User &u,const char *path,VFSNode *dir,VFSNode **child,uint flags,mode_t mode);
 	static void doPrintTree(OStream &os,size_t level,const VFSNode *parent);
-	bool canRemove(pid_t pid,const VFSNode *node) const;
+	bool canRemove(const fs::User &u,const VFSNode *node) const;
 	void doAppend(VFSNode *parent);
 	void doRemove(bool force);
 	ushort doUnref(bool force);
@@ -623,7 +614,6 @@ protected:
 	time_t modtime;
 	time_t acctime;
 	/* the owner of this node */
-	pid_t owner;
 	uid_t uid;
 	gid_t gid;
 	/* 0 means unused; stores permissions and the type of node */

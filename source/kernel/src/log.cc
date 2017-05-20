@@ -43,28 +43,32 @@ Log Log::inst;
 void Log::vfsIsReady() {
 	VFSNode *dir = NULL,*stdin = NULL;
 	OpenFile *inFile;
-	pid_t pid = Proc::getRunning();
+	Proc *p = Proc::getByPid(Proc::getRunning());
+	const fs::User kern = fs::User::kernel();
 
 	/* open log-file */
-	sassert(VFSNode::request(LOG_DIR,&dir,VFS_CREATE,FILE_DEF_MODE) == 0);
-	LogFile *logNode = createObj<LogFile>(KERNEL_PID,dir);
+	sassert(VFSNode::request(kern,LOG_DIR,&dir,VFS_CREATE,FILE_DEF_MODE) == 0);
+	LogFile *logNode = createObj<LogFile>(kern,dir);
 	/* reserve the whole file here to prevent that we want to increase it later which might need to
 	 * deadlocks if we log something at a bad place */
 	logNode->reserve(MAX_LOG_SIZE);
 	assert(logNode != NULL);
 	VFSNode::release(dir);
-	sassert(VFS::openFile(KERNEL_PID,0,VFS_WRITE,logNode,logNode->getNo(),VFS_DEV_NO,&inst.logFile) == 0);
+	sassert(VFS::openFile(kern,0,VFS_WRITE,logNode,logNode->getNo(),VFS_DEV_NO,&inst.logFile) == 0);
 	VFSNode::release(logNode);
+
+	fs::User user(p->getUid(),p->getGid());
+	user.groupCount = Groups::get(p->getPid(),user.gids,fs::MAX_GROUPS);
 
 	/* create stdin, stdout and stderr for initloader. out and err should write to the log-file */
 	/* stdin is just a dummy file. init will remove these fds before starting the shells which will
 	 * create new ones (for the vterm of the shell) */
-	sassert(VFSNode::request(DUMMY_STDIN,&stdin,VFS_CREATE,FILE_DEF_MODE) == 0);
-	sassert(VFS::openFile(pid,0,VFS_READ,stdin,stdin->getNo(),VFS_DEV_NO,&inFile) == 0);
+	sassert(VFSNode::request(user,DUMMY_STDIN,&stdin,VFS_CREATE,FILE_DEF_MODE) == 0);
+	sassert(VFS::openFile(user,0,VFS_READ,stdin,stdin->getNo(),VFS_DEV_NO,&inFile) == 0);
 	VFSNode::release(stdin);
-	sassert(FileDesc::assoc(Proc::getByPid(pid),inFile) == 0);
-	sassert(FileDesc::assoc(Proc::getByPid(pid),inst.logFile) == 1);
-	sassert(FileDesc::assoc(Proc::getByPid(pid),inst.logFile) == 2);
+	sassert(FileDesc::assoc(p,inFile) == 0);
+	sassert(FileDesc::assoc(p,inst.logFile) == 1);
+	sassert(FileDesc::assoc(p,inst.logFile) == 2);
 
 	/* now write the stuff we've saved so far to the log-file */
 	inst.vfsReady = true;

@@ -53,7 +53,7 @@ public:
 		bool valid = true;
 		if(lastAddr != addr) {
 			memclear(buffer,sizeof(buffer));
-			if(file->seek(pid,addr,SEEK_SET) < 0)
+			if(file->seek(addr,SEEK_SET) < 0)
 				valid = false;
 			if(valid && file->read(pid,buffer,sizeof(buffer)) < 0)
 				valid = false;
@@ -97,10 +97,10 @@ int cons_cmd_dump(OStream &os,size_t argc,char **argv) {
 	pid = Proc::getRunning();
 	int res = VFS::openPath(pid,VFS_READ | VFS_NOFOLLOW,0,argv[1],NULL,&file);
 	if(res >= 0) {
-		off_t end = file->seek(pid,0,SEEK_END);
+		off_t end = file->seek(0,SEEK_END);
 		DumpNaviBackend backend(argv[1],esc::Util::round_dn(end,Console::BYTES_PER_LINE));
 		Console::navigation(os,&backend);
-		file->close(pid);
+		file->close();
 	}
 	return res;
 }

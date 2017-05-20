@@ -46,9 +46,9 @@ static PathTree<TarINode> tree;
 static bool changed = false;
 
 struct OpenTarFile : public OpenFile {
-	explicit OpenTarFile(int f,const char *_path = NULL,PathTreeItem<TarINode> *_item = NULL,
-			FILE *_archive = NULL,int _flags = 0)
-		: OpenFile(f), flags(_flags), path(_path), file(_item->getData()), bfile() {
+	explicit OpenTarFile(int f,fs::User *u = NULL,const char *_path = NULL,
+			PathTreeItem<TarINode> *_item = NULL,FILE *_archive = NULL,int _flags = 0)
+		: OpenFile(f,*u,0), flags(_flags), path(_path), file(_item->getData()), bfile() {
 		if(S_ISDIR(_item->getData()->info.st_mode))
 			bfile = new DirFile(_item,tree);
 		else
@@ -118,7 +118,7 @@ public:
 		if(!canReach(u,tfile))
 			return -EPERM;
 
-		*file = new OpenTarFile(fd,cpath,tfile,_archive,flags);
+		*file = new OpenTarFile(fd,u,cpath,tfile,_archive,flags);
 		return fd;
 	}
 
@@ -141,16 +141,16 @@ public:
 		return res;
 	}
 
-	int truncate(User *,OpenTarFile *file,off_t length) override {
+	int truncate(OpenTarFile *file,off_t length) override {
 		return file->truncate(length);
 	}
 
-	int link(User *,OpenTarFile *,OpenTarFile *,const char *) override {
+	int link(OpenTarFile *,OpenTarFile *,const char *) override {
 		// TODO
 		return -ENOTSUP;
 	}
 
-	int unlink(User *u,OpenTarFile *dir,const char *name) override {
+	int unlink(OpenTarFile *dir,const char *name) override {
 		char path[MAX_PATH_LEN];
 		snprintf(path,sizeof(path),"%s/%s",dir->path.c_str(),name);
 
@@ -164,7 +164,7 @@ public:
 			return -ENOTDIR;
 
 		struct stat *pinfo = &dir->file->info;
-		int res = Permissions::canAccess(u,pinfo->st_mode,pinfo->st_uid,pinfo->st_gid,MODE_WRITE);
+		int res = Permissions::canAccess(&dir->user,pinfo->st_mode,pinfo->st_uid,pinfo->st_gid,MODE_WRITE);
 		if(res < 0)
 			return res;
 
@@ -174,7 +174,7 @@ public:
 		return 0;
 	}
 
-	int mkdir(User *u,OpenTarFile *dir,const char *name,mode_t mode) override {
+	int mkdir(OpenTarFile *dir,const char *name,mode_t mode) override {
 		char path[MAX_PATH_LEN];
 		snprintf(path,sizeof(path),"%s/%s",dir->path.c_str(),name);
 
@@ -186,18 +186,18 @@ public:
 			return -EEXIST;
 		if(!S_ISDIR(dir->file->info.st_mode))
 			return -ENOTDIR;
-		if((res = Permissions::canAccess(u,pinfo->st_mode,pinfo->st_uid,pinfo->st_gid,MODE_WRITE)) < 0)
+		if((res = Permissions::canAccess(&dir->user,pinfo->st_mode,pinfo->st_uid,pinfo->st_gid,MODE_WRITE)) < 0)
 			return res;
 
 		TarINode *inode = new TarINode(time(NULL),0,S_IFDIR | (mode & MODE_PERM));
-		inode->info.st_uid = u->uid;
-		inode->info.st_gid = u->gid;
+		inode->info.st_uid = dir->user.uid;
+		inode->info.st_gid = dir->user.gid;
 		tree.insert(path,inode);
 		changed = true;
 		return 0;
 	}
 
-	int rmdir(User *u,OpenTarFile *dir,const char *name) override {
+	int rmdir(OpenTarFile *dir,const char *name) override {
 		char path[MAX_PATH_LEN];
 		snprintf(path,sizeof(path),"%s/%s",dir->path.c_str(),name);
 
@@ -213,7 +213,7 @@ public:
 			return -ENOTEMPTY;
 		if(file->getParent() == file)
 			return -EINVAL;
-		if((res = Permissions::canAccess(u,pi->st_mode,pi->st_uid,pi->st_gid,MODE_WRITE)) < 0)
+		if((res = Permissions::canAccess(&dir->user,pi->st_mode,pi->st_uid,pi->st_gid,MODE_WRITE)) < 0)
 			return res;
 
 		TarINode *data = tree.remove(path);
@@ -222,8 +222,7 @@ public:
 		return 0;
 	}
 
-	int rename(User *u,OpenTarFile *oldDir,const char *oldName,OpenTarFile *newDir,
-			const char *newName) override {
+	int rename(OpenTarFile *oldDir,const char *oldName,OpenTarFile *newDir,const char *newName) override {
 		char oldPath[MAX_PATH_LEN];
 		char newPath[MAX_PATH_LEN];
 		snprintf(oldPath,sizeof(oldPath),"%s/%s",oldDir->path.c_str(),oldName);
@@ -238,13 +237,13 @@ public:
 			return -ENOENT;
 		if(!S_ISDIR(oldDir->file->info.st_mode))
 			return -ENOTDIR;
-		if((res = Permissions::canAccess(u,opi->st_mode,opi->st_uid,opi->st_gid,MODE_EXEC)) < 0)
+		if((res = Permissions::canAccess(&oldDir->user,opi->st_mode,opi->st_uid,opi->st_gid,MODE_EXEC)) < 0)
 			return res;
 		if(srcFile->getParent() == srcFile)
 			return -EINVAL;
 		if(!S_ISDIR(newDir->file->info.st_mode))
 			return -ENOTDIR;
-		if((res = Permissions::canAccess(u,npi->st_mode,npi->st_uid,npi->st_gid,MODE_EXEC | MODE_WRITE)) < 0)
+		if((res = Permissions::canAccess(&oldDir->user,npi->st_mode,npi->st_uid,npi->st_gid,MODE_EXEC | MODE_WRITE)) < 0)
 			return res;
 
 		PathTreeItem<TarINode> *dstFile = tree.find(newPath,&end);
@@ -257,9 +256,9 @@ public:
 		return 0;
 	}
 
-	int chmod(User *u,OpenTarFile *file,mode_t mode) override {
+	int chmod(OpenTarFile *file,mode_t mode) override {
 		struct stat *info = &file->file->info;
-		if(!Permissions::canChmod(u,info->st_uid))
+		if(!Permissions::canChmod(&file->user,info->st_uid))
 			return -EPERM;
 
 		info->st_mode = (info->st_mode & ~MODE_PERM) | (mode & MODE_PERM);
@@ -267,9 +266,9 @@ public:
 		return 0;
 	}
 
-	int chown(User *u,OpenTarFile *file,uid_t uid,gid_t gid) override {
+	int chown(OpenTarFile *file,uid_t uid,gid_t gid) override {
 		struct stat *info = &file->file->info;
-		if(!Permissions::canChown(u,info->st_uid,info->st_gid,uid,gid))
+		if(!Permissions::canChown(&file->user,info->st_uid,info->st_gid,uid,gid))
 			return -EPERM;
 
 		if(uid != (uid_t)-1)
@@ -280,9 +279,9 @@ public:
 		return 0;
 	}
 
-	int utime(User *u,OpenTarFile *file,const struct utimbuf *utimes) override {
+	int utime(OpenTarFile *file,const struct utimbuf *utimes) override {
 		struct stat *info = &file->file->info;
-		if(!Permissions::canUtime(u,info->st_uid))
+		if(!Permissions::canUtime(&file->user,info->st_uid))
 			return -EPERM;
 
 		info->st_mtime = utimes->modtime;

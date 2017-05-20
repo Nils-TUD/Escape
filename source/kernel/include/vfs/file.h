@@ -32,18 +32,18 @@ public:
 	/**
 	 * Creates a new file with name <name> in <parent>
 	 *
-	 * @param pid the process-id
+	 * @param u the user
 	 * @param parent the parent-node
 	 * @param name the name
 	 * @param mode the mode to set
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	explicit VFSFile(pid_t pid,VFSNode *parent,char *name,uint mode,bool &success);
+	explicit VFSFile(const fs::User &u,VFSNode *parent,char *name,uint mode,bool &success);
 
 	/**
 	 * Creates a new file for the memory <data>..<data>+<len>.
 	 *
-	 * @param pid the process-id
+	 * @param u the user
 	 * @param parent the parent-node
 	 * @param name the name
 	 * @param data the data to make available with that file
@@ -51,7 +51,7 @@ public:
 	 * @param mode the mode to set
 	 * @param success whether the constructor succeeded (is expected to be true before the call!)
 	 */
-	explicit VFSFile(pid_t pid,VFSNode *parent,char *name,void *data,size_t len,uint mode,bool &success);
+	explicit VFSFile(const fs::User &u,VFSNode *parent,char *name,void *data,size_t len,uint mode,bool &success);
 
 	/**
 	 * Destructor
@@ -67,11 +67,11 @@ public:
 	 */
 	int reserve(off_t newSize);
 
-	virtual ssize_t getSize(pid_t pid);
-	virtual off_t seek(pid_t pid,off_t position,off_t offset,uint whence) const;
+	virtual ssize_t getSize();
+	virtual off_t seek(off_t position,off_t offset,uint whence) const;
 	virtual ssize_t read(pid_t pid,OpenFile *file,void *buffer,off_t offset,size_t count);
 	virtual ssize_t write(pid_t pid,OpenFile *file,const void *buffer,off_t offset,size_t count);
-	virtual int truncate(pid_t pid,off_t length);
+	virtual int truncate(off_t length);
 
 	virtual void print(OStream &os) const;
 

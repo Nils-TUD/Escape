@@ -178,7 +178,7 @@ void *UEnvBase::setupThread(const void *arg,uintptr_t tentryPoint) {
 	sElfEHeader ehd;
 
 	/* seek to header */
-	if(textreg->reg->getFile()->seek(pid,0,SEEK_SET) < 0) {
+	if(textreg->reg->getFile()->seek(0,SEEK_SET) < 0) {
 		Log::get().writef("[LOADER] Unable to seek to header of '%s'\n",t->getProc()->getProgram());
 		return NULL;
 	}

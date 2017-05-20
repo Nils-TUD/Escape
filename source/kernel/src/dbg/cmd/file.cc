@@ -59,7 +59,7 @@ int cons_cmd_file(OStream &os,size_t argc,char **argv) {
 		}
 	}
 	lines.endLine();
-	file->close(pid);
+	file->close();
 	file = NULL;
 
 	/* now display lines */
@@ -69,6 +69,6 @@ int cons_cmd_file(OStream &os,size_t argc,char **argv) {
 error:
 	/* clean up */
 	if(file != NULL)
-		file->close(pid);
+		file->close();
 	return res;
 }

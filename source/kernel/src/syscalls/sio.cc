@@ -61,7 +61,7 @@ int Syscalls::open(Thread *t,IntrptStackFrame *stack) {
 	/* assoc fd with file */
 	int fd = FileDesc::assoc(t->getProc(),file);
 	if(EXPECT_FALSE(fd < 0)) {
-		file->close(pid);
+		file->close();
 		SYSC_ERROR(stack,fd);
 	}
 	UserAccess::write(sympos,&ksympos,sizeof(ksympos));
@@ -75,7 +75,7 @@ int Syscalls::fcntl(Thread *t,IntrptStackFrame *stack) {
 	Proc *p = t->getProc();
 
 	ScopedFile file(p,fd);
-	int res = EXPECT_TRUE(file) ? file->fcntl(p->getPid(),cmd,arg) : -EBADF;
+	int res = EXPECT_TRUE(file) ? file->fcntl(cmd,arg) : -EBADF;
 	SYSC_RESULT(stack,res);
 }
 
@@ -89,7 +89,7 @@ int Syscalls::fstat(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	ScopedFile file(p,fd);
-	int res = EXPECT_TRUE(file) ? file->fstat(p->getPid(),&kinfo) : -EBADF;
+	int res = EXPECT_TRUE(file) ? file->fstat(&kinfo) : -EBADF;
 	UserAccess::write(info,&kinfo,sizeof(kinfo));
 	SYSC_RESULT(stack,res);
 }
@@ -100,7 +100,7 @@ int Syscalls::chmod(Thread *t,IntrptStackFrame *stack) {
 	Proc *p = t->getProc();
 
 	ScopedFile file(p,fd);
-	int res = EXPECT_TRUE(file) ? file->chmod(p->getPid(),mode) : -EBADF;
+	int res = EXPECT_TRUE(file) ? file->chmod(mode) : -EBADF;
 	SYSC_RESULT(stack,res);
 }
 
@@ -111,7 +111,7 @@ int Syscalls::chown(Thread *t,IntrptStackFrame *stack) {
 	Proc *p = t->getProc();
 
 	ScopedFile file(p,fd);
-	int res = EXPECT_TRUE(file) ? file->chown(p->getPid(),uid,gid) : -EBADF;
+	int res = EXPECT_TRUE(file) ? file->chown(uid,gid) : -EBADF;
 	SYSC_RESULT(stack,res);
 }
 
@@ -131,7 +131,7 @@ int Syscalls::utime(Thread *t,IntrptStackFrame *stack) {
 		kutimes.actime = kutimes.modtime = Timer::getTime();
 
 	ScopedFile file(p,fd);
-	int res = EXPECT_TRUE(file) ? file->utime(p->getPid(),&kutimes) : -EBADF;
+	int res = EXPECT_TRUE(file) ? file->utime(&kutimes) : -EBADF;
 	SYSC_RESULT(stack,res);
 }
 
@@ -141,7 +141,7 @@ int Syscalls::truncate(Thread *t,IntrptStackFrame *stack) {
 	Proc *p = t->getProc();
 
 	ScopedFile file(p,fd);
-	int res = EXPECT_TRUE(file) ? file->truncate(p->getPid(),length) : -EBADF;
+	int res = EXPECT_TRUE(file) ? file->truncate(length) : -EBADF;
 	SYSC_RESULT(stack,res);
 }
 
@@ -171,7 +171,7 @@ int Syscalls::seek(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EINVAL);
 
 	ScopedFile file(p,fd);
-	off_t res = EXPECT_TRUE(file) ? file->seek(p->getPid(),offset,whence) : -EBADF;
+	off_t res = EXPECT_TRUE(file) ? file->seek(offset,whence) : -EBADF;
 	SYSC_RESULT(stack,res);
 }
 
@@ -355,7 +355,7 @@ int Syscalls::close(Thread *t,IntrptStackFrame *stack) {
 
 	/* close file */
 	FileDesc::unassoc(p,fd);
-	if(EXPECT_FALSE(!file->close(p->getPid())))
+	if(EXPECT_FALSE(!file->close()))
 		FileDesc::release(file);
 	SYSC_SUCCESS(stack,0);
 }
@@ -365,7 +365,7 @@ int Syscalls::syncfs(Thread *t,IntrptStackFrame *stack) {
 	Proc *p = t->getProc();
 
 	ScopedFile file(p,fd);
-	int res = EXPECT_TRUE(file) ? file->syncfs(p->getPid()) : -EBADF;
+	int res = EXPECT_TRUE(file) ? file->syncfs() : -EBADF;
 	SYSC_RESULT(stack,res);
 }
 
@@ -387,7 +387,7 @@ int Syscalls::link(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(!dirFile))
 		SYSC_ERROR(stack,-EBADF);
 
-	int res = targetFile->link(p->getPid(),&*dirFile,filename);
+	int res = targetFile->link(&*dirFile,filename);
 	SYSC_RESULT(stack,res);
 }
 
@@ -401,7 +401,7 @@ int Syscalls::unlink(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	ScopedFile dir(p,fd);
-	int res = EXPECT_TRUE(dir) ? dir->unlink(p->getPid(),filename) : -EBADF;
+	int res = EXPECT_TRUE(dir) ? dir->unlink(filename) : -EBADF;
 	SYSC_RESULT(stack,res);
 }
 
@@ -427,7 +427,7 @@ int Syscalls::rename(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(!newf))
 		SYSC_ERROR(stack,-EBADF);
 
-	int res = oldf->rename(p->getPid(),oldFilename,&*newf,newFilename);
+	int res = oldf->rename(oldFilename,&*newf,newFilename);
 	SYSC_RESULT(stack,res);
 }
 
@@ -442,7 +442,7 @@ int Syscalls::mkdir(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	ScopedFile file(p,fd);
-	int res = EXPECT_TRUE(file) ? file->mkdir(p->getPid(),filename,mode) : -EBADF;
+	int res = EXPECT_TRUE(file) ? file->mkdir(filename,mode) : -EBADF;
 	SYSC_RESULT(stack,res);
 }
 
@@ -460,7 +460,7 @@ int Syscalls::rmdir(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EINVAL);
 
 	ScopedFile file(p,fd);
-	int res = EXPECT_TRUE(file) ? file->rmdir(p->getPid(),filename) : -EBADF;
+	int res = EXPECT_TRUE(file) ? file->rmdir(filename) : -EBADF;
 	SYSC_RESULT(stack,res);
 }
 
@@ -478,6 +478,6 @@ int Syscalls::symlink(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	ScopedFile file(p,dir);
-	int res = EXPECT_TRUE(file) ? file->symlink(p->getPid(),kname,ktarget) : -EBADF;
+	int res = EXPECT_TRUE(file) ? file->symlink(kname,ktarget) : -EBADF;
 	SYSC_RESULT(stack,res);
 }

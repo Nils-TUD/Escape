@@ -64,23 +64,21 @@ struct FSSync {
 struct NameRequest {
 	explicit NameRequest() {
 	}
-	explicit NameRequest(char *buffer,size_t _size) : u(), name(buffer,_size) {
+	explicit NameRequest(char *buffer,size_t _size) : name(buffer,_size) {
 	}
-	explicit NameRequest(const fs::User &_u,const CString &_name)
-		: u(_u), name(_name) {
+	explicit NameRequest(const CString &_name) : name(_name) {
 	}
 
 	friend IPCBuf &operator<<(IPCBuf &is,const NameRequest &r) {
-		return is << r.u << r.name;
+		return is << r.name;
 	}
 	friend IPCStream &operator<<(IPCStream &is,const NameRequest &r) {
-		return is << r.u << r.name;
+		return is << r.name;
 	}
 	friend IPCStream &operator>>(IPCStream &is,NameRequest &r) {
-		return is >> r.u >> r.name;
+		return is >> r.name;
 	}
 
-	fs::User u;
 	CString name;
 };
 
@@ -97,23 +95,21 @@ struct FSLink {
 	struct Request {
 		explicit Request() {
 		}
-		explicit Request(char *buffer,size_t _size) : u(), dirFd(), name(buffer,_size) {
+		explicit Request(char *buffer,size_t _size) : dirFd(), name(buffer,_size) {
 		}
-		explicit Request(const fs::User &_u,int _dirFd,const CString &_name)
-			: u(_u), dirFd(_dirFd), name(_name) {
+		explicit Request(int _dirFd,const CString &_name) : dirFd(_dirFd), name(_name) {
 		}
 
 		friend IPCBuf &operator<<(IPCBuf &is,const Request &r) {
-			return is << r.u << r.dirFd << r.name;
+			return is << r.dirFd << r.name;
 		}
 		friend IPCStream &operator<<(IPCStream &is,const Request &r) {
-			return is << r.u << r.dirFd << r.name;
+			return is << r.dirFd << r.name;
 		}
 		friend IPCStream &operator>>(IPCStream &is,Request &r) {
-			return is >> r.u >> r.dirFd >> r.name;
+			return is >> r.dirFd >> r.name;
 		}
 
-		fs::User u;
 		int dirFd;
 		CString name;
 	};
@@ -135,23 +131,22 @@ struct FSRename {
 		explicit Request() {
 		}
 		explicit Request(char *oldBuf,size_t oldSize,char *newBuf,size_t newSize)
-			: u(), oldName(oldBuf,oldSize), newDirFd(), newName(newBuf,newSize) {
+			: oldName(oldBuf,oldSize), newDirFd(), newName(newBuf,newSize) {
 		}
-		explicit Request(const fs::User &_u,const CString &_oldName,int _newDirFd,const CString &_newName)
-			: u(_u), oldName(_oldName), newDirFd(_newDirFd), newName(_newName) {
+		explicit Request(const CString &_oldName,int _newDirFd,const CString &_newName)
+			: oldName(_oldName), newDirFd(_newDirFd), newName(_newName) {
 		}
 
 		friend IPCBuf &operator<<(IPCBuf &is,const Request &r) {
-			return is << r.u << r.oldName << r.newDirFd << r.newName;
+			return is << r.oldName << r.newDirFd << r.newName;
 		}
 		friend IPCStream &operator<<(IPCStream &is,const Request &r) {
-			return is << r.u << r.oldName << r.newDirFd << r.newName;
+			return is << r.oldName << r.newDirFd << r.newName;
 		}
 		friend IPCStream &operator>>(IPCStream &is,Request &r) {
-			return is >> r.u >> r.oldName >> r.newDirFd >> r.newName;
+			return is >> r.oldName >> r.newDirFd >> r.newName;
 		}
 
-		fs::User u;
 		CString oldName;
 		int newDirFd;
 		CString newName;
@@ -166,23 +161,21 @@ struct FSMkdir {
 	struct Request {
 		explicit Request() {
 		}
-		explicit Request(char *buffer,size_t _size) : u(), mode(), name(buffer,_size) {
+		explicit Request(char *buffer,size_t _size) : mode(), name(buffer,_size) {
 		}
-		explicit Request(const fs::User &_u,const CString &_name,mode_t _mode)
-			: u(_u), mode(_mode), name(_name) {
+		explicit Request(const CString &_name,mode_t _mode) : mode(_mode), name(_name) {
 		}
 
 		friend IPCBuf &operator<<(IPCBuf &is,const Request &r) {
-			return is << r.u << r.mode << r.name;
+			return is << r.mode << r.name;
 		}
 		friend IPCStream &operator<<(IPCStream &is,const Request &r) {
-			return is << r.u << r.mode << r.name;
+			return is << r.mode << r.name;
 		}
 		friend IPCStream &operator>>(IPCStream &is,Request &r) {
-			return is >> r.u >> r.mode >> r.name;
+			return is >> r.mode >> r.name;
 		}
 
-		fs::User u;
 		mode_t mode;
 		CString name;
 	};
@@ -204,23 +197,22 @@ struct FSSymlink {
 		explicit Request() {
 		}
 		explicit Request(char *nbuf,size_t nsize,char *tbuf,size_t tsize)
-			: u(), name(nbuf,nsize), target(tbuf,tsize) {
+			: name(nbuf,nsize), target(tbuf,tsize) {
 		}
-		explicit Request(const fs::User &_u,const CString &_name, const CString &_target)
-			: u(_u), name(_name), target(_target) {
+		explicit Request(const CString &_name, const CString &_target)
+			: name(_name), target(_target) {
 		}
 
 		friend IPCBuf &operator<<(IPCBuf &is,const Request &r) {
-			return is << r.u << r.name << r.target;
+			return is << r.name << r.target;
 		}
 		friend IPCStream &operator<<(IPCStream &is,const Request &r) {
-			return is << r.u << r.name << r.target;
+			return is << r.name << r.target;
 		}
 		friend IPCStream &operator>>(IPCStream &is,Request &r) {
-			return is >> r.u >> r.name >> r.target;
+			return is >> r.name >> r.target;
 		}
 
-		fs::User u;
 		CString name;
 		CString target;
 	};
@@ -233,11 +225,9 @@ struct FSChmod {
 	struct Request {
 		explicit Request() {
 		}
-		explicit Request(const fs::User &_u,mode_t _mode)
-			: u(_u), mode(_mode) {
+		explicit Request(mode_t _mode) : mode(_mode) {
 		}
 
-		fs::User u;
 		mode_t mode;
 	};
 
@@ -250,11 +240,9 @@ struct FSChown {
 	struct Request {
 		explicit Request() {
 		}
-		explicit Request(const fs::User &_u,uid_t _uid,gid_t _gid)
-			: u(_u), uid(_uid), gid(_gid) {
+		explicit Request(uid_t _uid,gid_t _gid) : uid(_uid), gid(_gid) {
 		}
 
-		fs::User u;
 		uid_t uid;
 		gid_t gid;
 	};
@@ -268,11 +256,9 @@ struct FSUtime {
 	struct Request {
 		explicit Request() {
 		}
-		explicit Request(const fs::User &_u,const utimbuf &_time)
-			: u(_u), time(_time) {
+		explicit Request(const utimbuf &_time) : time(_time) {
 		}
 
-		fs::User u;
 		struct utimbuf time;
 	};
 
@@ -285,11 +271,9 @@ struct FSTruncate {
 	struct Request {
 		explicit Request() {
 		}
-		explicit Request(const fs::User &_u,off_t _length)
-			: u(_u), length(_length) {
+		explicit Request(off_t _length) : length(_length) {
 		}
 
-		fs::User u;
 		off_t length;
 	};
 

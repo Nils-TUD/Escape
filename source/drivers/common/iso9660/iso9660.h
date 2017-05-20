@@ -197,13 +197,13 @@ public:
 	int stat(fs::OpenFile *file,struct stat *info) override;
 	ssize_t read(fs::OpenFile *file,void *buffer,off_t offset,size_t size) override;
 	ssize_t write(fs::OpenFile *file,const void *buffer,off_t offset,size_t size) override;
-	int link(fs::User *u,fs::OpenFile *dst,fs::OpenFile *dir,const char *name) override;
-	int unlink(fs::User *u,fs::OpenFile *dir,const char *name) override;
-	int mkdir(fs::User *u,fs::OpenFile *dir,const char *name,mode_t mode) override;
-	int rmdir(fs::User *u,fs::OpenFile *dir,const char *name) override;
-	int chmod(fs::User *u,fs::OpenFile *file,mode_t mode) override;
-	int chown(fs::User *u,fs::OpenFile *file,uid_t uid,gid_t gid) override;
-	int utime(fs::User *u,fs::OpenFile *file,const struct utimbuf *utimes) override;
+	int link(fs::OpenFile *dst,fs::OpenFile *dir,const char *name) override;
+	int unlink(fs::OpenFile *dir,const char *name) override;
+	int mkdir(fs::OpenFile *dir,const char *name,mode_t mode) override;
+	int rmdir(fs::OpenFile *dir,const char *name) override;
+	int chmod(fs::OpenFile *file,mode_t mode) override;
+	int chown(fs::OpenFile *file,uid_t uid,gid_t gid) override;
+	int utime(fs::OpenFile *file,const struct utimbuf *utimes) override;
 	void sync() override;
 	void print(FILE *f) override;
 

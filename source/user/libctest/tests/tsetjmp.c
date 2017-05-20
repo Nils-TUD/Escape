@@ -35,9 +35,9 @@ sTestModule tModSetjmp = {
 	&test_setjmp
 };
 
+#if defined(__x86__)
 static jmp_buf env;
 
-#if defined(__x86__)
 static void myfunc(int i) {
 	if(i > 0)
 		myfunc(i - 1);

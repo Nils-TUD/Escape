@@ -98,7 +98,7 @@
 #define GFT_AREA				0
 #define VFSNODE_AREA			0
 #define SLLNODE_AREA			0
-#define KSTACK_AREA				0
+#define KSTACK_AREA				1	/* 1 to prevent warning */
 #define GFT_AREA_SIZE			(PAGE_SIZE * PT_ENTRY_COUNT)
 #define VFSNODE_AREA_SIZE		(PAGE_SIZE * PT_ENTRY_COUNT)
 #define SLLNODE_AREA_SIZE		(PAGE_SIZE * PT_ENTRY_COUNT * 8)

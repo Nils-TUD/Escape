@@ -19,6 +19,7 @@
 
 #include <esc/stream/std.h>
 #include <esc/env.h>
+#include <info/mount.h>
 #include <sys/conf.h>
 #include <sys/mount.h>
 #include <sys/proc.h>
@@ -27,6 +28,7 @@
 #include <usergroup/usergroup.h>
 #include <dirent.h>
 #include <getopt.h>
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -59,7 +61,30 @@ static int leave(const std::vector<std::string> &groups) {
 	return setgroups(gids.size(),gids.begin());
 }
 
-static uint perms(const char *perms) {
+struct Remount {
+	explicit Remount() : path(), perm() {
+	}
+	explicit Remount(const std::string &_path,uint _perm) : path(_path), perm(_perm) {
+	}
+
+	std::string path;
+	uint perm;
+};
+
+static bool operator<(const Remount &r1,const Remount &r2) {
+	return r1.path.length() > r2.path.length();
+}
+
+static const char *permToStr(uint perm) {
+	static char buf[4];
+	buf[0] = (perm & O_RDONLY) ? 'r' : '-';
+	buf[1] = (perm & O_WRONLY) ? 'w' : '-';
+	buf[2] = (perm & O_EXEC) ? 'x' : '-';
+	buf[3] = '\0';
+	return buf;
+}
+
+static uint strToPerm(const char *perms) {
 	uint p = 0;
 	for(size_t i = 0; perms[i]; ++i) {
 		if(perms[i] == 'r')
@@ -72,11 +97,49 @@ static uint perms(const char *perms) {
 	return p;
 }
 
-static void remount(std::vector<std::string> &mounts) {
+static void addMount(std::vector<Remount> &mounts,const char *path,uint perm,bool pref) {
+	for(auto &r : mounts) {
+		if(strcmp(r.path.c_str(),path) == 0) {
+			if(pref)
+				r.perm = perm;
+			return;
+		}
+	}
+	mounts.push_back(Remount(path,perm));
+}
+
+static void addMounts(const std::vector<info::mount*> &pmnts,
+		std::vector<Remount> &smnts,const std::string &path,uint perm) {
+	char cpath[MAX_PATH_LEN];
+	for(auto &m : pmnts) {
+		if(strncmp(path.c_str(),m->path().c_str(),path.length()) == 0 && path != m->path()) {
+			if(~perm & m->perm()) {
+				if(canonpath(cpath,sizeof(cpath),m->path().c_str()) < 0)
+					error("canonpath for '%s' failed",m->path().c_str());
+				addMount(smnts,cpath,perm & m->perm(),false);
+			}
+		}
+	}
+
+	if(canonpath(cpath,sizeof(cpath),path.c_str()) < 0)
+		error("canonpath for '%s' failed",path.c_str());
+	addMount(smnts,cpath,perm,true);
+}
+
+static void addMounts(const std::vector<info::mount*> &pmnts,
+		std::vector<Remount> &smnts,char *spec) {
+	char *colon = strchr(spec,':');
+	if(!colon)
+		error("Invalid mount specification: %s",spec);
+	*colon = '\0';
+	addMounts(pmnts,smnts,spec,strToPerm(colon + 1));
+}
+
+static void remount(const std::vector<info::mount*> pmnts,std::vector<Remount> &mounts) {
 	int ms = -1;
 
-	char path[MAX_PATH_LEN];
 	for(int i = 1; ; ++i) {
+		char path[MAX_PATH_LEN];
 		snprintf(path,sizeof(path),"sandbox-%d",i);
 		if(clonems(path) == 0) {
 			ms = open("/sys/pid/self/ms",O_RDWR);
@@ -86,42 +149,35 @@ static void remount(std::vector<std::string> &mounts) {
 		}
 	}
 
-	/* make the hierarchy below our process writable */
+	// make the hierarchy below our process writable
 	{
 		esc::OStringStream os;
 		os << "/sys/pid/" << getpid();
-		mounts.push_back(os.str() + ":rw");
-		/* but everything else readonly / invisible */
-		mounts.push_back(std::string("/sys/proc:") + ((flags & FL_ALONE) ? "x" : "r"));
+		addMounts(pmnts,mounts,os.str(),O_RDWR);
+		// but everything else readonly / invisible
+		addMounts(pmnts,mounts,"/sys/proc",(flags & FL_ALONE) ? O_EXEC : O_RDONLY);
 	}
 
-	/* make the hierarchy below our mountspace writable */
+	// make the hierarchy below our mountspace writable
 	{
 		esc::OStringStream os;
 		os << "/sys/pid/" << getpid() << "/ms";
-		mounts.push_back(os.str() + ":rw");
-		/* but everything else readonly */
-		mounts.push_back("/sys/mount:r");
+		addMounts(pmnts,mounts,os.str(),O_RDWR);
+		// but everything else readonly
+		addMounts(pmnts,mounts,"/sys/mount",O_RDONLY);
 	}
 
+	// sort them, so that we perform the remounts of the inner paths first
+	std::sort(mounts.begin(),mounts.end());
+
 	for(auto m = mounts.begin(); m != mounts.end(); ++m) {
-		char *colon = strchr(m->c_str(),':');
-		if(!colon)
-			error("Invalid mount specification: %s",m->c_str());
-
-		*colon = '\0';
-		uint p = perms(colon + 1);
-
-		if(canonpath(path,sizeof(path),m->c_str()) < 0)
-			error("canonpath for '%s' failed",m->c_str());
-
-		int dir = open(path,O_NOCHAN);
+		int dir = open(m->path.c_str(),O_NOCHAN);
 		if(dir < 0)
-			error("Unable to open '%s'",path);
+			error("Unable to open '%s'",m->path.c_str());
 		if(!fisdir(dir))
-			error("'%s' is no directory",path);
-		if(::remount(ms,dir,p) < 0)
-			error("Remounting '%s' with permissions '%s' failed",path,colon + 1);
+			error("'%s' is no directory",m->path.c_str());
+		if(::remount(ms,dir,m->perm) < 0)
+			error("Remounting '%s' with permissions '%s' failed",m->path.c_str(),permToStr(m->perm));
 		close(dir);
 	}
 
@@ -134,12 +190,20 @@ static void usage(const char *name) {
 	serr << "  -L:                leave all groups\n";
 	serr << "  -l <group>:        leave given group\n";
 	serr << "  -m <path>:<perms>: remount <path> and reduce permissions to <perms> (rwx)\n";
+	serr << "\n";
+	serr << "The -m option can be specified multiple times. For each one, the permissions are\n";
+	serr << "also enforced indirectly on all mounts below <path>. The permissions specified for\n";
+	serr << "<path> take precedence over the indirectly enforced permissions. For example, if\n";
+	serr << "'/', '/dev' and '/sys' is mounted and you specify '-m /:rw' and '-m /sys:r', the\n";
+	serr << "result will be /:rw, /dev:rw, /sys:r, independent of the order of the two -m options.\n";
 	exit(1);
 }
 
 int main(int argc,char **argv) {
 	std::vector<std::string> leaveGroups;
-	std::vector<std::string> mounts;
+	std::vector<Remount> mounts;
+
+	const std::vector<info::mount*> pmnts = info::mount::get_list();
 
 	// parse args
 	int opt;
@@ -148,7 +212,7 @@ int main(int argc,char **argv) {
 			case 'a': flags |= FL_ALONE; break;
 			case 'L': flags |= FL_LEAVEALL; break;
 			case 'l': leaveGroups.push_back(optarg); break;
-			case 'm': mounts.push_back(optarg); break;
+			case 'm': addMounts(pmnts,mounts,optarg); break;
 			default:
 				usage(argv[0]);
 		}
@@ -173,7 +237,7 @@ int main(int argc,char **argv) {
 			error("Unable to duplicate stdout to stderr");
 
 		// remounts
-		remount(mounts);
+		remount(pmnts,mounts);
 
 		// leave groups
 		int res = 0;

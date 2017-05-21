@@ -49,7 +49,6 @@ int Syscalls::mount(Thread *t,IntrptStackFrame *stack) {
 	int ms = SYSC_ARG1(stack);
 	int fs = SYSC_ARG2(stack);
 	const char *path = (const char*)SYSC_ARG3(stack);
-	uint flags = (uint)SYSC_ARG4(stack);
 	Proc *p = t->getProc();
 	VFSMS *msnode;
 	int res;
@@ -68,34 +67,58 @@ int Syscalls::mount(Thread *t,IntrptStackFrame *stack) {
 	if(res < 0)
 		SYSC_ERROR(stack,res);
 
-	/* if it's a filesystem, mount it */
-	if(fsfile->getDev() == VFS_DEV_NO && IS_CHANNEL(fsfile->getNode()->getMode()) &&
-			IS_FS(fsfile->getNode()->getParent()->getMode())) {
-		MntSpace *msobj = MntSpace::request(msnode->id());
-		if(!msobj)
-			SYSC_ERROR(stack,-EDESTROYED);
+	/* it has to be a filesystem */
+	if(fsfile->getDev() != VFS_DEV_NO || !IS_CHANNEL(fsfile->getNode()->getMode()) ||
+			!IS_FS(fsfile->getNode()->getParent()->getMode()))
+		SYSC_ERROR(stack,-EINVAL);
 
-		res = msobj->mount(abspath,&*fsfile);
-		MntSpace::release(msobj);
-	}
-	else {
-		if((flags & ~(VFS_READ | VFS_WRITE | VFS_EXEC)) != 0)
-			SYSC_ERROR(stack,-EINVAL);
+	/* mount it */
+	MntSpace *msobj = MntSpace::request(msnode->id());
+	if(!msobj)
+		SYSC_ERROR(stack,-EDESTROYED);
 
-		/* otherwise, remount the directory */
-		struct stat info;
-		if((res = fsfile->fstat(&info)) < 0)
-			SYSC_ERROR(stack,res);
-		if(!S_ISDIR(info.st_mode))
-			SYSC_ERROR(stack,-ENOTDIR);
+	res = msobj->mount(abspath,&*fsfile);
+	MntSpace::release(msobj);
 
-		MntSpace *msobj = MntSpace::request(msnode->id());
-		if(!msobj)
-			SYSC_ERROR(stack,-EDESTROYED);
+	SYSC_RESULT(stack,res);
+}
 
-		res = msobj->remount(msfile->getUser(),abspath,&*fsfile,flags);
-		MntSpace::release(msobj);
-	}
+int Syscalls::remount(Thread *t,IntrptStackFrame *stack) {
+	int ms = SYSC_ARG1(stack);
+	int fs = SYSC_ARG2(stack);
+	uint flags = (uint)SYSC_ARG3(stack);
+	Proc *p = t->getProc();
+	VFSMS *msnode;
+	int res;
+
+	/* get fs file */
+	ScopedFile fsfile(p,fs);
+	if(EXPECT_FALSE(!fsfile))
+		SYSC_ERROR(stack,-EBADF);
+
+	/* get mountspace file */
+	ScopedFile msfile;
+	res = getMS(p,ms,&msfile,&msnode,VFS_WRITE);
+	if(res < 0)
+		SYSC_ERROR(stack,res);
+
+	if((flags & ~(VFS_READ | VFS_WRITE | VFS_EXEC)) != 0)
+		SYSC_ERROR(stack,-EINVAL);
+
+	/* check if it's a directory */
+	struct stat info;
+	if((res = fsfile->fstat(&info)) < 0)
+		SYSC_ERROR(stack,res);
+	if(!S_ISDIR(info.st_mode))
+		SYSC_ERROR(stack,-ENOTDIR);
+
+	/* remount it */
+	MntSpace *msobj = MntSpace::request(msnode->id());
+	if(!msobj)
+		SYSC_ERROR(stack,-EDESTROYED);
+
+	res = msobj->remount(msfile->getUser(),&*fsfile,flags);
+	MntSpace::release(msobj);
 
 	SYSC_RESULT(stack,res);
 }

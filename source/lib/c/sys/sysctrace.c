@@ -78,14 +78,15 @@ const struct Syscall syscalls[] = {
 	{"mkdir",    		"%d,%s"						},
 	{"rmdir",    		"%d,%s"						},
 	{"mount",    		"%d,%d,%s"					},
+	{"remount",    		"%d,%d,%O"					},
 	{"unmount",    		"%d,%s"						},
 	{"waitchild",    	"%p,%d,%u",					},
 	{"tell",    		"%d,%p"						},
 	{"sysconf",   		"%d"						},
 	{"getwork",    		"%W,%p,%p,%x"				},
-	{"join",    		"%d"						},
 
 	/* 40 */
+	{"join",    		"%d"						},
 	{"fstat",    		"%d,%p"						},
 	{"mmap",    		"%M"						},
 	{"mprotect",    	"%p,%x"						},
@@ -95,9 +96,9 @@ const struct Syscall syscalls[] = {
 	{"setuid",    		"%d"						},
 	{"getgid",    		""							},
 	{"setgid",    		"%d"						},
-	{"chmod",    		"%d,%o"						},
 
 	/* 50 */
+	{"chmod",    		"%d,%o"						},
 	{"chown",    		"%d,%d,%d"					},
 	{"getgroups",    	"%x,%p"						},
 	{"setgroups",    	"%x,%p"						},
@@ -107,9 +108,9 @@ const struct Syscall syscalls[] = {
 	{"semop",			"%d,%d"						},
 	{"semdestr",		"%d"						},
 	{"sendrecv",		"%d,%p,%p,%x"				},
-	{"cancel",			"%d,%u"						},
 
 	/* 60 */
+	{"cancel",			"%d,%u"						},
 	{"createchan",		"%d,%O"						},
 	{"delegate",        "%d,%d,%O,%d",				},
 	{"obtain",          "%d,%d",					},
@@ -119,9 +120,9 @@ const struct Syscall syscalls[] = {
 	{"mlock",			"%p,%x"						},
 	{"mlockall",		""							},
 	{"semcrtirq",		"%d,%s,%p,%p"				},
-	{"bindto",			"%d,%d"						},
 
 	/* 70 */
+	{"bindto",			"%d,%d"						},
 	{"rename",			"%d,%s,%d,%s"				},
 	{"gettimeofday",	"%p"						},
 	{"utime",			"%d,%p"						},

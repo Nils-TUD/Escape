@@ -113,15 +113,14 @@ public:
 	int mount(const char *path,OpenFile *file);
 
 	/**
-	 * Remounts <dir> at <path> with given permissions.
+	 * Remounts <dir> with given permissions.
 	 *
 	 * @param u the user
-	 * @param path the path to mount it at
 	 * @param dir the directory to remount
 	 * @param flags the flags (rwx) to use; only downgrading is allowed
 	 * @return 0 on success
 	 */
-	int remount(const fs::User &u,const char *path,OpenFile *dir,uint flags);
+	int remount(const fs::User &u,OpenFile *dir,uint flags);
 
 	/**
 	 * Unmounts the filesystem that is mounted at <path>.

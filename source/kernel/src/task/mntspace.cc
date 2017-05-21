@@ -168,43 +168,43 @@ int MntSpace::mount(const char *path,OpenFile *file) {
 	return _tree.insert(path,file);
 }
 
-int MntSpace::remount(const fs::User &u,const char *path,OpenFile *dir,uint flags) {
+int MntSpace::remount(const fs::User &u,OpenFile *dir,uint flags) {
+	const uint mntrwx = dir->getMntPerms() & (VFS_READ | VFS_WRITE | VFS_EXEC);
+	const uint newrwx = flags & (VFS_READ | VFS_WRITE | VFS_EXEC);
+	/* only downgrades are possible */
+	if(~mntrwx & newrwx)
+		return -EACCES;
+
+	/* create a new file with requested permissions */
+	OpenFile *nfile;
+	int res = OpenFile::getFree(u,newrwx,newrwx | VFS_NOCHAN,dir->getNodeNo(),dir->getDev(),
+		dir->getNode(),&nfile,true);
+	if(res < 0)
+		return res;
+
+	/* use the path of the directory to ensure that the user can't remount it at a different
+	 * location. this could be used to circumvent the permissions in a subdirectory. if the tree
+	 * is A/B/C, with A=rwx and C=r, we could simply remount A at a different location to get rwx
+	 * access to C. */
+	char path[MAX_PATH_LEN];
+	dir->getPathTo(path,sizeof(path));
+
 	LockGuard<SpinLock> guard(&_lock);
 	const char *end;
 	MSTreeItem *match = _tree.find(path,&end);
-	if(!match)
+	if(!match) {
+		nfile->close();
 		return -ENOENT;
-
-	/* create a new file, if necessary with adjusted permissions */
-	OpenFile *nfile;
-	OpenFile *old = match->getData();
-	const uint rwx = VFS_READ | VFS_WRITE | VFS_EXEC;
-	const uint oldrwx = old->getFlags() & rwx;
-	const uint newrwx = flags & rwx;
-	/* only downgrades are possible */
-	if(~oldrwx & newrwx)
-		return -EACCES;
-
-	if(newrwx != oldrwx) {
-		flags = (old->getFlags() & ~rwx) | newrwx;
-		int res = OpenFile::getFree(u,flags,flags | VFS_NOCHAN,old->getNodeNo(),old->getDev(),
-			old->getNode(),&nfile,true);
-		if(res < 0)
-			return res;
-	}
-	else {
-		nfile = old;
-		nfile->incRefs();
 	}
 
 	/* if we remount at the same place, remove the old one */
 	if(end[0] == '\0') {
-		_tree.remove(path);
+		OpenFile *old = _tree.remove(path);
 		old->close();
 	}
 
 	/* mount it */
-	int res = _tree.insert(path,nfile);
+	res = _tree.insert(path,nfile);
 	if(res < 0) {
 		nfile->close();
 		return res;

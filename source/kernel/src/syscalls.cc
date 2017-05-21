@@ -73,14 +73,15 @@ const Syscalls::handler_func Syscalls::syscalls[] = {
 	mkdir,
 	rmdir,
 	mount,
+	remount,
 	unmount,
 	waitchild,
 	tell,
 	sysconf,
 	getwork,
-	join,
 
 	/* 40 */
+	join,
 	fstat,
 	mmap,
 	mprotect,
@@ -90,9 +91,9 @@ const Syscalls::handler_func Syscalls::syscalls[] = {
 	setuid,
 	getgid,
 	setgid,
-	chmod,
 
 	/* 50 */
+	chmod,
 	chown,
 	getgroups,
 	setgroups,
@@ -102,9 +103,9 @@ const Syscalls::handler_func Syscalls::syscalls[] = {
 	semop,
 	semdestr,
 	sendrecv,
-	cancel,
 
 	/* 60 */
+	cancel,
 	createchan,
 	delegate,
 	obtain,
@@ -114,9 +115,9 @@ const Syscalls::handler_func Syscalls::syscalls[] = {
 	mlock,
 	mlockall,
 	semcrtirq,
-	bindto,
 
 	/* 70 */
+	bindto,
 	rename,
 	gettimeofday,
 	utime,

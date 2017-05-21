@@ -27,16 +27,17 @@ int mount(int ms,int fs,const char *path) {
 	/* root is a special case; we cannot create it before, which is why it doesn't exist before
 	 * mounting something there */
 	if(path[0] == '/' && path[1] == '\0')
-		return syscall4(SYSCALL_MOUNT,ms,fs,(ulong)"/",0);
-	return remount(ms,fs,path,0);
-}
+		return syscall3(SYSCALL_MOUNT,ms,fs,(ulong)"/");
 
-int remount(int ms,int dir,const char *path,uint perm) {
 	char apath[MAX_PATH_LEN];
 	ssize_t res = canonpath(apath,sizeof(apath),path);
 	if(res < 0)
 		return res;
-	return syscall4(SYSCALL_MOUNT,ms,dir,(ulong)apath,perm);
+	return syscall3(SYSCALL_MOUNT,ms,fs,(ulong)apath);
+}
+
+int remount(int ms,int dir,uint perm) {
+	return syscall3(SYSCALL_REMOUNT,ms,dir,perm);
 }
 
 int unmount(int ms,const char *path) {

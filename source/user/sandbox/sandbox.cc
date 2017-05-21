@@ -90,9 +90,7 @@ static void remount(std::vector<std::string> &mounts) {
 	{
 		esc::OStringStream os;
 		os << "/sys/pid/" << getpid();
-		if(canonpath(path,sizeof(path),os.str().c_str()) < 0)
-			error("canonpath for '%s' failed",os.str().c_str());
-		mounts.push_back(std::string(path) + ":rw");
+		mounts.push_back(os.str() + ":rw");
 		/* but everything else readonly / invisible */
 		mounts.push_back(std::string("/sys/proc:") + ((flags & FL_ALONE) ? "x" : "r"));
 	}
@@ -101,9 +99,7 @@ static void remount(std::vector<std::string> &mounts) {
 	{
 		esc::OStringStream os;
 		os << "/sys/pid/" << getpid() << "/ms";
-		if(canonpath(path,sizeof(path),os.str().c_str()) < 0)
-			error("canonpath for '%s' failed",os.str().c_str());
-		mounts.push_back(std::string(path) + ":rw");
+		mounts.push_back(os.str() + ":rw");
 		/* but everything else readonly */
 		mounts.push_back("/sys/mount:r");
 	}
@@ -116,13 +112,16 @@ static void remount(std::vector<std::string> &mounts) {
 		*colon = '\0';
 		uint p = perms(colon + 1);
 
-		int dir = open(m->c_str(),O_NOCHAN);
+		if(canonpath(path,sizeof(path),m->c_str()) < 0)
+			error("canonpath for '%s' failed",m->c_str());
+
+		int dir = open(path,O_NOCHAN);
 		if(dir < 0)
-			error("Unable to open '%s'",m->c_str());
+			error("Unable to open '%s'",path);
 		if(!fisdir(dir))
-			error("'%s' is no directory",m->c_str());
-		if(::remount(ms,dir,m->c_str(),p) < 0)
-			error("Remounting '%s' with permissions '%s' failed",m->c_str(),colon + 1);
+			error("'%s' is no directory",path);
+		if(::remount(ms,dir,p) < 0)
+			error("Remounting '%s' with permissions '%s' failed",path,colon + 1);
 		close(dir);
 	}
 

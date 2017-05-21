@@ -26,9 +26,8 @@
 #include <stdlib.h>
 
 static void usage(const char *name) {
-	fprintf(stderr,"Usage: %s [--ms <ms>] [-p <perms>] <source> <path>\n",name);
-	fprintf(stderr,"    Opens <source> and makes it appear at <path>. <source> can be a\n");
-	fprintf(stderr,"    filesystem device or a directory.\n");
+	fprintf(stderr,"Usage: %s [--ms <ms>] [-p <perms>] <fsdev> <path>\n",name);
+	fprintf(stderr,"    Opens <fsdev> and makes it appear at <path>.\n");
 	fprintf(stderr,"\n");
 	fprintf(stderr,"    -p <perms>: set the permissions to <perms>, which is a combination\n");
 	fprintf(stderr,"                of the letters r, w and x (rwx by default).\n");
@@ -58,7 +57,7 @@ int main(int argc,char *argv[]) {
 	if(optind + 2 > argc)
 		usage(argv[0]);
 
-	const char *src = argv[optind];
+	const char *fsdev = argv[optind];
 	const char *path = argv[optind + 1];
 
 	uint flags = 0;
@@ -71,27 +70,15 @@ int main(int argc,char *argv[]) {
 			flags |= O_EXEC;
 	}
 
-	int fd = open(src,O_NOCHAN);
+	int fd = open(fsdev,flags);
 	if(fd < 0)
-		error("Unable to open '%s'",src);
-	struct stat info;
-	if(fstat(fd,&info) < 0)
-		error("Unable to stat '%s'",src);
+		error("Unable to open '%s'",fsdev);
 
-	/* if it's a filesystem, reopen with requested permissions */
-	if(S_ISFS(info.st_mode)) {
-		close(fd);
-		fd = open(src,flags);
-		if(fd < 0)
-			error("Unable to open '%s' for %s",perms);
-	}
-
-	/* now mount it */
 	int ms = open(mspath,O_WRITE);
 	if(ms < 0)
 		error("Unable to open '%s' for writing",mspath);
-	if(remount(ms,fd,path,flags) < 0)
-		error("Unable to mount '%s' @ '%s' in mountspace '%s'",src,path,mspath);
+	if(mount(ms,fd,path) < 0)
+		error("Unable to mount '%s' @ '%s' in mountspace '%s'",fsdev,path,mspath);
 
 	close(ms);
 	close(fd);

@@ -38,7 +38,7 @@ ino_t ISO9660Dir::resolve(ISO9660FileSystem *h,A_UNUSED User *u,const char *path
 
 	size_t extLoc,extSize;
 	ino_t res;
-	if(root == 0) {
+	if(root == 0 || root == h->rootDirId()) {
 		extLoc = h->primary.data.primary.rootDir.extentLoc.littleEndian;
 		extSize = h->primary.data.primary.rootDir.extentSize.littleEndian;
 		res = h->rootDirId();

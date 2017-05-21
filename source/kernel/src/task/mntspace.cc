@@ -187,7 +187,7 @@ int MntSpace::remount(const fs::User &u,const char *path,OpenFile *dir,uint flag
 
 	if(newrwx != oldrwx) {
 		flags = (old->getFlags() & ~rwx) | newrwx;
-		int res = OpenFile::getFree(u,flags,flags,old->getNodeNo(),old->getDev(),
+		int res = OpenFile::getFree(u,flags,flags | VFS_NOCHAN,old->getNodeNo(),old->getDev(),
 			old->getNode(),&nfile,true);
 		if(res < 0)
 			return res;

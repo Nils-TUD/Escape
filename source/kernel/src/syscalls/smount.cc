@@ -79,7 +79,7 @@ int Syscalls::mount(Thread *t,IntrptStackFrame *stack) {
 		MntSpace::release(msobj);
 	}
 	else {
-		if((flags & (VFS_READ | VFS_WRITE | VFS_EXEC)) == 0)
+		if((flags & ~(VFS_READ | VFS_WRITE | VFS_EXEC)) != 0)
 			SYSC_ERROR(stack,-EINVAL);
 
 		/* otherwise, remount the directory */

@@ -241,7 +241,7 @@ int main() {
 
 			for(size_t i = 0; i < ARRAY_SIZE(nics); ++i) {
 				if(nic.deviceId == nics[i].dev && nic.vendorId == nics[i].vendor) {
-					print("Found PCI-device %d.%d.%d: vendor=%hx, device=%hx model=%s name=%s",
+					print("Found PCI-device %d.%d.%d: vendor=%hx device=%hx model=%s name=%s",
 							nic.bus,nic.dev,nic.func,nic.vendorId,nic.deviceId,nics[i].model,nics[i].name);
 
 					esc::OStringStream link,bdf;

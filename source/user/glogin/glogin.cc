@@ -60,14 +60,13 @@ public:
 
 		getTheme().setPadding(0);
 
-		shared_ptr<ColorFadePanel> header = make_control<ColorFadePanel>(make_layout<BorderLayout>(0));
+		auto header = make_control<ColorFadePanel>(make_layout<BorderLayout>(0));
 		header->getTheme().setColor(Theme::CTRL_BACKGROUND,Theme::WIN_TITLE_ACT_BG);
 		header->add(make_control<Label>("Login",CENTER),BorderLayout::CENTER);
 		add(header,BorderLayout::NORTH);
 
-		shared_ptr<Panel> body = make_control<Panel>(
-			make_layout<FlowLayout>(FRONT,true,VERTICAL,5));
-		shared_ptr<Panel> namepnl = make_control<Panel>(make_layout<GridLayout>(2,1));
+		auto body = make_control<Panel>(make_layout<FlowLayout>(FRONT,true,VERTICAL,5));
+		auto namepnl = make_control<Panel>(make_layout<GridLayout>(2,1));
 		namepnl->add(make_control<Label>("Username:"),GridPos(0,0));
 
 		_cbuser = make_control<ComboBox>();
@@ -83,7 +82,7 @@ public:
 		win.appendTabCtrl(*_cbuser.get());
 		body->add(namepnl);
 
-		shared_ptr<Panel> pwpnl = make_control<Panel>(make_layout<GridLayout>(2,1));
+		auto pwpnl = make_control<Panel>(make_layout<GridLayout>(2,1));
 		pwpnl->add(make_control<Label>("Password:"),GridPos(0,0));
 		_edpw = make_control<Editable>(Pos(),Size(150,0),true);
 		_edpw->keyPressed().subscribe(mem_recv(this,&LoginPanel::onKeyPress));
@@ -91,8 +90,8 @@ public:
 		win.appendTabCtrl(*_edpw.get());
 		body->add(pwpnl);
 
-		shared_ptr<Panel> btnpnl = make_control<Panel>(make_layout<FlowLayout>(BACK));
-		shared_ptr<Button> login = make_control<Button>("Login");
+		auto btnpnl = make_control<Panel>(make_layout<FlowLayout>(BACK));
+		auto login = make_control<Button>("Login");
 		login->clicked().subscribe(mem_recv(this,&LoginPanel::onLogin));
 		btnpnl->add(login);
 		win.appendTabCtrl(*login.get());
@@ -151,11 +150,11 @@ private:
 class DesktopWindow : public Window {
 public:
 	DesktopWindow(const Size &size) : Window(Pos(0,0),size,DESKTOP), _lgpnl() {
-		shared_ptr<ColorFadePanel> bg = make_control<ColorFadePanel>();
+		auto bg = make_control<ColorFadePanel>();
 		bg->getTheme().setColor(Theme::CTRL_BACKGROUND,Theme::DESKTOP_BG);
 
 		_lgpnl = make_control<LoginPanel>(*this);
-		shared_ptr<Border> border = make_control<Border>(_lgpnl);
+		auto border = make_control<Border>(_lgpnl);
 		bg->add(border);
 		border->moveTo(Pos(size.width / 2 - border->getPreferredSize().width / 2,
 			size.height / 2 - border->getPreferredSize().height / 2));
@@ -198,7 +197,7 @@ int main(void) {
 
 	// let the user login
 	Application *app = Application::create();
-	shared_ptr<DesktopWindow> win = make_control<DesktopWindow>(app->getScreenSize());
+	auto win = make_control<DesktopWindow>(app->getScreenSize());
 	win->show();
 	app->addWindow(win);
 	app->run();

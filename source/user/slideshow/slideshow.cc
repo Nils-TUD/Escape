@@ -83,7 +83,7 @@ int main(int argc,char **argv) {
 	slide = 0;
 
 	Application *app = Application::create();
-	shared_ptr<Window> w = make_control<Window>("Slideshow",Pos(0,0),app->getScreenSize());
+	auto w = make_control<Window>("Slideshow",Pos(0,0),app->getScreenSize());
 	root = w->getRootPanel();
 	root->setLayout(make_layout<BorderLayout>());
 	w->keyReleased().subscribe(func_recv(onKeyReleased));

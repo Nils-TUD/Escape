@@ -36,7 +36,7 @@ public:
 					gui::FRONT,true,gui::VERTICAL,4)),
 			  _filelist(filelist) {
 		for(auto it = favs.begin(); it != favs.end(); ++it) {
-			std::shared_ptr<gui::Button> b = gui::make_control<gui::Button>(it->getTitle());
+			auto b = gui::make_control<gui::Button>(it->getTitle());
 			b->clicked().subscribe(gui::bind1_mem_recv(*it,this,&Favorites::onButtonClick));
 			add(b);
 		}

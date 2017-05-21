@@ -51,7 +51,7 @@ int main() {
 		error("Unable to create semaphore");
 
 	Application *app = Application::create();
-	shared_ptr<DesktopWin> win = make_control<DesktopWin>(app->getScreenSize(),childsm);
+	auto win = make_control<DesktopWin>(app->getScreenSize(),childsm);
 	for(size_t i = 0; i < ARRAY_SIZE(shortcuts); ++i)
 		win->addShortcut(new Shortcut(shortcuts[i].icon,const_cast<const char**>(shortcuts[i].args)));
 	win->show();

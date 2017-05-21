@@ -95,10 +95,10 @@ static int guiProc(const char *devName) {
 
 	// now start GUI
 	Application *app = Application::create(getenv("WINMNG"));
-	shared_ptr<Window> w = make_control<Window>("Shell",Pos(100,100));
-	shared_ptr<Panel> root = w->getRootPanel();
+	auto w = make_control<Window>("Shell",Pos(100,100));
+	auto root = w->getRootPanel();
 	root->getTheme().setPadding(0);
-	shared_ptr<ShellControl> sh = make_control<ShellControl>();
+	auto sh = make_control<ShellControl>();
 	gt = new GUIVTermDevice(devName,0700,sh,DEF_COLS,DEF_ROWS);
 	int tid;
 	if((tid = startthread(termThread,gt)) < 0)

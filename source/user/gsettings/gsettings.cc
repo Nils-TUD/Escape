@@ -54,11 +54,11 @@ static void onApply(UIElement &) {
 
 int main() {
 	Application *app = Application::create();
-	shared_ptr<Window> win = make_control<Window>("Settings",Pos(200,200));
-	shared_ptr<Panel> root = win->getRootPanel();
+	auto win = make_control<Window>("Settings",Pos(200,200));
+	auto root = win->getRootPanel();
 	root->setLayout(make_layout<BorderLayout>());
 
-	shared_ptr<Panel> grid = make_control<Panel>(make_layout<GridLayout>(2,2,5));
+	auto grid = make_control<Panel>(make_layout<GridLayout>(2,2,5));
 	grid->add(make_control<Label>("Screenmode:"),GridPos(0,0));
 
 	modeCombo = make_control<ComboBox>();
@@ -89,11 +89,11 @@ int main() {
 
 	root->add(grid,BorderLayout::CENTER);
 
-	shared_ptr<Panel> btns = make_control<Panel>(make_layout<FlowLayout>(BACK,true,HORIZONTAL,5));
-	shared_ptr<Button> cancel = make_control<Button>("Cancel");
+	auto btns = make_control<Panel>(make_layout<FlowLayout>(BACK,true,HORIZONTAL,5));
+	auto cancel = make_control<Button>("Cancel");
 	cancel->clicked().subscribe(func_recv(onCancel));
 	btns->add(cancel);
-	shared_ptr<Button> apply = make_control<Button>("Apply");
+	auto apply = make_control<Button>("Apply");
 	apply->clicked().subscribe(func_recv(onApply));
 	btns->add(apply);
 	root->add(btns,BorderLayout::SOUTH);

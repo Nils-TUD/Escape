@@ -111,11 +111,11 @@ int main() {
 	Application *app = Application::create();
 	win = make_control<Window>("Calculator",Pos(250,250));
 	win->keyPressed().subscribe(func_recv(keyPressed));
-	shared_ptr<Panel> root = win->getRootPanel();
+	auto root = win->getRootPanel();
 	root->getTheme().setPadding(2);
 	root->setLayout(make_layout<BorderLayout>(2));
 
-	shared_ptr<Panel> grid = make_control<Panel>(make_layout<GridLayout>(5,4));
+	auto grid = make_control<Panel>(make_layout<GridLayout>(5,4));
 	root->add(grid,BorderLayout::CENTER);
 
 	textfield = make_control<Editable>();
@@ -146,19 +146,19 @@ int main() {
 	};
 	for(size_t i = 0; i < ARRAY_SIZE(buttons); ++i) {
 		char name[] = {buttons[i].c,'\0'};
-		shared_ptr<Button> b = make_control<Button>(name,Pos(0,0),BTN_SIZE);
+		auto b = make_control<Button>(name,Pos(0,0),BTN_SIZE);
 		b->clicked().subscribe(bind1_func_recv(buttons[i].c,onButtonClick));
 		grid->add(b,buttons[i].pos);
 	}
 
 	{
-		shared_ptr<Button> b = make_control<Button>("C",Pos(0,0),BTN_SIZE);
+		auto b = make_control<Button>("C",Pos(0,0),BTN_SIZE);
 		b->clicked().subscribe(func_recv(onClearButtonClick));
 		grid->add(b,GridPos(4,2));
 	}
 
 	{
-		shared_ptr<Button> b = make_control<Button>("=",Pos(0,0),BTN_SIZE);
+		auto b = make_control<Button>("=",Pos(0,0),BTN_SIZE);
 		b->clicked().subscribe(func_recv(onSubmitButtonClick));
 		grid->add(b,GridPos(4,3));
 	}

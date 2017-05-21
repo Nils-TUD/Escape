@@ -97,13 +97,13 @@ static int refreshThread(void *) {
 
 int main() {
 	Application *app = Application::create();
-	shared_ptr<Window> win = make_control<Window>("CPUGraph",Pos(300,300));
-	shared_ptr<Panel> root = win->getRootPanel();
+	auto win = make_control<Window>("CPUGraph",Pos(300,300));
+	auto root = win->getRootPanel();
 	root->setLayout(make_layout<BorderLayout>());
 
 	std::vector<info::cpu*> cpulist = info::cpu::get_list();
 
-	shared_ptr<Panel> grid = make_control<Panel>(
+	auto grid = make_control<Panel>(
 		make_layout<GridLayout>(1,cpulist.size()));
 
 	int no = 0;

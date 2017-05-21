@@ -79,29 +79,29 @@ int main() {
 	}
 
 	Application *app = Application::create();
-	shared_ptr<Window> w = make_control<Window>("File manager",Pos(100,100),Size(560,360));
-	shared_ptr<Panel> root = w->getRootPanel();
-	shared_ptr<PathBar> pathbar = make_control<PathBar>();
+	auto w = make_control<Window>("File manager",Pos(100,100),Size(560,360));
+	auto root = w->getRootPanel();
+	auto pathbar = make_control<PathBar>();
 	filelist = make_control<FileList>(pathbar);
 	root->setLayout(make_layout<BorderLayout>());
 
-	shared_ptr<Panel> north = make_control<Panel>(make_layout<BorderLayout>());
+	auto north = make_control<Panel>(make_layout<BorderLayout>());
 	north->add(make_control<Label>("Location:"),BorderLayout::WEST);
 	north->add(pathbar,BorderLayout::CENTER);
-	shared_ptr<Panel> buttons = make_control<Panel>(make_layout<FlowLayout>(CENTER));
+	auto buttons = make_control<Panel>(make_layout<FlowLayout>(CENTER));
 
-	shared_ptr<Button> listButton = make_control<Button>("List");
+	auto listButton = make_control<Button>("List");
 	listButton->clicked().subscribe(func_recv(listButtonClick));
 	buttons->add(listButton);
 
-	shared_ptr<Button> iconsButton = make_control<Button>("Icons");
+	auto iconsButton = make_control<Button>("Icons");
 	iconsButton->clicked().subscribe(func_recv(iconButtonClick));
 	buttons->add(iconsButton);
 
 	north->add(buttons,BorderLayout::EAST);
 	root->add(make_control<Border>(north,Border::BOTTOM),BorderLayout::NORTH);
 
-	shared_ptr<SplitPanel> splitpan = make_control<SplitPanel>(VERTICAL);
+	auto splitpan = make_control<SplitPanel>(VERTICAL);
 	splitpan->getTheme().setPadding(0);
 	splitpan->add(make_control<Favorites>(filelist,favlist));
 	splitpan->add(make_control<ScrollPane>(filelist));

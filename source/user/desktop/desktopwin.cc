@@ -39,7 +39,7 @@ DesktopWin::DesktopWin(const Size &size,int childsm)
 			  	make_layout<FlowLayout>(FRONT,true,HORIZONTAL,4))),
 	  _iconPanel(make_control<Background>(make_layout<IconLayout>(VERTICAL,PADDING))),
 	  _active(nullptr), _windows(), _shortcuts() {
-	shared_ptr<Panel> root = getRootPanel();
+	auto root = getRootPanel();
 	root->setLayout(make_layout<BorderLayout>());
 	root->getTheme().setPadding(0);
 	root->add(_winPanel,BorderLayout::SOUTH);
@@ -80,7 +80,7 @@ void DesktopWin::onWinBtnClicked(UIElement& el) {
 }
 
 void DesktopWin::onWindowCreated(gwinid_t wid,const string& title) {
-	shared_ptr<WinButton> b = make_control<WinButton>(this,title);
+	auto b = make_control<WinButton>(this,title);
 	_windows[wid] = b;
 	_winPanel->add(b);
 	_winPanel->layout();

@@ -113,8 +113,8 @@ static int refreshThread(void*) {
 
 int main() {
 	Application *app = Application::create();
-	std::shared_ptr<Window> win = make_control<Window>("Clock",Pos(250,250));
-	std::shared_ptr<Panel> root = win->getRootPanel();
+	auto win = make_control<Window>("Clock",Pos(250,250));
+	auto root = win->getRootPanel();
 	root->getTheme().setPadding(2);
 	root->setLayout(make_layout<BorderLayout>(2));
 

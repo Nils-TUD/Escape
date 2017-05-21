@@ -91,7 +91,7 @@ public:
 	void addShortcut(Shortcut *sc) {
 		// do that first for exception-safety
 		std::shared_ptr<gui::Image> img = gui::Image::loadImage(sc->getIcon());
-		std::shared_ptr<gui::ImageButton> btn(gui::make_control<gui::ImageButton>(img));
+		auto btn = gui::make_control<gui::ImageButton>(img);
 		sc->setButton(btn);
 		btn->clicked().subscribe(mem_recv(this,&DesktopWin::onIconClick));
 		_shortcuts[btn] = sc;

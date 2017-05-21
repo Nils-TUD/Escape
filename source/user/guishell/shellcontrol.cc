@@ -194,10 +194,7 @@ void ShellControl::doUpdate() {
 		if(_vt->upScroll != 0) {
 			if(_vt->firstLine == 0) {
 				makeDirty(true);
-				// TODO actually, it should be possible to repaint ourself here. but this seems to
-				// be a problem with the paint-rect-calculation which is wrong if our offset is < 0
-				// or so. I don't know what's the problem there.
-				getParent()->repaint(false);
+				repaint(false);
 			}
 			else {
 				size_t hidden = (HISTORY_SIZE * _vt->rows) - _vt->firstLine - _vt->rows;

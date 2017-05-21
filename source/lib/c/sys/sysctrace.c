@@ -206,7 +206,6 @@ static const char *vtMsgs[] = {
 	"VT_SETFLAG",
 	"VT_BACKUP",
 	"VT_RESTORE",
-	"VT_SHELLPID",
 	"VT_ISVTERM",
 };
 
@@ -236,10 +235,9 @@ static const char *pciMsgs[] = {
 	"PCI_ENABLE_MSIS",
 };
 
-static const char *initMsgs[] = {
-	"INIT_REBOOT",
-	"INIT_SHUTDOWN",
-	"INIT_IAMALIVE",
+static const char *powerMsgs[] = {
+	"POWER_REBOOT",
+	"POWER_SHUTDOWN",
 };
 
 static const char *nicMsgs[] = {
@@ -285,7 +283,7 @@ static const struct Messages msgs[] = {
 	{msMsgs,	700,	ARRAY_SIZE(msMsgs)},
 	{uimMsgs,	800,	ARRAY_SIZE(uimMsgs)},
 	{pciMsgs,	900,	ARRAY_SIZE(pciMsgs)},
-	{initMsgs,	1000,	ARRAY_SIZE(initMsgs)},
+	{powerMsgs,	1000,	ARRAY_SIZE(powerMsgs)},
 	{nicMsgs,	1100,	ARRAY_SIZE(nicMsgs)},
 	{netMsgs,	1200,	ARRAY_SIZE(netMsgs)},
 	{sockMsgs,	1300,	ARRAY_SIZE(sockMsgs)},

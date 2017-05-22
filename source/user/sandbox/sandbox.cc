@@ -35,8 +35,8 @@
 using namespace esc;
 
 enum {
-	FL_ALONE	= 1,
-	FL_LEAVEALL	= 2,
+	FL_ALONE		= 1,
+	FL_LEAVE_GROUPS	= 2,
 };
 
 static uint flags;
@@ -185,10 +185,10 @@ static void remount(const std::vector<info::mount*> pmnts,std::vector<Remount> &
 }
 
 static void usage(const char *name) {
-	serr << "Usage: " << name << " [-a] [-L] [-l <group>] [-m <path>:<perms>] <program> [<arg>...]\n";
-	serr << "  -a:                hide other processes, so that the sandbox is `alone'.\n";
-	serr << "  -L:                leave all groups\n";
-	serr << "  -l <group>:        leave given group\n";
+	serr << "Usage: " << name << " [-a] [-G] [-g <group>] [-m <path>:<perms>] <program> [<arg>...]\n";
+	serr << "  -a:                hide other processes, so that the sandbox is `alone'\n";
+	serr << "  -G:                leave all groups\n";
+	serr << "  -g <group>:        leave given group\n";
 	serr << "  -m <path>:<perms>: remount <path> and reduce permissions to <perms> (rwx)\n";
 	serr << "\n";
 	serr << "The -m option can be specified multiple times. For each one, the permissions are\n";
@@ -207,11 +207,11 @@ int main(int argc,char **argv) {
 
 	// parse args
 	int opt;
-	while((opt = getopt(argc,argv,"aLl:m:")) != -1) {
+	while((opt = getopt(argc,argv,"aGg:m:")) != -1) {
 		switch(opt) {
 			case 'a': flags |= FL_ALONE; break;
-			case 'L': flags |= FL_LEAVEALL; break;
-			case 'l': leaveGroups.push_back(optarg); break;
+			case 'G': flags |= FL_LEAVE_GROUPS; break;
+			case 'g': leaveGroups.push_back(optarg); break;
 			case 'm': addMounts(pmnts,mounts,optarg); break;
 			default:
 				usage(argv[0]);
@@ -241,7 +241,7 @@ int main(int argc,char **argv) {
 
 		// leave groups
 		int res = 0;
-		if(flags & FL_LEAVEALL)
+		if(flags & FL_LEAVE_GROUPS)
 			res = setgroups(0,NULL);
 		else if(!leaveGroups.empty())
 			res = leave(leaveGroups);

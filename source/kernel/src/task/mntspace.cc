@@ -169,12 +169,6 @@ int MntSpace::mount(const char *path,OpenFile *file) {
 }
 
 int MntSpace::remount(const fs::User &u,OpenFile *dir,uint flags) {
-	const uint mntrwx = dir->getMntPerms() & (VFS_READ | VFS_WRITE | VFS_EXEC);
-	const uint newrwx = flags & (VFS_READ | VFS_WRITE | VFS_EXEC);
-	/* only downgrades are possible */
-	if(~mntrwx & newrwx)
-		return -EACCES;
-
 	/* use the path of the directory to ensure that the user can't remount it at a different
 	 * location. this could be used to circumvent the permissions in a subdirectory. if the tree
 	 * is A/B/C, with A=rwx and C=r, we could simply remount A at a different location to get rwx
@@ -188,8 +182,19 @@ int MntSpace::remount(const fs::User &u,OpenFile *dir,uint flags) {
 	if(!match)
 		return -ENOENT;
 
-	/* create a new file with requested permissions */
+	/* ensure that the path still refers to the same filesystem */
 	OpenFile *old = match->getData();
+	if((IS_CHANNEL(old->getNode()->getMode()) && old->getNodeNo() != dir->getDev()) ||
+		(!IS_CHANNEL(old->getNode()->getMode()) && old->getDev() != dir->getDev()))
+		return -ENOTSUP;
+
+	/* check permissions; only downgrades are possible */
+	const uint mntrwx = old->getFlags() & (VFS_READ | VFS_WRITE | VFS_EXEC);
+	const uint newrwx = flags & (VFS_READ | VFS_WRITE | VFS_EXEC);
+	if(~mntrwx & newrwx)
+		return -EACCES;
+
+	/* create a new file with requested permissions */
 	OpenFile *nfile;
 	int res = OpenFile::getFree(u,newrwx,newrwx | VFS_NOCHAN,old->getNodeNo(),old->getDev(),
 		old->getNode(),&nfile,true);

@@ -37,6 +37,7 @@ using namespace esc;
 enum {
 	FL_ALONE		= 1,
 	FL_LEAVE_GROUPS	= 2,
+	FL_UNSHARE_FDS	= 4,
 };
 
 static uint flags;
@@ -185,8 +186,9 @@ static void remount(const std::vector<info::mount*> pmnts,std::vector<Remount> &
 }
 
 static void usage(const char *name) {
-	serr << "Usage: " << name << " [-a] [-G] [-g <group>] [-m <path>:<perms>] <program> [<arg>...]\n";
+	serr << "Usage: " << name << " [-a] [-F] [-G] [-g <group>] [-m <path>:<perms>] <program> [<arg>...]\n";
 	serr << "  -a:                hide other processes, so that the sandbox is `alone'\n";
+	serr << "  -F:                close all file descriptors and reopen stdin, stdout and stderr\n";
 	serr << "  -G:                leave all groups\n";
 	serr << "  -g <group>:        leave given group\n";
 	serr << "  -m <path>:<perms>: remount <path> and reduce permissions to <perms> (rwx)\n";
@@ -207,9 +209,10 @@ int main(int argc,char **argv) {
 
 	// parse args
 	int opt;
-	while((opt = getopt(argc,argv,"aGg:m:")) != -1) {
+	while((opt = getopt(argc,argv,"aFGg:m:")) != -1) {
 		switch(opt) {
 			case 'a': flags |= FL_ALONE; break;
+			case 'F': flags |= FL_UNSHARE_FDS; break;
 			case 'G': flags |= FL_LEAVE_GROUPS; break;
 			case 'g': leaveGroups.push_back(optarg); break;
 			case 'm': addMounts(pmnts,mounts,optarg); break;
@@ -222,19 +225,21 @@ int main(int argc,char **argv) {
 
 	int pid;
 	if((pid = fork()) == 0) {
-		// the sandboxed process shouldn't share stdin, stdout and stderr with us.
-		const std::string &term = env::get("TERM");
-		int maxfds = sysconf(CONF_MAX_FDS);
-		for(int i = 0; i < maxfds; ++i) {
-			if(i != 3)
-				close(i);
+		if(flags & FL_UNSHARE_FDS) {
+			// the sandboxed process shouldn't share stdin, stdout and stderr with us.
+			const std::string &term = env::get("TERM");
+			int maxfds = sysconf(CONF_MAX_FDS);
+			for(int i = 0; i < maxfds; ++i) {
+				if(i != 3)
+					close(i);
+			}
+			if(open(term.c_str(),O_RDONLY | O_MSGS) != STDIN_FILENO)
+				error("Unable to reopen '%s' for stdin",term.c_str());
+			if(open(term.c_str(),O_WRONLY | O_MSGS) != STDOUT_FILENO)
+				error("Unable to reopen '%s' for stdout",term.c_str());
+			if(dup(STDOUT_FILENO) != STDERR_FILENO)
+				error("Unable to duplicate stdout to stderr");
 		}
-		if(open(term.c_str(),O_RDONLY | O_MSGS) != STDIN_FILENO)
-			error("Unable to reopen '%s' for stdin",term.c_str());
-		if(open(term.c_str(),O_WRONLY | O_MSGS) != STDOUT_FILENO)
-			error("Unable to reopen '%s' for stdout",term.c_str());
-		if(dup(STDOUT_FILENO) != STDERR_FILENO)
-			error("Unable to duplicate stdout to stderr");
 
 		// remounts
 		remount(pmnts,mounts);

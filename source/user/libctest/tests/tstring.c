@@ -47,6 +47,7 @@ static void test_strchr(void);
 static void test_strchri(void);
 static void test_strrchr(void);
 static void test_strstr(void);
+static void test_memmem(void);
 static void test_strcasestr(void);
 static void test_strspn(void);
 static void test_strcspn(void);
@@ -91,6 +92,7 @@ static void test_string(void) {
 	test_strchri();
 	test_strrchr();
 	test_strstr();
+	test_memmem();
 	test_strcasestr();
 	test_strspn();
 	test_strcspn();

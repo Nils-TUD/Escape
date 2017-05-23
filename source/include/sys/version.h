@@ -19,11 +19,4 @@
 
 #pragma once
 
-#include <sys/defines.h>
-#include <sys/types.h>
-#include <stdarg.h>
-#include <stddef.h>
-
-#ifndef NDEBUG
-#define DEBUGGING 1
-#endif
+#define ESCAPE_VERSION	"0.6"

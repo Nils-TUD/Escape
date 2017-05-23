@@ -29,6 +29,7 @@
 #include <sys/io.h>
 #include <sys/proc.h>
 #include <sys/thread.h>
+#include <sys/version.h>
 #include <dirent.h>
 #include <signal.h>
 #include <stdio.h>

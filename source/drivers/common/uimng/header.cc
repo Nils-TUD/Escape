@@ -21,6 +21,7 @@
 #include <info/cpu.h>
 #include <sys/common.h>
 #include <sys/conf.h>
+#include <sys/version.h>
 #include <vbe/vbe.h>
 #include <assert.h>
 #include <stdio.h>

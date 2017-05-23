@@ -24,6 +24,7 @@
 #include <sys/mount.h>
 #include <sys/proc.h>
 #include <sys/thread.h>
+#include <sys/version.h>
 #include <usergroup/usergroup.h>
 #include <errno.h>
 #include <stdlib.h>

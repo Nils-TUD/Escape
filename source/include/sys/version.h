@@ -19,4 +19,4 @@
 
 #pragma once
 
-#define ESCAPE_VERSION	"0.6"
+#define ESCAPE_VERSION	"0.7"

@@ -46,22 +46,22 @@
 }
 
 <INITIAL,CHARCLASS>\\d {
-	return T_DIGIT;
+	return T_DIGIT_CLS;
 }
 <INITIAL,CHARCLASS>\\D {
-	return T_NON_DIGIT;
+	return T_NON_DIGIT_CLS;
 }
 <INITIAL,CHARCLASS>\\s {
-	return T_WS;
+	return T_WS_CLS;
 }
 <INITIAL,CHARCLASS>\\S {
-	return T_NON_WS;
+	return T_NON_WS_CLS;
 }
 <INITIAL,CHARCLASS>\\w {
-	return T_WORD;
+	return T_WORD_CLS;
 }
 <INITIAL,CHARCLASS>\\W {
-	return T_NON_WORD;
+	return T_NON_WORD_CLS;
 }
 
  /* repeat specification */

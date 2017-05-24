@@ -35,12 +35,12 @@
 %token T_REP_ANY
 %token T_REP_ONEPLUS
 %token T_REP_OPTIONAL
-%token T_DIGIT
-%token T_NON_DIGIT
-%token T_WS
-%token T_NON_WS
-%token T_WORD
-%token T_NON_WORD
+%token T_DIGIT_CLS
+%token T_NON_DIGIT_CLS
+%token T_WS_CLS
+%token T_NON_WS_CLS
+%token T_WORD_CLS
+%token T_NON_WORD_CLS
 
 %type <node> regex elemlist elem std_elem charclass_list charclass_elem choice_list charclass_abrv
 
@@ -121,12 +121,12 @@ charclass_elem:
 ;
 
 charclass_abrv:
-	T_DIGIT												{ $$ = pattern_createSimpleCharClass('0','9',false); }
-	| T_NON_DIGIT										{ $$ = pattern_createSimpleCharClass('0','9',true); }
-	| T_WS												{ $$ = pattern_createWS(false); }
-	| T_NON_WS											{ $$ = pattern_createWS(true); }
-	| T_WORD											{ $$ = pattern_createWord(false); }
-	| T_NON_WORD										{ $$ = pattern_createWord(true); }
+	T_DIGIT_CLS											{ $$ = pattern_createSimpleCharClass('0','9',false); }
+	| T_NON_DIGIT_CLS									{ $$ = pattern_createSimpleCharClass('0','9',true); }
+	| T_WS_CLS											{ $$ = pattern_createWSClass(false); }
+	| T_NON_WS_CLS										{ $$ = pattern_createWSClass(true); }
+	| T_WORD_CLS										{ $$ = pattern_createWordClass(false); }
+	| T_NON_WORD_CLS									{ $$ = pattern_createWordClass(true); }
 ;
 
 %%

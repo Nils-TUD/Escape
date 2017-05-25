@@ -223,66 +223,44 @@ int main(int argc,char **argv) {
 	if(optind >= argc)
 		usage(argv[0]);
 
-	int pid;
-	if((pid = fork()) == 0) {
-		if(flags & FL_UNSHARE_FDS) {
-			// the sandboxed process shouldn't share stdin, stdout and stderr with us.
-			const std::string &term = env::get("TERM");
-			int maxfds = sysconf(CONF_MAX_FDS);
-			for(int i = 0; i < maxfds; ++i) {
-				if(i != 3)
-					close(i);
-			}
-			if(open(term.c_str(),O_RDONLY | O_MSGS) != STDIN_FILENO)
-				error("Unable to reopen '%s' for stdin",term.c_str());
-			if(open(term.c_str(),O_WRONLY | O_MSGS) != STDOUT_FILENO)
-				error("Unable to reopen '%s' for stdout",term.c_str());
-			if(dup(STDOUT_FILENO) != STDERR_FILENO)
-				error("Unable to duplicate stdout to stderr");
+	if(flags & FL_UNSHARE_FDS) {
+		// the sandboxed process shouldn't share stdin, stdout and stderr with us.
+		const std::string &term = env::get("TERM");
+		int maxfds = sysconf(CONF_MAX_FDS);
+		for(int i = 0; i < maxfds; ++i) {
+			if(i != 3)
+				close(i);
 		}
-
-		// remounts
-		remount(pmnts,mounts);
-
-		// leave groups
-		int res = 0;
-		if(flags & FL_LEAVE_GROUPS)
-			res = setgroups(0,NULL);
-		else if(!leaveGroups.empty())
-			res = leave(leaveGroups);
-		if(res < 0)
-			error("Unable to leave groups");
-
-		// build arguments
-		const char **cargs = new const char*[argc - optind + 1];
-		if(!cargs)
-			error("Not enough mem");
-		for(int i = optind; i < argc; ++i)
-			cargs[i - optind] = argv[i];
-		cargs[argc - optind] = NULL;
-
-		// go!
-		execvp(cargs[0],cargs);
-		error("Exec failed");
-	}
-	else if(pid < 0)
-		error("Fork failed");
-	else {
-		sExitState state;
-		waitchild(&state,-1,0);
-
-		sout << "\n";
-		sout << "Process " << state.pid << " ('";
-		for(int i = optind; i < argc; ++i) {
-			sout << argv[i];
-			if(i + 1 < argc)
-				sout << ' ';
-		}
-		sout << "') terminated with exit-code " << state.exitCode;
-		if(state.signal != SIG_COUNT)
-			sout << " (signal " << state.signal << ")";
-		sout << "\n";
+		if(open(term.c_str(),O_RDONLY | O_MSGS) != STDIN_FILENO)
+			error("Unable to reopen '%s' for stdin",term.c_str());
+		if(open(term.c_str(),O_WRONLY | O_MSGS) != STDOUT_FILENO)
+			error("Unable to reopen '%s' for stdout",term.c_str());
+		if(dup(STDOUT_FILENO) != STDERR_FILENO)
+			error("Unable to duplicate stdout to stderr");
 	}
 
+	// remounts
+	remount(pmnts,mounts);
+
+	// leave groups
+	int res = 0;
+	if(flags & FL_LEAVE_GROUPS)
+		res = setgroups(0,NULL);
+	else if(!leaveGroups.empty())
+		res = leave(leaveGroups);
+	if(res < 0)
+		error("Unable to leave groups");
+
+	// build arguments
+	const char **cargs = new const char*[argc - optind + 1];
+	if(!cargs)
+		error("Not enough mem");
+	for(int i = optind; i < argc; ++i)
+		cargs[i - optind] = argv[i];
+	cargs[argc - optind] = NULL;
+
+	// go!
+	execvp(cargs[0],cargs);
+	error("Exec failed");
 	return 0;
 }

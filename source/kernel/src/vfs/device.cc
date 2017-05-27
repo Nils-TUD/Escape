@@ -177,6 +177,9 @@ int VFSDevice::send(VFSChannel *chan,ushort flags,msgid_t id,USER const void *da
 	VFSChannel::Message *msg1,*msg2 = NULL;
 	int res;
 
+	if(EXPECT_FALSE(!isAlive()))
+		return -EDESTROYED;
+
 	/* devices write to the receive-list (which will be read by other processes) */
 	if(flags & VFS_DEVICE) {
 		assert(data2 == NULL && size2 == 0);

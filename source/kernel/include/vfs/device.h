@@ -113,7 +113,7 @@ private:
 		msgCount -= count;
 	}
 
-	void wakeupClients(bool locked);
+	void wakeupClients();
 	int getClientFd(tid_t tid);
 
 	static uint buildMode(uint type);

@@ -77,7 +77,7 @@ void VFSDevice::close(OpenFile *file,A_UNUSED int msgid) {
 		 * whether they are affected by the remove of this device and perform the corresponding
 		 * action */
 		/* do that first because otherwise the client-nodes are already gone :) */
-		wakeupClients(true);
+		wakeupClients();
 		destroy();
 	}
 	else
@@ -378,14 +378,14 @@ void VFSDevice::print(OStream &os) const {
 	closeDir(false);
 }
 
-void VFSDevice::wakeupClients(bool locked) {
+void VFSDevice::wakeupClients() {
 	bool valid;
-	const VFSNode *n = openDir(locked,&valid);
+	const VFSNode *n = openDir(true,&valid);
 	if(valid) {
 		while(n != NULL) {
 			Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)n);
 			n = n->next;
 		}
 	}
-	closeDir(locked);
+	closeDir(true);
 }

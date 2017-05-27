@@ -20,7 +20,7 @@
 #include <sys/common.h>
 
 #include "keystrokes.h"
-#include "screens.h"
+#include "screenmng.h"
 
 const int Keystrokes::VGA_MODE			= 3;
 

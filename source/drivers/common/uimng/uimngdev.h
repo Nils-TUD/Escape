@@ -28,7 +28,7 @@
 #include "clients.h"
 #include "header.h"
 #include "keystrokes.h"
-#include "screens.h"
+#include "screenmng.h"
 
 class UIMngDevice : public esc::ClientDevice<UIClient> {
 public:

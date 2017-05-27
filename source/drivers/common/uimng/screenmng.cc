@@ -23,7 +23,7 @@
 
 #include "clients.h"
 #include "header.h"
-#include "screens.h"
+#include "screenmng.h"
 
 std::vector<esc::Screen*> ScreenMng::_screens;
 

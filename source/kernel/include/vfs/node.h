@@ -469,10 +469,12 @@ public:
 	/**
 	 * Decrements the references of this node including all child-nodes and removes them from the
 	 * VFS. They are only destroyed and released if there are no references anymore.
+	 *
+	 * @return the remaining number of references
 	 */
-	void destroy() {
+	ushort destroy() {
 		LockGuard<SpinLock> guard(&treeLock);
-		doUnref(true);
+		return doUnref(true);
 	}
 
 	/**

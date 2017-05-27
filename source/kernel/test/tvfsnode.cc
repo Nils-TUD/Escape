@@ -18,6 +18,7 @@
  */
 
 #include <sys/test.h>
+#include <task/filedesc.h>
 #include <task/proc.h>
 #include <task/thread.h>
 #include <vfs/node.h>
@@ -265,8 +266,10 @@ static void test_vfs_node_dir_refs() {
 static void test_vfs_node_dev_refs() {
 	char path[MAX_PATH_LEN];
 	Thread *t = Thread::getRunning();
-	pid_t pid = t->getProc()->getPid();
-	OpenFile *f1,*f2,*f3,*f4;
+	Proc *p = t->getProc();
+	pid_t pid = p->getPid();
+	OpenFile *f1,*f2,*f3;
+	OpenFile *d1,*d2;
 
 	test_caseStart("Testing reference counting of device/channel nodes");
 	checkMemoryBefore(false);
@@ -279,26 +282,117 @@ static void test_vfs_node_dev_refs() {
 	test_assertSize(f1->getNode()->getRefCount(),1);
 
 	test_assertInt(VFS::openPath(pid,VFS_MSGS,0,"/dev/foo",NULL,&f2),0);
+	d1 = FileDesc::request(p,3);
+	test_assertPtr(d1->getNode(),f2->getNode());
 	test_assertSize(f1->getNode()->getRefCount(),2);
-	test_assertSize(f2->getNode()->getRefCount(),2);
+	test_assertSize(f2->getNode()->getRefCount(),3);
 
 	test_assertInt(VFS::openPath(pid,VFS_MSGS,0,"/dev/foo",NULL,&f3),0);
-	test_assertSize(f1->getNode()->getRefCount(),3);
-	test_assertSize(f3->getNode()->getRefCount(),2);
+	d2 = FileDesc::request(p,4);
+	test_assertPtr(d2->getNode(),f3->getNode());
 
-	f1->close();
-	test_assertSize(f1->getNode()->getRefCount(),2);
-	test_assertSize(f2->getNode()->getRefCount(),1);
-	test_assertSize(f3->getNode()->getRefCount(),1);
-	test_assertInt(VFS::openPath(pid,VFS_MSGS,0,"/dev/foo",NULL,&f4),-ENOENT);
+	/* 2 channels; 2 files each */
+	test_assertSize(f1->getNode()->getRefCount(),3);
+	test_assertSize(f3->getNode()->getRefCount(),3);
+	test_assertSize(VFSNode::getNodeCount(),nodesBefore + 3);
 
 	f3->close();
-	test_assertSize(f1->getNode()->getRefCount(),1);
-	test_assertSize(f2->getNode()->getRefCount(),1);
+	/* 2 channels; d1=2 files, d2=1 file */
+	test_assertSize(f1->getNode()->getRefCount(),3);
+	test_assertSize(f2->getNode()->getRefCount(),3);
+	test_assertSize(d2->getNode()->getRefCount(),2);
+	test_assertSize(VFSNode::getNodeCount(),nodesBefore + 3);
+
+	d2->close();
+	FileDesc::unassoc(p,4);
+	/* 1 channel; d1=2 files, d2 gone */
+	test_assertSize(f1->getNode()->getRefCount(),2);
+	test_assertSize(f2->getNode()->getRefCount(),3);
+	test_assertSize(VFSNode::getNodeCount(),nodesBefore + 2);
 
 	f2->close();
+	/* 1 channel; d1=1 file */
+	test_assertSize(f1->getNode()->getRefCount(),2);
+	test_assertSize(d1->getNode()->getRefCount(),2);
+	test_assertSize(VFSNode::getNodeCount(),nodesBefore + 2);
 
-	test_assertSize(nodesBefore,VFSNode::getNodeCount());
+	d1->close();
+	FileDesc::unassoc(p,3);
+	/* 0 channels */
+	test_assertSize(f1->getNode()->getRefCount(),1);
+	test_assertSize(VFSNode::getNodeCount(),nodesBefore + 1);
+
+	test_assertInt(VFS::openPath(pid,VFS_MSGS,0,"/dev/foo",NULL,&f2),0);
+	d1 = FileDesc::request(p,3);
+	/* 1 channel; d1=2 files */
+	test_assertPtr(d1->getNode(),f2->getNode());
+	test_assertSize(f1->getNode()->getRefCount(),2);
+	test_assertSize(f2->getNode()->getRefCount(),3);
+	test_assertSize(VFSNode::getNodeCount(),nodesBefore + 2);
+
+	d1->close();
+	FileDesc::unassoc(p,3);
+	/* 1 channel; d1=1 file */
+	test_assertSize(f1->getNode()->getRefCount(),2);
+	test_assertSize(f2->getNode()->getRefCount(),2);
+	test_assertSize(VFSNode::getNodeCount(),nodesBefore + 2);
+
+	f2->close();
+	/* 0 channels */
+	test_assertSize(f1->getNode()->getRefCount(),1);
+	test_assertSize(VFSNode::getNodeCount(),nodesBefore + 1);
+
+	test_assertInt(VFS::openPath(pid,VFS_MSGS,0,"/dev/foo",NULL,&f2),0);
+	d1 = FileDesc::request(p,3);
+	/* 1 channel; d1=2 files */
+	test_assertPtr(d1->getNode(),f2->getNode());
+	test_assertSize(f1->getNode()->getRefCount(),2);
+	test_assertSize(f2->getNode()->getRefCount(),3);
+	test_assertSize(VFSNode::getNodeCount(),nodesBefore + 2);
+
+	f1->close();
+	/* 1 channel; d1=2 files */
+	test_assertSize(f2->getNode()->getRefCount(),2);
+	test_assertSize(VFSNode::getNodeCount(),nodesBefore + 2);
+
+	d1->close();
+	FileDesc::unassoc(p,3);
+	/* 1 channel; d1=1 file */
+	test_assertSize(f2->getNode()->getRefCount(),1);
+	test_assertSize(VFSNode::getNodeCount(),nodesBefore + 2);
+
+	f2->close();
+	/* 0 channels */
+	test_assertSize(VFSNode::getNodeCount(),nodesBefore);
+
+	test_assertInt(VFS::openPath(pid,VFS_MSGS | VFS_WRITE,0,"/dev",NULL,&f2),0);
+	test_assertInt(f2->createdev("foo",0777,DEV_TYPE_BLOCK,DEV_CLOSE,&f1),0);
+	f2->close();
+	test_assertSize(f1->getNode()->getRefCount(),1);
+
+	test_assertInt(VFS::openPath(pid,VFS_MSGS,0,"/dev/foo",NULL,&f2),0);
+	d1 = FileDesc::request(p,3);
+	/* 1 channel; d1=2 files */
+	test_assertPtr(d1->getNode(),f2->getNode());
+	test_assertSize(f1->getNode()->getRefCount(),2);
+	test_assertSize(f2->getNode()->getRefCount(),3);
+	test_assertSize(VFSNode::getNodeCount(),nodesBefore + 2);
+
+	d1->close();
+	FileDesc::unassoc(p,3);
+	/* 1 channel; d1=1 file */
+	test_assertSize(f2->getNode()->getRefCount(),2);
+	test_assertSize(VFSNode::getNodeCount(),nodesBefore + 2);
+
+	f1->close();
+	/* 1 channel; d1=1 file (no change; chan already destroyed) */
+	test_assertSize(f2->getNode()->getRefCount(),2);
+	test_assertSize(VFSNode::getNodeCount(),nodesBefore + 2);
+
+	f2->close();
+	/* 0 channels */
+	test_assertSize(VFSNode::getNodeCount(),nodesBefore);
+
 	checkMemoryAfter(false);
 	test_caseSucceeded();
 }

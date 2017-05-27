@@ -162,6 +162,7 @@ private:
 	int fd;
 	tid_t handler;
 	bool closed;
+	bool driver_gone;
 	void *shmem;
 	size_t shmemSize;
 	/* a list for sending messages to the device */

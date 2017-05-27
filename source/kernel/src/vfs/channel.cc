@@ -45,13 +45,11 @@ VFSChannel::VFSChannel(const fs::User &u,VFSNode *p,bool &success)
 		/* but in order to allow devices to be created by non-root users, give permissions for everyone */
 		/* otherwise, if root uses that device, the driver is unable to open this channel. */
 		: VFSNode(u,generateId(),MODE_TYPE_CHANNEL | 0777,success), fd(-1),
-		  handler(), closed(false),
+		  handler(), closed(false), driver_gone(false),
 		  shmem(NULL), shmemSize(0), sendList(), recvList() {
 	if(!success)
 		return;
 
-	/* auto-destroy on the last close() */
-	refCount--;
 	append(p);
 
 	/* ensure that we don't do that in parallel with VFSDevice::bindto */
@@ -141,19 +139,28 @@ error:
 }
 
 void VFSChannel::close(OpenFile *file,int msgid) {
+	ushort remRefs;
+
 	if(!isAlive())
-		unref();
+		remRefs = unref();
 	else {
+		/* if this is the driver, destroy it */
 		if(file->isDevice()) {
 			Sched::wakeup(EV_RECEIVED_MSG,(evobj_t)this);
-			destroy();
+			remRefs = destroy();
+			driver_gone = true;
 		}
-		/* if there is only the device left, do the real close */
-		else if(unref() == 1) {
+		/* if there is only the default ref and the drivers left, do the real close */
+		else if((remRefs = unref()) == 2) {
 			send(0,msgid,NULL,0,NULL,0);
 			closed = true;
 		}
 	}
+
+	/* auto destroy if only the default ref is left. if the device was destroyed, the default ref
+	 * is already gone. */
+	if(driver_gone && remRefs == 1)
+		unref();
 }
 
 off_t VFSChannel::seek(off_t position,off_t offset,uint whence) const {

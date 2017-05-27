@@ -87,6 +87,7 @@ void FileDesc::destroy(Proc *p) {
 	}
 	Cache::free(p->fileDescs);
 	p->fileDescsSize = 0;
+	p->fileDescs = NULL;
 	p->unlock(PLOCK_FDS);
 }
 
@@ -106,6 +107,8 @@ int FileDesc::doAssoc(Proc *p,OpenFile *file) {
 		}
 	}
 
+	if(p->fileDescsSize == 0)
+		return -EDESTROYED;
 	if(p->fileDescsSize == MAX_FD_COUNT)
 		return -EMFILE;
 	fds = (OpenFile**)Cache::realloc(p->fileDescs,p->fileDescsSize * sizeof(OpenFile*) * 2);

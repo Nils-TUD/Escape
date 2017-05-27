@@ -101,6 +101,9 @@ int Syscalls::bindto(Thread *t,IntrptStackFrame *stack) {
 	tid_t tid = SYSC_ARG2(stack);
 	Proc *p = t->getProc();
 
+	if(EXPECT_FALSE(!t->isSameProcess(tid)))
+		SYSC_ERROR(stack,-EINVAL);
+
 	ScopedFile file(p,fd);
 	int res = EXPECT_TRUE(file) ? file->bindto(tid) : -EBADF;
 	SYSC_RESULT(stack,res);

@@ -284,6 +284,8 @@ static int headerThread(A_UNUSED void *arg) {
 				}
 				catch(const std::exception &e) {
 					printe("headerThread: %s",e.what());
+					kill(getpid(),SIGINT);
+					break;
 				}
 			}
 		}

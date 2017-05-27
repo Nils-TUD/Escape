@@ -371,6 +371,12 @@ public:
 	IntrptStackFrame *getUserState() const;
 
 	/**
+	 * @param tid the thread id
+	 * @return true if the given thread belongs to the same process as this one
+	 */
+	bool isSameProcess(tid_t tid);
+
+	/**
 	 * Retrieves the range of the stack with given number.
 	 *
 	 * @param start will be set to the start-address (may be NULL)

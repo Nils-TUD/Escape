@@ -106,6 +106,16 @@ Thread *ThreadBase::createInitial(Proc *p) {
 	return t;
 }
 
+bool ThreadBase::isSameProcess(tid_t tid) {
+	const Thread *t = Thread::getRef(tid);
+	if(t == NULL)
+		return false;
+
+	bool same = t->getTid() == getTid() || t->getProc()->getPid() == getProc()->getPid();
+	Thread::relRef(t);
+	return same;
+}
+
 int ThreadBase::extendStack(uintptr_t address) {
 	Thread *t = Thread::getRunning();
 	int res = 0;

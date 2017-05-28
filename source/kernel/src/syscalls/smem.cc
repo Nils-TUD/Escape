@@ -188,6 +188,8 @@ int Syscalls::mmapphys(Thread *t,IntrptStackFrame *stack) {
 	if(UserAccess::readVar(&physCpy,phys) < 0)
 		SYSC_ERROR(stack,-EFAULT);
 
+	if(bytes == 0)
+		SYSC_ERROR(stack,-EINVAL);
 	/* ensure that its allowed to map this area (if the address is specified) */
 	if(EXPECT_FALSE((flags & MAP_PHYS_MAP) && !PhysMem::canMap(physCpy,bytes)))
 		SYSC_ERROR(stack,-EFAULT);

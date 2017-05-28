@@ -127,7 +127,12 @@ int main() {
 	if(startthread(refreshThread,NULL) < 0)
 		error("Unable to start refresh thread");
 
-	int res = app->run();
+	int res = 1;
+	try {
+		res = app->run();
+	}
+	catch(...) {
+	}
 
 	run = false;
 	kill(getpid(),SIGUSR2);

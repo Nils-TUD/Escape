@@ -27,8 +27,8 @@
 
 #define PACKET_COUNT	10000
 
-static size_t sizes[] = {0x1000,0x2000,0x4000,0x8000,0x10000,0x20000,0x40000,0x80000,0x100000};
-static char buffer[0x100000];
+static size_t sizes[] = {0x1000,0x2000,0x4000,0x8000,0x10000,0x20000,0x40000};
+static char buffer[0x40000];
 
 int mod_writenull(A_UNUSED int argc,A_UNUSED char **argv) {
 	uint64_t times[ARRAY_SIZE(sizes)] = {0};

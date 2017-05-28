@@ -179,6 +179,8 @@ int VFSDevice::send(VFSChannel *chan,ushort flags,msgid_t id,USER const void *da
 
 	if(EXPECT_FALSE(!isAlive()))
 		return -EDESTROYED;
+	if(EXPECT_FALSE(size1 > VFSChannel::Message::MAX_SIZE))
+		return -EINVAL;
 
 	/* devices write to the receive-list (which will be read by other processes) */
 	if(flags & VFS_DEVICE) {
@@ -200,6 +202,11 @@ int VFSDevice::send(VFSChannel *chan,ushort flags,msgid_t id,USER const void *da
 	}
 
 	if(EXPECT_FALSE(data2)) {
+		if(EXPECT_FALSE(size2 > VFSChannel::Message::MAX_SIZE)) {
+			res = -EINVAL;
+			goto errorMsg1;
+		}
+
 		msg2 = new (size2) VFSChannel::Message(size2);
 		if(EXPECT_FALSE(msg2 == NULL)) {
 			res = -ENOMEM;

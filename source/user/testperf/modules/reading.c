@@ -30,10 +30,10 @@
 
 #include "../modules.h"
 
-#define MAX_PACKET_SIZE		(1024 * 1024)
+#define MAX_PACKET_SIZE		0x40000
 #define PACKET_COUNT		10000
 
-static size_t sizes[] = {0x1000,0x2000,0x4000,0x8000,0x10000,0x20000,0x40000,0x80000,0x100000};
+static size_t sizes[] = {0x1000,0x2000,0x4000,0x8000,0x10000,0x20000,0x40000};
 static char buffer[MAX_PACKET_SIZE];
 
 static void do_read(const char *path,bool useshm) {

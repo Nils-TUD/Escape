@@ -34,8 +34,8 @@
 
 typedef ssize_t (*test_func)(int fd,void *buf,size_t count);
 
-static size_t sizes[] = {0x1000,0x2000,0x4000,0x8000,0x10000,0x20000,0x40000,0x80000,0x100000};
-static char buffer[0x100000];
+static size_t sizes[] = {0x1000,0x2000,0x4000,0x8000,0x10000,0x20000,0x40000};
+static char buffer[0x40000];
 
 static void test_openseekclose(const char *path) {
 	uint64_t openTotal = 0, closeTotal = 0, seekTotal = 0;

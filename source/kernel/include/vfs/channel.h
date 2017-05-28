@@ -29,6 +29,8 @@ class VFSChannel : public VFSNode {
 	friend class VFSDevice;
 
 	struct Message : public esc::SListItem {
+		static const size_t MAX_SIZE	= 256 * 1024;
+
 		static void *operator new(size_t size, size_t msgSize) {
 			return Cache::alloc(size + msgSize);
 		}

@@ -276,6 +276,8 @@ ssize_t VFSChannel::write(OpenFile *file,USER const void *buffer,off_t offset,si
 
 	if((res = isSupported(DEV_WRITE)) < 0)
 		return res;
+	if(!buffer)
+		return -EINVAL;
 
 	/* send msg and data to driver */
 	ib << esc::FileWrite::Request(offset,count,useshm ? ((uintptr_t)buffer - (uintptr_t)shmem) : -1);

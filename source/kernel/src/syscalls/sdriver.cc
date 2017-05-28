@@ -116,12 +116,15 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 	size_t size = SYSC_ARG4(stack);
 	uint flags = SYSC_ARG1(stack) & 0x3;
 	Proc *p = t->getProc();
-	msgid_t mid = *id;
+	msgid_t mid;
 
 	/* validate pointers */
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)id,sizeof(msgid_t))))
 		SYSC_ERROR(stack,-EFAULT);
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)data,size)))
+		SYSC_ERROR(stack,-EFAULT);
+
+	if(EXPECT_FALSE(UserAccess::readVar(&mid,id) < 0))
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* get client */
@@ -138,6 +141,6 @@ int Syscalls::getwork(Thread *t,IntrptStackFrame *stack) {
 	int res = EXPECT_TRUE(cli) ? cli->receiveMsg(&mid,data,size,VFS_SIGNALS) : -EBADF;
 	if(EXPECT_FALSE(res < 0))
 		SYSC_ERROR(stack,res);
-	*id = mid;
+	UserAccess::writeVar(id,mid);
 	SYSC_SUCCESS(stack,clifd);
 }

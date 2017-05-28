@@ -38,8 +38,8 @@ public:
 	}
 
 	static ssize_t strlen(USER const char *str,size_t max = 0);
-	static int strnzcpy(char *dst,USER const char *str,size_t size);
-	static void copyByte(char *dst,const char *src);
+	static int strnzcpy(USER char *dst,USER const char *str,size_t size);
+	static void copyByte(USER char *dst,USER const char *src);
 
 private:
 	static int copy(char *dst,const char *src,size_t size,size_t offset);

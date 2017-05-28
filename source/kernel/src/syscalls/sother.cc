@@ -61,7 +61,7 @@ int Syscalls::sysconfstr(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	const char *res = Config::getStr(id);
 	if(!res)
 		SYSC_ERROR(stack,-EINVAL);
-	strnzcpy(buf,res,len);
+	UserAccess::strnzcpy(buf,res,len);
 	SYSC_SUCCESS(stack,0);
 }
 
@@ -82,6 +82,10 @@ int Syscalls::tsctotime(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)tsc,sizeof(uint64_t))))
 		SYSC_ERROR(stack,-EINVAL);
-	*tsc = Timer::cyclesToTime(*tsc);
+
+	uint64_t ktsc;
+	if(EXPECT_FALSE(UserAccess::readVar(&ktsc,tsc) < 0))
+		SYSC_ERROR(stack,-EFAULT);
+	UserAccess::writeVar(tsc,Timer::cyclesToTime(ktsc));
 	SYSC_SUCCESS(stack,0);
 }

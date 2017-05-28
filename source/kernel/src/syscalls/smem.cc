@@ -55,14 +55,18 @@ int Syscalls::mmap(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)p,sizeof(*p))))
 		SYSC_ERROR(stack,-EFAULT);
 
-	uintptr_t addr = (uintptr_t)p->addr;
-	size_t byteCount = p->length;
-	size_t loadCount = p->loadLength;
-	int prot = p->prot;
-	int flags = p->flags;
-	int fd = p->fd;
-	off_t binOffset = p->offset;
 	OpenFile *f = NULL;
+	struct mmap_params kp;
+	if(EXPECT_FALSE(UserAccess::read(&kp,p,sizeof(kp)) < 0))
+		SYSC_ERROR(stack,-EFAULT);
+
+	uintptr_t addr = (uintptr_t)kp.addr;
+	size_t byteCount = kp.length;
+	size_t loadCount = kp.loadLength;
+	int prot = kp.prot;
+	int flags = kp.flags;
+	int fd = kp.fd;
+	off_t binOffset = kp.offset;
 
 #if DISABLE_DEMLOAD
 	flags |= MAP_POPULATE;
@@ -177,9 +181,11 @@ int Syscalls::mmapphys(Thread *t,IntrptStackFrame *stack) {
 	size_t bytes = SYSC_ARG2(stack);
 	size_t align = SYSC_ARG3(stack);
 	int flags = SYSC_ARG4(stack);
-	uintptr_t physCpy = *phys;
+	uintptr_t physCpy;
 
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)phys,sizeof(uintptr_t))))
+		SYSC_ERROR(stack,-EFAULT);
+	if(UserAccess::readVar(&physCpy,phys) < 0)
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* ensure that its allowed to map this area (if the address is specified) */
@@ -196,6 +202,7 @@ int Syscalls::mmapphys(Thread *t,IntrptStackFrame *stack) {
 		t->discardFrames();
 	if(EXPECT_FALSE(addr == 0))
 		SYSC_ERROR(stack,-ENOMEM);
-	*phys = physCpy;
+	if(UserAccess::writeVar(phys,physCpy) < 0)
+		SYSC_ERROR(stack,-EFAULT);
 	SYSC_SUCCESS(stack,addr);
 }

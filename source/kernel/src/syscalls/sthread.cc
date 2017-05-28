@@ -62,7 +62,7 @@ int Syscalls::getcycles(Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)res,sizeof(uint64_t))))
 		SYSC_ERROR(stack,-EFAULT);
 
-	*res = t->getStats().curCycleCount;
+	UserAccess::writeVar(res,t->getStats().curCycleCount);
 	SYSC_SUCCESS(stack,0);
 }
 
@@ -154,8 +154,8 @@ int Syscalls::semcrtirq(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,res);
 
 	if(msiaddr) {
-		*msiaddr = kmsiaddr;
-		*msival = kmsival;
+		UserAccess::writeVar(msiaddr,kmsiaddr);
+		UserAccess::writeVar(msival,kmsival);
 	}
 	SYSC_SUCCESS(stack,res);
 }

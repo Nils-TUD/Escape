@@ -90,7 +90,8 @@ int Syscalls::fstat(Thread *t,IntrptStackFrame *stack) {
 
 	ScopedFile file(p,fd);
 	int res = EXPECT_TRUE(file) ? file->fstat(&kinfo) : -EBADF;
-	UserAccess::write(info,&kinfo,sizeof(kinfo));
+	if(UserAccess::write(info,&kinfo,sizeof(kinfo)) < 0)
+		SYSC_ERROR(stack,-EFAULT);
 	SYSC_RESULT(stack,res);
 }
 
@@ -125,8 +126,10 @@ int Syscalls::utime(Thread *t,IntrptStackFrame *stack) {
 		SYSC_ERROR(stack,-EFAULT);
 
 	/* populate kutimes */
-	if(utimes)
-		memcpy(&kutimes,utimes,sizeof(*utimes));
+	if(utimes) {
+		if(UserAccess::read(&kutimes,utimes,sizeof(*utimes)) < 0)
+			SYSC_ERROR(stack,-EFAULT);
+	}
 	else
 		kutimes.actime = kutimes.modtime = Timer::getTime();
 
@@ -156,8 +159,8 @@ int Syscalls::tell(Thread *t,IntrptStackFrame *stack) {
 	ScopedFile file(p,fd);
 	if(EXPECT_FALSE(!file))
 		SYSC_ERROR(stack,-EBADF);
-	/* this may fail, but we're requested the file, so it will be released on our termination */
-	*pos = file->tell();
+	if(UserAccess::writeVar(pos,file->tell()) < 0)
+		SYSC_ERROR(stack,-EFAULT);
 	SYSC_SUCCESS(stack,0);
 }
 
@@ -244,8 +247,14 @@ int Syscalls::receive(Thread *t,IntrptStackFrame *stack) {
 	void *data = (void*)SYSC_ARG3(stack);
 	size_t size = SYSC_ARG4(stack);
 	Proc *p = t->getProc();
-	/* prevent a pagefault during the operation */
-	msgid_t mid = id != NULL ? *id : 0;
+
+	msgid_t mid = 0;
+	if(id) {
+		if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)id,sizeof(msgid_t))))
+			SYSC_ERROR(stack,-EFAULT);
+		if(EXPECT_FALSE(UserAccess::readVar(&mid,id) < 0))
+			SYSC_ERROR(stack,-EFAULT);
+	}
 
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)data,size)))
 		SYSC_ERROR(stack,-EFAULT);
@@ -253,7 +262,7 @@ int Syscalls::receive(Thread *t,IntrptStackFrame *stack) {
 	ScopedFile file(p,fd);
 	ssize_t res = EXPECT_TRUE(file) ? file->receiveMsg(&mid,data,size,VFS_SIGNALS) : -EBADF;
 	if(id)
-		*id = mid;
+		UserAccess::writeVar(id,mid);
 	if(res > 0)
 		p->getStats().input += res;
 	SYSC_RESULT(stack,res);
@@ -265,11 +274,14 @@ int Syscalls::sendrecv(Thread *t,IntrptStackFrame *stack) {
 	void *data = (void*)SYSC_ARG3(stack);
 	size_t size = SYSC_ARG4(stack);
 	Proc *p = t->getProc();
-	msgid_t mid = *id;
+	msgid_t mid;
 
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)id,sizeof(id))))
 		SYSC_ERROR(stack,-EFAULT);
 	if(EXPECT_FALSE(!PageDir::isInUserSpace((uintptr_t)data,size)))
+		SYSC_ERROR(stack,-EFAULT);
+
+	if(EXPECT_FALSE(UserAccess::readVar(&mid,id) < 0))
 		SYSC_ERROR(stack,-EFAULT);
 
 	ScopedFile file(p,fd);
@@ -288,7 +300,7 @@ int Syscalls::sendrecv(Thread *t,IntrptStackFrame *stack) {
 	/* receive response */
 	mid = res;
 	res = file->receiveMsg(&mid,data,size,VFS_SIGNALS);
-	*id = mid;
+	UserAccess::writeVar(id,mid);
 	if(res > 0) {
 		p->getStats().output += size;
 		p->getStats().input += res;

@@ -38,7 +38,7 @@
 InterruptsBase::Interrupt InterruptsBase::intrptList[] = {
 	/* 0x00 */	{Interrupts::defHandler,	"Power failure",		0},
 	/* 0x01 */	{Interrupts::defHandler,	"Memory parity error",	0},
-	/* 0x02 */	{Interrupts::defHandler,	"Nonexistent memory",	0},
+	/* 0x02 */	{Interrupts::exNonExMem,	"Nonexistent memory",	0},
 	/* 0x03 */	{Interrupts::defHandler,	"Reboot",				0},
 	/* 0x04 */	{Interrupts::defHandler,	"??",					0},
 	/* 0x05 */	{Interrupts::defHandler,	"??",					0},
@@ -179,6 +179,10 @@ void Interrupts::defHandler(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 			irqNo,intrptList[irqNo & 0x3f].name,rww);
 }
 
+void Interrupts::exNonExMem(A_UNUSED IntrptStackFrame *stack,int irqNo) {
+	termUser(irqNo,-EFAULT);
+}
+
 void Interrupts::exProtFault(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 	uintptr_t pfaddr = CPU::getFaultLoc();
 
@@ -203,6 +207,12 @@ void Interrupts::exProtFault(A_UNUSED IntrptStackFrame *stack,int irqNo) {
 	/* ok, now lets check if the thread wants more stack-pages */
 	if(EXPECT_TRUE(res == -EFAULT && (res = Thread::extendStack(pfaddr)) == 0))
 		return;
+
+	termUser(irqNo,res);
+}
+
+void Interrupts::termUser(int irqNo,int res) {
+	uintptr_t pfaddr = CPU::getFaultLoc();
 
 	/* pagefault in kernel? */
 	Thread *t = Thread::getRunning();

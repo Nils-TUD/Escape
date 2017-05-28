@@ -80,6 +80,7 @@ class Interrupts : public InterruptsBase {
 	static bool dynTrap(IntrptStackFrame *stack,int irqNo) asm("intrpt_dynTrap");
 
 	static void defHandler(IntrptStackFrame *stack,int irqNo);
+	static void exNonExMem(IntrptStackFrame *stack,int irqNo);
 	static void exProtFault(IntrptStackFrame *stack,int irqNo);
 	static void irqKB(IntrptStackFrame *stack,int irqNo);
 	static void irqTimer(IntrptStackFrame *stack,int irqNo);
@@ -87,6 +88,7 @@ class Interrupts : public InterruptsBase {
 	static void irqTermRcvr(IntrptStackFrame *stack,int irqNo);
 	static void irqTermXmtr(IntrptStackFrame *stack,int irqNo);
 
+	static void termUser(int irqNo,int res);
 public:
 	static void printStackFrame(OStream &os,const IntrptStackFrame *stack);
 };

@@ -102,7 +102,7 @@ int Boot::init(A_UNUSED IntrptStackFrame *stack) {
 	/* we have to do the forking here because we have to leave to userland afterwards (the child
 	 * gets our kernel stack). furthermore, we can only do one fork at a time */
 
-	switch(initPhase) {
+	switch(initPhase++) {
 		case 0:
 			if(Proc::clone(P_KERNEL) == 0) {
 				/* the child shouldn't try again */
@@ -127,6 +127,5 @@ int Boot::init(A_UNUSED IntrptStackFrame *stack) {
 			break;
 		}
 	}
-	initPhase++;
 	return 0;
 }

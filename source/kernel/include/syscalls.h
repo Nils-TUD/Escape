@@ -131,7 +131,6 @@ private:
 	static int open(Thread *t,IntrptStackFrame *stack);
 	static int fcntl(Thread *t,IntrptStackFrame *stack);
 	static int tell(Thread *t,IntrptStackFrame *stack);
-	static int eof(Thread *t,IntrptStackFrame *stack);
 	static int seek(Thread *t,IntrptStackFrame *stack);
 	static int read(Thread *t,IntrptStackFrame *stack);
 	static int write(Thread *t,IntrptStackFrame *stack);

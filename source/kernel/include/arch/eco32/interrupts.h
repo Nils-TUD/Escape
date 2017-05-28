@@ -72,10 +72,13 @@ class Interrupts : public InterruptsBase {
 	static void defHandler(Thread *t,IntrptStackFrame *stack);
 	static void debug(Thread *t,IntrptStackFrame *stack);
 	static void exTrap(Thread *t,IntrptStackFrame *stack);
+	static void exBusTimeout(Thread *t,IntrptStackFrame *stack);
 	static void exPageFault(Thread *t,IntrptStackFrame *stack);
 	static void irqTimer(Thread *t,IntrptStackFrame *stack);
 	static void irqKB(Thread *t,IntrptStackFrame *stack);
 	static void termRcvr(Thread *t,IntrptStackFrame *stack);
 	static void termXmtr(Thread *t,IntrptStackFrame *stack);
 	static void irqDisk(Thread *t,IntrptStackFrame *stack);
+
+	static void termUser(Thread *t,IntrptStackFrame *stack,const char *type,int res);
 };

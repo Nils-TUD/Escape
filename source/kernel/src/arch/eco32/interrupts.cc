@@ -52,7 +52,7 @@ InterruptsBase::Interrupt InterruptsBase::intrptList[] = {
 	/* 0x0D */	{Interrupts::defHandler,	"??",						0},
 	/* 0x0E */	{Interrupts::irqTimer,		"Timer",					0},
 	/* 0x0F */	{Interrupts::defHandler,	"??",						0},
-	/* 0x10 */	{Interrupts::defHandler,	"Bus timeout ex.",			0},
+	/* 0x10 */	{Interrupts::exBusTimeout,	"Bus timeout ex.",			0},
 	/* 0x11 */	{Interrupts::defHandler,	"Ill. instr. ex.",			0},
 	/* 0x12 */	{Interrupts::defHandler,	"Prv. instr. ex.",			0},
 	/* 0x13 */	{Interrupts::defHandler,	"Divide ex.",				0},
@@ -140,7 +140,11 @@ void Interrupts::debug(A_UNUSED Thread *t,A_UNUSED IntrptStackFrame *stack) {
 	Console::start(NULL);
 }
 
-void Interrupts::exPageFault(A_UNUSED Thread *t,IntrptStackFrame *stack) {
+void Interrupts::exBusTimeout(Thread *t,IntrptStackFrame *stack) {
+	termUser(t,stack,"bus timeout",-EFAULT);
+}
+
+void Interrupts::exPageFault(Thread *t,IntrptStackFrame *stack) {
 #if DEBUG_PAGEFAULTS
 	Log::get().writef("Page fault for %p @ %p, process %d:%s\n",pfaddr,
 			stack->r[30],t->getProc()->getPid(),t->getProc()->getProgram());
@@ -154,18 +158,22 @@ void Interrupts::exPageFault(A_UNUSED Thread *t,IntrptStackFrame *stack) {
 	if(EXPECT_TRUE(res == -EFAULT && (res = Thread::extendStack(pfaddr)) == 0))
 		return;
 
+	termUser(t,stack,"page fault",res);
+}
+
+void Interrupts::termUser(Thread *t,IntrptStackFrame *stack,const char *type,int res) {
 	if(!stack->fromUserSpace()) {
 		/* skip that instruction */
 		stack->r[30] += 4;
 	}
 
 	pid_t pid = Proc::getRunning();
-	Log::get().writef("proc %d, page fault for address %p @ %p\n",pid,pfaddr,stack->r[30]);
+	Log::get().writef("proc %d, %s for address %p @ %p\n",pid,type,pfaddr,stack->r[30]);
 	Log::get().writef("Unable to resolve because: %s (%d)\n",strerror(res),res);
 #if PANIC_ON_PAGEFAULT
 	if(res != -ENOMEM) {
 		Util::setpf(pfaddr,stack->r[30]);
-		Util::panic("proc %d: page fault for address %p @ %p\n",pid,pfaddr,stack->r[30]);
+		Util::panic("proc %d: %s for address %p @ %p\n",pid,type,pfaddr,stack->r[30]);
 	}
 #endif
 	Signals::addSignalFor(t,SIGSEGV);

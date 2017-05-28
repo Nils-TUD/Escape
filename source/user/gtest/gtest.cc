@@ -76,7 +76,14 @@ int main() {
 	addWindow(app,win8());
 	addWindow(app,win9());
 	addWindow(app,win10());
-	int res = app->run();
+
+	int res = 1;
+	try {
+		res = app->run();
+	}
+	catch(...) {
+	}
+
 	run = false;
 	join(0);
 	return res;

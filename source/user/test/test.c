@@ -58,6 +58,7 @@ static sTestModule modules[] = {
 	{"rwlock",mod_rwlock},
 	{"mutex",mod_mutex},
 	{"zombies",mod_zombies},
+	{"syscalls",mod_syscalls},
 };
 
 int main(int argc,char *argv[]) {

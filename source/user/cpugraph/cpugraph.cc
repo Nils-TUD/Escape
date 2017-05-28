@@ -119,7 +119,13 @@ int main() {
 
 	win->show(true);
 	app->addWindow(win);
-	int res = app->run();
+
+	int res = 1;
+	try {
+		res = app->run();
+	}
+	catch(...) {
+	}
 
 	kill(getpid(),SIGUSR2);
 	join(tid);

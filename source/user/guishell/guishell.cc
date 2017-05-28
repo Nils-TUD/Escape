@@ -109,7 +109,14 @@ static int guiProc(const char *devName) {
 	w->show(true);
 	w->requestFocus(sh.get());
 	app->addWindow(w);
-	int res = app->run();
+
+	int res = 1;
+	try {
+		res = app->run();
+	}
+	catch(...) {
+	}
+
 	sh->sendEOF();
 	// notify the other thread and wait for him
 	if(kill(getpid(),SIGUSR2) < 0)

@@ -23,7 +23,7 @@
 #include <intrptstackframe.h>
 #include <semaphore.h>
 
-#define PANIC_ON_PAGEFAULT	1
+#define PANIC_ON_PAGEFAULT	0
 
 class OStream;
 class Thread;

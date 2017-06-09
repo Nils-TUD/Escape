@@ -30,9 +30,11 @@
 #include <sys/esccodes.h>
 #include <sys/keycodes.h>
 #include <sys/thread.h>
+#include <sys/proc.h>
 #include <usergroup/usergroup.h>
 #include <assert.h>
 #include <mutex>
+#include <signal.h>
 #include <stdlib.h>
 #include <string>
 
@@ -196,7 +198,15 @@ static void display(void) {
 	}
 }
 
+static void sighdl(int) {
+	signal(SIGINT,sighdl);
+	run = false;
+}
+
 static int refreshThread(void*) {
+	if(signal(SIGINT,sighdl) == SIG_ERR)
+		error("Unable to set signal handler");
+
 	while(run) {
 		display();
 		sleep(1);
@@ -216,7 +226,10 @@ int main(void) {
 	if(tid < 0)
 		exitmsg("startthread");
 
-	FStream vt(STDIN_FILENO,"r");
+	FStream vt(STDIN_FILENO,"rs");
+
+	if(signal(SIGINT,sighdl) == SIG_ERR)
+		error("Unable to set signal handler");
 
 	// read from vterm
 	char c;
@@ -251,6 +264,7 @@ int main(void) {
 				display();
 		}
 	}
+	kill(getpid(),SIGINT);
 	join(tid);
 
 	vterm.setFlag(esc::VTerm::FL_NAVI,true);

@@ -279,8 +279,10 @@ int vtctrl_control(sVTerm *vt,uint cmd,int arg1,int arg2) {
 				}
 				free(vt->screenBackup);
 				vt->screenBackup = NULL;
-				vt->col = vt->backupCol;
-				vt->row = vt->backupRow;
+				vt->col = esc::Util::min(vt->backupCol,vt->cols - 1);
+				if(vt->readLine)
+					vt->col = esc::Util::max(vt->rlStartCol,vt->col);
+				vt->row = esc::Util::min(vt->backupRow,vt->rows - 1);
 				vtctrl_markScrDirty(vt);
 			}
 			break;

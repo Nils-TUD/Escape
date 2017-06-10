@@ -56,6 +56,7 @@ int main(int argc,char **argv) {
 		switch(opt) {
 			case 'f': fieldsize = optarg; break;
 			case 's': stonesize = atoi(optarg); break;
+			case 'n': nosound = true; break;
 			default:
 				usage(argv[0]);
 		}

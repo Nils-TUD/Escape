@@ -34,7 +34,7 @@ typedef uint16_t port_t;
 
 class Socket {
 	// this is called in accept, where IPCStream will not close the file, because it hasn't opened it
-	explicit Socket(int f) : _close(true), _is(f), _shm(), _shmfd(-1), _shmsize() {
+	explicit Socket(int f) : _close(true), _is(f), _shm(), _shmsize() {
 	}
 
 public:
@@ -78,7 +78,7 @@ public:
 	explicit Socket(Type type,Protocol proto)
 		// no close by default because the IPCStream will do that already
 		: _close(false), _is(buildPath(type,proto).c_str(),O_RDWRMSG),
-		  _shm(), _shmfd(-1), _shmsize() {
+		  _shm(), _shmsize() {
 	}
 
 	/**
@@ -93,8 +93,8 @@ public:
 	 * Closes the socket
 	 */
 	~Socket() {
-		if(_shmfd != -1)
-			destroybuf(_shm,_shmfd);
+		if(_shm)
+			destroybuf(_shm);
 		if(_close)
 			::close(_is.fd());
 	}
@@ -122,10 +122,10 @@ public:
 	int sharebuf(size_t size) {
 		if(_shmsize)
 			return -EEXIST;
-		_shmfd = ::sharebuf(fd(),size,&_shm,0);
-		if(_shmfd == 0)
+		int res = ::sharebuf(fd(),size,&_shm,0);
+		if(res == 0)
 			_shmsize = size;
-		return _shmfd;
+		return res;
 	}
 
 	/**
@@ -143,7 +143,6 @@ public:
 		if(res == 0) {
 			_shmsize = size;
 			_shm = addr;
-			_shmfd = -1;
 		}
 		return res;
 	}
@@ -323,7 +322,6 @@ private:
 	bool _close;
 	IPCStream _is;
 	void *_shm;
-	int _shmfd;
 	size_t _shmsize;
 };
 

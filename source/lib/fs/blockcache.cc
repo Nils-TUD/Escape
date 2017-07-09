@@ -33,10 +33,10 @@ namespace fs {
 BlockCache::BlockCache(int fd,size_t blocks,size_t bsize)
 		: _blockCacheSize(blocks), _blockSize(bsize), _hashmap(new CBlock*[HASH_SIZE]()),
 		  _oldestBlock(NULL), _newestBlock(NULL), _freeBlocks(NULL),
-		  _blockCache(new CBlock[blocks]), _blockmem(), _blockfd(), _hits(), _misses() {
+		  _blockCache(new CBlock[blocks]), _blockmem(), _hits(), _misses() {
 	size_t i;
 	CBlock *bentry;
-	if((_blockfd = sharebuf(fd,_blockCacheSize * _blockSize,&_blockmem,0)) < 0) {
+	if(sharebuf(fd,_blockCacheSize * _blockSize,&_blockmem,0) < 0) {
 		if(_blockmem == NULL)
 			VTHROW("Unable to create block cache");
 		printe("Unable to share buffer with disk driver");
@@ -56,7 +56,7 @@ BlockCache::BlockCache(int fd,size_t blocks,size_t bsize)
 }
 
 BlockCache::~BlockCache() {
-	destroybuf(_blockmem,_blockfd);
+	destroybuf(_blockmem);
 	delete[] _hashmap;
 	delete[] _blockCache;
 }

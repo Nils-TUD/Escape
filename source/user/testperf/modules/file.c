@@ -79,11 +79,10 @@ static void test_readwrite(const char *path,const char *name,int flags,test_func
 		return;
 	}
 
-	int shmfd;
 	void *shmem;
 	if(!shared)
 		shmem = mmap(NULL,sizeof(buffer),0,PROT_READ | PROT_WRITE,MAP_PRIVATE,-1,0);
-	else if((shmfd = sharebuf(fd,sizeof(buffer),&shmem,0)) < 0)
+	else if(sharebuf(fd,sizeof(buffer),&shmem,0) < 0)
 		printe("Unable to share memory");
 	if(!shmem)
 		error("Unable to map shared memory");
@@ -107,7 +106,7 @@ static void test_readwrite(const char *path,const char *name,int flags,test_func
 	}
 
 	if(shared)
-		destroybuf(shmem,shmfd);
+		destroybuf(shmem);
 	close(fd);
 	for(j = 0; j < ARRAY_SIZE(sizes); ++j) {
 		printf("%s(%3zuK): %6Lu cycles/call, %Lu MB/s (%s)\n",
@@ -164,10 +163,9 @@ static void test_sharebuf(const char *path,size_t bufsize) {
 			return;
 		}
 
-		int shmfd;
 		void *shmem;
 		start = rdtsc();
-		if((shmfd = sharebuf(fd,bufsize,&shmem,0)) < 0)
+		if(sharebuf(fd,bufsize,&shmem,0) < 0)
 			printe("Unable to share memory");
 		end = rdtsc();
 		if(!shmem)
@@ -175,7 +173,7 @@ static void test_sharebuf(const char *path,size_t bufsize) {
 		sharetime += end - start;
 
 		start = rdtsc();
-		destroybuf(shmem,shmfd);
+		destroybuf(shmem);
 		end = rdtsc();
 		destrtime += end - start;
 

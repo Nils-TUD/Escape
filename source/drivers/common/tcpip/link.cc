@@ -34,7 +34,7 @@
 #endif
 
 Link::~Link() {
-	destroybuf(_buffer,_buffd);
+	destroybuf(_buffer);
 }
 
 ssize_t Link::read(void *buffer,size_t size) {

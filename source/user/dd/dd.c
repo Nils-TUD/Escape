@@ -78,13 +78,10 @@ int main(int argc,char *argv[]) {
 	{
 		int shmfd;
 		void *shmem;
-		if((shmfd = sharebuf(infd,bs,&shmem,0)) < 0) {
-			if(shmem == NULL)
-				error("Unable to mmap buffer");
-		}
-		if(shmem) {
-			if(delegate(outfd,shmfd,O_RDONLY,DEL_ARG_SHFILE) < 0) {}
-		}
+		if((shmfd = createbuf(bs,&shmem,0)) < 0)
+			error("Unable to create shared memory");
+		if(delegate(infd,shmfd,O_WRONLY,DEL_ARG_SHFILE) < 0) {}
+		if(delegate(outfd,shmfd,O_RDONLY,DEL_ARG_SHFILE) < 0) {}
 
 		ssize_t result;
 		ullong limit = (ullong)count * bs;
@@ -101,7 +98,8 @@ int main(int argc,char *argv[]) {
 			total += result;
 		}
 
-		destroybuf(shmem,shmfd);
+		destroybuf(shmem);
+		close(shmfd);
 	}
 	end = rdtsc();
 

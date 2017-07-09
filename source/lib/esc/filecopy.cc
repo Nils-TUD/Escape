@@ -42,7 +42,8 @@ FileCopy::FileCopy(size_t bufsize,uint fl)
 }
 
 FileCopy::~FileCopy() {
-	destroybuf(_shm,_shmfd);
+	destroybuf(_shm);
+	close(_shmfd);
 }
 
 void FileCopy::printSize(size_t size) {

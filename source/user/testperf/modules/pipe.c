@@ -40,10 +40,9 @@ static void test_pipe(size_t size) {
 	uint64_t start,end;
 	const char *name;
 	void *buf;
-	int buffd;
 	if(fork() == 0) {
 		close(wfd);
-		if((buffd = sharebuf(rfd,size,&buf,0)) < 0)
+		if(sharebuf(rfd,size,&buf,0) < 0)
 			printe("Unable to share buffer");
 		name = "read";
 		start = rdtsc();
@@ -54,12 +53,12 @@ static void test_pipe(size_t size) {
 			}
 		}
 		end = rdtsc();
-		destroybuf(buf,buffd);
+		destroybuf(buf);
 		close(rfd);
 	}
 	else {
 		close(rfd);
-		if((buffd = sharebuf(wfd,size,&buf,0)) < 0)
+		if(sharebuf(wfd,size,&buf,0) < 0)
 			printe("Unable to share buffer");
 		name = "write";
 		start = rdtsc();
@@ -70,7 +69,7 @@ static void test_pipe(size_t size) {
 			}
 		}
 		end = rdtsc();
-		destroybuf(buf,buffd);
+		destroybuf(buf);
 		close(wfd);
 		waitchild(NULL,-1,0);
 	}

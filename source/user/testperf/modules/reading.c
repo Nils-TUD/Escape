@@ -45,8 +45,7 @@ static void do_read(const char *path,bool useshm) {
 	}
 
 	void *buf = buffer;
-	int buffd;
-	if(useshm && (buffd = sharebuf(fd,MAX_PACKET_SIZE,&buf,0)) < 0)
+	if(useshm && sharebuf(fd,MAX_PACKET_SIZE,&buf,0) < 0)
 		printe("Unable to share buffer");
 
 	for(size_t s = 0; s < ARRAY_SIZE(sizes); ++s) {
@@ -68,7 +67,7 @@ static void do_read(const char *path,bool useshm) {
 	}
 
 	if(useshm)
-		destroybuf(buf,buffd);
+		destroybuf(buf);
 	close(fd);
 
 	for(size_t s = 0; s < ARRAY_SIZE(sizes); ++s) {

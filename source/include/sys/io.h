@@ -315,18 +315,16 @@ int createbuf(size_t size,void **mem,int flags);
  * @param size the size of the buffer
  * @param mem will be set to the buffer address (!= NULL means only the sharing failed)
  * @param flags the flags to pass to mmap (besides MAP_SHARED)
- * @return the file descriptor on success
+ * @return 0 on success
  */
 int sharebuf(int dev,size_t size,void **mem,int flags);
 
 /**
- * Destroys the shared memory file, that has been created by sharebuf. That is, it munmaps the given
- * memory region and closes the file.
+ * Unmaps the shared memory, that has been created by createbuf/sharebuf.
  *
  * @param mem the memory region
- * @param fd the file descriptor
  */
-void destroybuf(void *mem,int fd);
+void destroybuf(void *mem);
 
 /**
  * Duplicates the given file-descriptor

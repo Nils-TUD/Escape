@@ -33,7 +33,7 @@ public:
 	explicit Link(const std::string &n,const char *path)
 		: esc::NIC(path,O_RDWRMSG), _rtid(), _rxpkts(), _txpkts(), _rxbytes(), _txbytes(),
 		  _mtu(getMTU()), _name(n), _status(esc::Net::DOWN), _mac(getMAC()), _ip(), _subnetmask() {
-		_buffd = sharebuf(fd(),mtu(),&_buffer,0);
+		sharebuf(fd(),mtu(),&_buffer,0);
 		if(_buffer == NULL)
 			throw esc::default_error("Not enough memory for buffer",-ENOMEM);
 	}
@@ -109,6 +109,5 @@ private:
 	esc::NIC::MAC _mac;
 	esc::Net::IPv4Addr _ip;
 	esc::Net::IPv4Addr _subnetmask;
-	int _buffd;
 	void *_buffer;
 };

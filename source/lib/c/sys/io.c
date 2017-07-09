@@ -297,12 +297,12 @@ int sharebuf(int dev,size_t size,void **mem,int flags) {
 
 	/* share it with device; if it doesn't work, we don't care here */
 	int res = delegate(dev,fd,O_RDWR,DEL_ARG_SHFILE);
+	close(fd);
 	if(res < 0)
 		return res;
-	return fd;
+	return 0;
 }
 
-void destroybuf(void *mem,int fd) {
+void destroybuf(void *mem) {
 	munmap(mem);
-	close(fd);
 }

@@ -172,11 +172,12 @@ void ThreadBase::doSwitch() {
 		/* lock the FPU so that we can save the FPU-state for the previous process as soon
 		 * as this one wants to use the FPU */
 		FPU::lockFPU();
+
+		n->stats.cycleStart = CPU::rdtsc();
+		uintptr_t pdir = n->getProc()->getPageDir()->getPhysAddr();
+		bool chgpdir = n->getProc() != old->getProc();
 		if(!Thread::save(&old->saveArea)) {
 			/* old thread */
-			n->stats.cycleStart = CPU::rdtsc();
-			uintptr_t pdir = n->getProc()->getPageDir()->getPhysAddr();
-			bool chgpdir = n->getProc() != old->getProc();
 			Thread::resume(pdir,&n->saveArea,&switchLock,chgpdir);
 		}
 	}

@@ -144,15 +144,16 @@ void ThreadBase::doSwitch() {
 	n->stats.schedCount++;
 
 	if(EXPECT_TRUE(n->getTid() != old->getTid())) {
-		if(!Thread::save(&old->saveArea)) {
-			setRunning(n);
-			if(EXPECT_FALSE(PhysMem::shouldSetRegTimestamp()))
-				VirtMem::setTimestamp(n,cycles);
+		setRunning(n);
+		if(EXPECT_FALSE(PhysMem::shouldSetRegTimestamp()))
+			VirtMem::setTimestamp(n,cycles);
 
-			SMP::schedule(n->getCPU(),n,cycles);
-			n->stats.cycleStart = CPU::rdtsc();
-			Thread::resume(n->getProc()->getPageDir()->getPhysAddr() | DIR_MAP_AREA,&n->saveArea,n->kstackFrame);
-		}
+		SMP::schedule(n->getCPU(),n,cycles);
+		n->stats.cycleStart = CPU::rdtsc();
+		uintptr_t pdir = n->getProc()->getPageDir()->getPhysAddr() | DIR_MAP_AREA;
+
+		if(!Thread::save(&old->saveArea))
+			Thread::resume(pdir,&n->saveArea,n->kstackFrame);
 	}
 	else {
 		SMP::schedule(n->getCPU(),n,cycles);

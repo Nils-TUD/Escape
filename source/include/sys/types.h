@@ -22,9 +22,13 @@
 #include <stddef.h>
 
 /* for mmix: ensure that the stdint.h provided by gcc includes our stdint.h */
-#define __STDC_HOSTED__ 1
-#include <stdint.h>
-#undef __STDC_HOSTED__
+#if defined(__mmix__)
+#	define __STDC_HOSTED__ 1
+#	include <stdint.h>
+#	undef __STDC_HOSTED__
+#else
+#	include <stdint.h>
+#endif
 
 #ifndef __cplusplus
 typedef enum {false = 0, true = 1} bool;

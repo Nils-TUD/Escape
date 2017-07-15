@@ -442,7 +442,8 @@ void PhysMem::swapper() {
 		size_t free = getFreeDef();
 		/* swapping out is more important than swapping in */
 		if((free - (kframes + cframes)) < uframes) {
-			size_t amount = esc::Util::min(MAX_SWAP_AT_ONCE,uframes - (free - (kframes + cframes)));
+			size_t amount = esc::Util::min(static_cast<size_t>(MAX_SWAP_AT_ONCE),
+				uframes - (free - (kframes + cframes)));
 			swapping = true;
 			defLock.up();
 

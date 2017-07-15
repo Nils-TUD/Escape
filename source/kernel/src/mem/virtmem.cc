@@ -1211,9 +1211,10 @@ int VirtMem::demandLoad(VMRegion *vm,uintptr_t addr) {
 
 	/* calculate the number of bytes to load and zero */
 	size_t loadCount = 0, zeroCount;
-	if(addr - vm->virt() < vm->reg->getLoadCount())
-		loadCount = esc::Util::min((size_t)PAGE_SIZE,vm->reg->getLoadCount() - (addr - vm->virt()));
-	zeroCount = esc::Util::min((size_t)PAGE_SIZE,vm->reg->getByteCount() - (addr - vm->virt())) - loadCount;
+	uintptr_t offset = addr - vm->virt();
+	if(offset < vm->reg->getLoadCount())
+		loadCount = esc::Util::min((size_t)PAGE_SIZE,(size_t)(vm->reg->getLoadCount() - offset));
+	zeroCount = esc::Util::min((size_t)PAGE_SIZE,(size_t)(vm->reg->getByteCount() - offset)) - loadCount;
 
 	/* load from file */
 	if(loadCount)
@@ -1242,7 +1243,7 @@ int VirtMem::demandLoad(VMRegion *vm,uintptr_t addr) {
 				PageTables::RangeAllocator alloc(frame);
 				VMRegion *mpreg = (*mp)->regtree.getByReg(vm->reg);
 				/* can't fail */
-				sassert((*mp)->getPageDir()->map(mpreg->virt() + (addr - vm->virt()),1,alloc,mapFlags) == 0);
+				sassert((*mp)->getPageDir()->map(mpreg->virt() + offset,1,alloc,mapFlags) == 0);
 				if(vm->reg->getFlags() & RF_SHAREABLE)
 					(*mp)->addShared(1);
 				else

@@ -117,7 +117,7 @@ ssize_t VFSDir::read(A_UNUSED OpenFile *file,USER void *buffer,off_t offset,size
 
 	if(offset > (off_t)byteCount)
 		offset = byteCount;
-	byteCount = esc::Util::min(byteCount - offset,count);
+	byteCount = esc::Util::min(static_cast<size_t>(byteCount - offset),count);
 	if(byteCount > 0) {
 		int res = UserAccess::write(buffer,(uint8_t*)fsBytes + offset,byteCount);
 		if(res < 0) {

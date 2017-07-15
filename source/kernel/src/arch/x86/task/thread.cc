@@ -135,7 +135,7 @@ void Thread::initialSwitch() {
 	cur->setCPU(cpu);
 	FPU::lockFPU();
 	cur->stats.cycleStart = CPU::rdtsc();
-	Thread::resume(cur->getProc()->getPageDir()->getPhysAddr(),&cur->saveArea,&switchLock,true);
+	Thread::resume(cur->getProc()->getPageDir()->getPhysAddr(),&cur->saveArea,&switchLock);
 }
 
 void ThreadBase::doSwitch() {
@@ -174,12 +174,9 @@ void ThreadBase::doSwitch() {
 		FPU::lockFPU();
 
 		n->stats.cycleStart = CPU::rdtsc();
-		uintptr_t pdir = n->getProc()->getPageDir()->getPhysAddr();
-		bool chgpdir = n->getProc() != old->getProc();
-		if(!Thread::save(&old->saveArea)) {
-			/* old thread */
-			Thread::resume(pdir,&n->saveArea,&switchLock,chgpdir);
-		}
+		uintptr_t pdir = n->getProc() == old->getProc() ? 0 : n->getProc()->getPageDir()->getPhysAddr();
+		if(!Thread::save(&old->saveArea))
+			Thread::resume(pdir,&n->saveArea,&switchLock);
 	}
 	else {
 		SMP::schedule(cpu,n,cycles);

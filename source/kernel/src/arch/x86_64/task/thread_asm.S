@@ -50,13 +50,13 @@ thread_save:
 	leave
 	ret
 
-// bool thread_resume(uintptr_t pageDir,ThreadRegs *saveArea,uint *lock,bool newProc);
+// bool thread_resume(uintptr_t pageDir,ThreadRegs *saveArea,uint *lock);
 thread_resume:
 	push	%rbp
 	mov		%rsp,%rbp
 
 	// exchange page-dir, if necessary
-	test	%rcx,%rcx
+	test	%rdi,%rdi
 	jz		1f						// dont set the page-dir if its the same process
 	mov		%rdi,%cr3				// set page-dir
 

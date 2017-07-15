@@ -88,12 +88,12 @@ private:
 	void printnpad(llong n,uint pad,uint flags);
 	void printupad(ullong u,uint base,uint pad,uint flags);
 	int printpad(int count,uint flags);
-	int printu(ullong n,uint base,char *chars);
+	int printu(ullong n,uint base,const char *chars);
 	int printn(llong n);
 	int prints(const char *str,ssize_t len);
 
 	size_t indent;
 	bool lineStart;
-	static char hexCharsBig[];
-	static char hexCharsSmall[];
+	static const char hexCharsBig[];
+	static const char hexCharsSmall[];
 };

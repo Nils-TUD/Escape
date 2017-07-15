@@ -40,8 +40,8 @@ enum {
 	FFL_OFF_T			= 1024,
 };
 
-char OStream::hexCharsBig[] = "0123456789ABCDEF";
-char OStream::hexCharsSmall[] = "0123456789abcdef";
+const char OStream::hexCharsBig[] = "0123456789ABCDEF";
+const char OStream::hexCharsSmall[] = "0123456789abcdef";
 
 void OStream::vwritef(const char *fmt,va_list ap) {
 	char c,b;
@@ -318,7 +318,7 @@ int OStream::printpad(int count,uint flags) {
 	return res;
 }
 
-int OStream::printu(ullong n,uint base,char *chars) {
+int OStream::printu(ullong n,uint base,const char *chars) {
 	int res = 0;
 	if(n >= base)
 		res += printu(n / base,base,chars);

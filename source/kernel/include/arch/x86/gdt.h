@@ -105,7 +105,7 @@ private:
 	static ulong selector(int seg) {
 		return (seg << 3) | 0x3;
 	}
-	static void flush(DescTable *gdt) {
+	static void flush(volatile DescTable *gdt) {
 		asm volatile ("lgdt	(%0)" : : "r"(gdt));
 	}
 	static void get(DescTable *gdt) {

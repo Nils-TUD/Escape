@@ -47,10 +47,6 @@ size_t GDT::cpuCount;
 extern void *syscall_entry;
 
 void GDT::init() {
-	DescTable gdtTable;
-	gdtTable.offset = (ulong)bspgdt;
-	gdtTable.size = GDT_ENTRY_COUNT * sizeof(Desc) - 1;
-
 	/* kernel code+data */
 	setDesc(bspgdt + SEG_KCODE,0,~0UL >> PAGE_BITS,Desc::GRANU_PAGES,Desc::CODE_XR,Desc::DPL_KERNEL);
 	setDesc(bspgdt + SEG_KDATA,0,~0UL >> PAGE_BITS,Desc::GRANU_PAGES,Desc::DATA_RW,Desc::DPL_KERNEL);
@@ -68,7 +64,11 @@ void GDT::init() {
 	setTSS(bspgdt,&bspTSS,KSTACK_AREA);
 
 	/* now load GDT and TSS */
+	volatile DescTable gdtTable;
+	gdtTable.offset = (ulong)bspgdt;
+	gdtTable.size = GDT_ENTRY_COUNT * sizeof(Desc) - 1;
 	flush(&gdtTable);
+
 	loadTSS(SEG_TSS * sizeof(Desc));
 }
 
@@ -87,7 +87,7 @@ void GDT::initBSP() {
 }
 
 void GDT::initAP() {
-	DescTable tmpTable;
+	volatile DescTable tmpTable;
 	/* use the GDT of the BSP temporary. this way, we can access the heap and build our own gdt */
 	tmpTable.offset = (uintptr_t)bspgdt;
 	tmpTable.size = GDT_ENTRY_COUNT * sizeof(Desc) - 1;

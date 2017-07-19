@@ -54,11 +54,6 @@ public:
 	 */
 	static void vfsIsReady();
 
-	/**
-	 * @return the file used for logging
-	 */
-	OpenFile *getFile();
-
 	virtual void writec(char c) override;
 
 private:

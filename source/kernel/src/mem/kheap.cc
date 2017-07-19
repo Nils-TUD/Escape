@@ -35,12 +35,19 @@ size_t KHeap::memUsage = 0;
 size_t KHeap::pages = 0;
 SpinLock KHeap::lock;
 
+struct MetaData {
+	uint64_t end;
+	uint64_t magic;
+} A_PACKED;
+
 void *KHeap::alloc(size_t size) {
 	if(size == 0)
 		return NULL;
 
-	/* align and we need 3 ulongs for the guards */
-	size = esc::Util::round_up(size,sizeof(ulong)) + sizeof(ulong) * 3;
+	static_assert(sizeof(MetaData) == 16, "Size of meta data wrong");
+
+	/* align and we need meta data before and behind */
+	size = esc::Util::round_up(size,sizeof(MetaData)) + sizeof(MetaData) * 2;
 
 	LockGuard<SpinLock> g(&lock);
 
@@ -97,11 +104,12 @@ void *KHeap::alloc(size_t size) {
 	*list = area;
 
 	/* add guards */
-	ulong *begin = (ulong*)area->address;
-	begin[0] = size - sizeof(ulong) * 3;
-	begin[1] = GUARD_MAGIC;
-	begin[size / sizeof(ulong) - 1] = GUARD_MAGIC;
-	return begin + 2;
+	MetaData *meta = (MetaData*)area->address;
+	meta->end = size / sizeof(MetaData) - 1;
+	meta->magic = GUARD_MAGIC;
+	MetaData *end = meta + meta->end;
+	end->magic = GUARD_MAGIC;
+	return meta + 1;
 }
 
 void *KHeap::calloc(size_t num,size_t size) {
@@ -113,23 +121,23 @@ void *KHeap::calloc(size_t num,size_t size) {
 	return a;
 }
 
-void KHeap::free(void *addr) {
+A_NOASAN void KHeap::free(void *addr) {
 	/* addr may be null */
 	if(addr == NULL)
 		return;
 
 	/* check guards */
-	ulong *begin = (ulong*)addr - 2;
-	assert(begin[1] == GUARD_MAGIC);
-	assert(begin[begin[0] / sizeof(ulong) + 2] == GUARD_MAGIC);
+	MetaData *meta = (MetaData*)addr - 1;
+	assert(meta->magic == GUARD_MAGIC);
+	assert((meta + meta->end)->magic == GUARD_MAGIC);
 
 	LockGuard<SpinLock> g(&lock);
 
 	/* find the area with given address */
 	MemArea *oprev = NULL;
-	MemArea *area = occupiedMap[getHash(begin)];
+	MemArea *area = occupiedMap[getHash(meta)];
 	while(area != NULL) {
-		if(area->address == begin)
+		if(area->address == meta)
 			break;
 		oprev = area;
 		area = area->next;
@@ -147,11 +155,11 @@ void KHeap::free(void *addr) {
 	MemArea *nprev = NULL;
 	MemArea *a = usableList;
 	while(a != NULL) {
-		if((uintptr_t)a->address + a->size == (uintptr_t)begin) {
+		if((uintptr_t)a->address + a->size == (uintptr_t)meta) {
 			prev = a;
 			pprev = tprev;
 		}
-		if((uintptr_t)a->address == (uintptr_t)begin + area->size) {
+		if((uintptr_t)a->address == (uintptr_t)meta + area->size) {
 			next = a;
 			nprev = tprev;
 		}
@@ -166,7 +174,7 @@ void KHeap::free(void *addr) {
 	if(oprev)
 		oprev->next = area->next;
 	else
-		occupiedMap[getHash(begin)] = area->next;
+		occupiedMap[getHash(meta)] = area->next;
 
 	/* see what we have to merge */
 	if(prev && next) {
@@ -221,20 +229,20 @@ void KHeap::free(void *addr) {
 	}
 }
 
-void *KHeap::realloc(void *addr,size_t size) {
+A_NOASAN void *KHeap::realloc(void *addr,size_t size) {
 	if(addr == NULL)
 		return alloc(size);
 
-	ulong *begin = (ulong*)addr - 2;
+	MetaData *meta = (MetaData*)addr - 1;
 
 	MemArea *area,*a;
 	{
 		LockGuard<SpinLock> g(&lock);
 
 		/* find the area with given address */
-		area = occupiedMap[getHash(begin)];
+		area = occupiedMap[getHash(meta)];
 		while(area != NULL) {
-			if(area->address == begin)
+			if(area->address == meta)
 				break;
 			area = area->next;
 		}
@@ -243,8 +251,7 @@ void *KHeap::realloc(void *addr,size_t size) {
 		if(area == NULL)
 			return NULL;
 
-		/* align and we need 3 ulongs for the guards */
-		size = esc::Util::round_up(size,sizeof(ulong)) + sizeof(ulong) * 3;
+		size = esc::Util::round_up(size,sizeof(MetaData)) + sizeof(MetaData) * 2;
 
 		/* ignore shrinks */
 		if(size < area->size)
@@ -277,10 +284,11 @@ void *KHeap::realloc(void *addr,size_t size) {
 
 					area->size = size;
 					/* reset guards */
-					begin[0] = size - sizeof(ulong) * 3;
-					begin[1] = GUARD_MAGIC;
-					begin[size / sizeof(ulong) - 1] = GUARD_MAGIC;
-					return begin + 2;
+					meta->end = size / sizeof(MetaData) - 1;
+					meta->magic = GUARD_MAGIC;
+					MetaData *end = meta + meta->end;
+					end->magic = GUARD_MAGIC;
+					return meta + 1;
 				}
 
 				/* makes no sense to continue since we've found the area behind */
@@ -297,7 +305,7 @@ void *KHeap::realloc(void *addr,size_t size) {
 		return NULL;
 
 	/* copy the old data and free it */
-	memcpy(a,addr,area->size - sizeof(ulong) * 3);
+	memcpy(a,addr,area->size - sizeof(MetaData) * 2);
 	free(addr);
 	return a;
 }

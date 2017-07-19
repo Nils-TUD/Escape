@@ -127,35 +127,36 @@ void Util::vpanic(const char *fmt,va_list ap) {
 	}
 }
 
-void Util::printEventTrace(OStream &os,const FuncCall *trace,const char *fmt,...) {
+void Util::printEventTrace(OStream &os,const uintptr_t *trace,const char *fmt,...) {
 	va_list ap;
 	va_start(ap,fmt);
 	os.vwritef(fmt,ap);
 	va_end(ap);
 	if(trace) {
-		for(size_t i = 0; trace->addr != 0 && i < 5; i++) {
-			KSymbols::Symbol *sym = KSymbols::getSymbolAt(trace->addr);
+		for(size_t i = 0; *trace != 0 && i < 5; i++) {
+			KSymbols::Symbol *sym = KSymbols::getSymbolAt(*trace);
 			if(sym)
 				os.writef("%s",sym->funcName);
 			else
-				os.writef("%Px",trace->addr);
+				os.writef("%Px",*trace);
 			trace++;
-			if(trace->addr)
+			if(*trace)
 				os.writef(" ");
 		}
 	}
 	os.writef("\n");
 }
 
-void Util::printStackTrace(OStream &os,const FuncCall *trace) {
-	if(trace && trace->addr) {
-		if(trace->addr < KERNEL_AREA)
+void Util::printStackTrace(OStream &os,const uintptr_t *trace) {
+	if(trace && *trace) {
+		if(*trace < KERNEL_AREA)
 			os.writef("User-Stacktrace:\n");
 		else
 			os.writef("Kernel-Stacktrace:\n");
 
-		while(trace->addr != 0) {
-			os.writef("\t%p -> %p (%s)\n",(trace + 1)->addr,trace->funcAddr,trace->funcName);
+		while(*trace != 0) {
+			KSymbols::Symbol *sym = KSymbols::getSymbolAt(*trace);
+			os.writef("\t%p (%s)\n",*trace,sym ? sym->funcName : "Unknown");
 			trace++;
 		}
 	}

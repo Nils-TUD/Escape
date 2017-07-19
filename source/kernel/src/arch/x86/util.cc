@@ -25,7 +25,7 @@
 #include <common.h>
 #include <util.h>
 
-static Util::FuncCall *getStackTrace(ulong *bp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend);
+static uintptr_t *getStackTrace(ulong *bp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend);
 
 /* the x86-call instruction is 5 bytes long */
 static const int CALL_INSTR_SIZE	= 5;
@@ -84,7 +84,7 @@ void Util::printUserState(OStream &os) {
 	printUserStateOf(os,t);
 }
 
-Util::FuncCall *Util::getUserStackTrace() {
+uintptr_t *Util::getUserStackTrace() {
 	Thread *t = Thread::getRunning();
 	IntrptStackFrame *kstack = t->getUserState();
 	if(kstack) {
@@ -95,7 +95,7 @@ Util::FuncCall *Util::getUserStackTrace() {
 	return NULL;
 }
 
-Util::FuncCall *Util::getKernelStackTrace() {
+uintptr_t *Util::getKernelStackTrace() {
 	Thread *t = Thread::getRunning();
 	if(t) {
 		ulong* bp;
@@ -117,7 +117,7 @@ Util::FuncCall *Util::getKernelStackTrace() {
 	return NULL;
 }
 
-Util::FuncCall *Util::getUserStackTraceOf(Thread *t) {
+uintptr_t *Util::getUserStackTraceOf(Thread *t) {
 	uintptr_t start,end;
 	if(t->getStackRange(&start,&end,0)) {
 		PageDir *pdir = t->getProc()->getPageDir();
@@ -135,7 +135,7 @@ Util::FuncCall *Util::getUserStackTraceOf(Thread *t) {
 		temp = PageDir::getAccess(frame);
 
 		// get trace
-		FuncCall *calls = getStackTrace(bp,start,temp,temp + PAGE_SIZE);
+		uintptr_t *calls = getStackTrace(bp,start,temp,temp + PAGE_SIZE);
 
 		PageDir::removeAccess(frame);
 		return calls;
@@ -143,7 +143,7 @@ Util::FuncCall *Util::getUserStackTraceOf(Thread *t) {
 	return NULL;
 }
 
-Util::FuncCall *Util::getKernelStackTraceOf(const Thread *t) {
+uintptr_t *Util::getKernelStackTraceOf(const Thread *t) {
 	Thread *run = Thread::getRunning();
 	if(run == t)
 		return getKernelStackTrace();
@@ -151,16 +151,15 @@ Util::FuncCall *Util::getKernelStackTraceOf(const Thread *t) {
 		ulong bp = t->getRegs().getBP();
 		frameno_t frame = t->getProc()->getPageDir()->getFrameNo(t->getKernelStack());
 		uintptr_t temp = PageDir::getAccess(frame);
-		FuncCall *calls = getStackTrace((ulong*)bp,t->getKernelStack(),temp,temp + PAGE_SIZE);
+		uintptr_t *calls = getStackTrace((ulong*)bp,t->getKernelStack(),temp,temp + PAGE_SIZE);
 		PageDir::removeAccess(frame);
 		return calls;
 	}
 }
 
-Util::FuncCall *getStackTrace(ulong *bp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend) {
-	static Util::FuncCall frames[Util::MAX_STACK_DEPTH];
-	bool isKernel = (uintptr_t)bp >= KERNEL_AREA;
-	Util::FuncCall *frame = &frames[0];
+uintptr_t *getStackTrace(ulong *bp,uintptr_t rstart,uintptr_t mstart,uintptr_t mend) {
+	static uintptr_t frames[Util::MAX_STACK_DEPTH];
+	uintptr_t *frame = &frames[0];
 
 	for(size_t i = 0; i < Util::MAX_STACK_DEPTH; i++) {
 		if(bp == NULL)
@@ -173,16 +172,7 @@ Util::FuncCall *getStackTrace(ulong *bp,uintptr_t rstart,uintptr_t mstart,uintpt
 		if((uintptr_t)bp < mstart || (uintptr_t)(bp + 1) < mstart ||
 				(((uintptr_t)(bp + 1) + sizeof(ulong) - 1) & ~(sizeof(ulong) - 1)) >= mend)
 			break;
-		frame->addr = *(bp + 1) - CALL_INSTR_SIZE;
-		KSymbols::Symbol *sym = isKernel ? KSymbols::getSymbolAt(frame->addr) : NULL;
-		if(sym) {
-			frame->funcAddr = sym->address;
-			frame->funcName = sym->funcName;
-		}
-		else {
-			frame->funcAddr = frame->addr;
-			frame->funcName = "Unknown";
-		}
+		*frame = *(bp + 1) - CALL_INSTR_SIZE;
 		frame++;
 		/* detect loops */
 		ulong *oldbp = bp;
@@ -192,6 +182,6 @@ Util::FuncCall *getStackTrace(ulong *bp,uintptr_t rstart,uintptr_t mstart,uintpt
 	}
 
 	/* terminate */
-	frame->addr = 0;
+	*frame = 0;
 	return &frames[0];
 }

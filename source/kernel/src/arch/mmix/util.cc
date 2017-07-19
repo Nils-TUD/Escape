@@ -29,8 +29,8 @@
 #include <util.h>
 #include <video.h>
 
-static Util::FuncCall frames[1] = {
-	{0,0,""}
+static uintptr_t frames[1] = {
+	0
 };
 
 void Util::panicArch() {
@@ -51,7 +51,7 @@ void Util::printUserState(OStream &os) {
 	Util::printUserStateOf(os,t);
 }
 
-Util::FuncCall *Util::getUserStackTrace() {
+uintptr_t *Util::getUserStackTrace() {
 	/* TODO */
 	/* the MMIX-toolchain doesn't use a frame-pointer when enabling optimization, as it seems.
 	 * therefore without information about the stackframe-sizes or similar, there is no way to
@@ -59,14 +59,14 @@ Util::FuncCall *Util::getUserStackTrace() {
 	return frames;
 }
 
-Util::FuncCall *Util::getKernelStackTrace() {
+uintptr_t *Util::getKernelStackTrace() {
 	return frames;
 }
 
-Util::FuncCall *Util::getUserStackTraceOf(A_UNUSED Thread *t) {
+uintptr_t *Util::getUserStackTraceOf(A_UNUSED Thread *t) {
 	return frames;
 }
 
-Util::FuncCall *Util::getKernelStackTraceOf(A_UNUSED const Thread *t) {
+uintptr_t *Util::getKernelStackTraceOf(A_UNUSED const Thread *t) {
 	return frames;
 }

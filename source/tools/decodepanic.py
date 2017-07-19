@@ -50,6 +50,16 @@ def get_symbols(binary):
 	symbols.sort(key=lambda tup: tup[0], reverse=True)
 	return symbols
 
+def get_location(bin, addr):
+	try:
+		location = subprocess.check_output(
+			"%s-addr2line -e %s %x 2>/dev/null" % (crossdir + "/bin/" + cross, builddir + "/dist/" + bin, addr),
+			shell=True
+		)
+	except:
+		location = 'Unknown'
+	return location
+
 # converts '1234:5678' to an int
 def str_to_addr(string):
 	string = string.replace(':', '')
@@ -65,22 +75,27 @@ if sys.stdin.isatty():
 	enable_echo(sys.stdin.fileno(), False)
 signal.signal(signal.SIGINT, sigint_handler)
 
+kernel_binary = '/boot/escape'
+
 # wait for start of backtrace
 while True:
 	line = sys.stdin.readline()
 	if not line:
 		break
+	if "Kernel parameters:" in line:
+		match = re.match('Kernel parameters: (\S+?)(.elf32)? ', line)
+		kernel_binary = match.group(1)
 	if line == '============= snip =============\r\n':
 		print line[:-1]
 		break
 
 # read the regions and build a code-region- and symbol-list
 coderegs = []
-syms = get_symbols('/boot/escape')
+syms = get_symbols(kernel_binary)
 if target == 'x86_64':
-	coderegs.append(('/boot/escape', 0xffffffff80000000, 0xffffffffffffffff, syms))
+	coderegs.append((kernel_binary, 0xffffffff80000000, 0xffffffffffffffff, syms))
 else:
-	coderegs.append(('/boot/escape', 0xc0100000, 0xffffffff, syms))
+	coderegs.append((kernel_binary, 0xc0100000, 0xffffffff, syms))
 while True:
 	line = sys.stdin.readline()
 	if not line:
@@ -113,17 +128,15 @@ while True:
 	line = sys.stdin.readline()
 	if not line:
 		break
-	match = re.match('\\s*([0-9a-f:]+) -> ([0-9a-f:]+)', line)
+	match = re.match('^\\s*([0-9a-f:]+)( \(.*?\))?\\s*$', line)
 	if match:
-		addr = str_to_addr(match.group(2))
+		addr = str_to_addr(match.group(1))
 		(lib, sym) = find_symbol(coderegs, addr)
+		location = get_location(lib[0], addr)
 		liboff = addr - lib[1]
-		funcoff = liboff - sym[0]
-		sys.stdout.write("\t=>: %#010x (%s+%#x)\n" % (addr, lib[0], liboff))
-		sys.stdout.write("\t    %s+%#x (%s)\n" % (sym[1], funcoff, sym[2]))
-	elif line == '============= snip =============\r\n':
-		print line[:-1]
-		break
+		funcoff = addr - sym[0]
+		sys.stdout.write("  =>: %#010x (%s+%#x)\n" % (addr, lib[0], liboff))
+		sys.stdout.write("      %s+%#x (%s)\n" % (sym[1], funcoff, location.strip()))
 	else:
 		print line[:-1]
 

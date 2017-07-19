@@ -340,22 +340,22 @@ void ThreadBase::print(OStream &os) const {
 	os.writef("Kernel-trace:\n");
 	os.pushIndent();
 	{
-		Util::FuncCall *calls = Util::getKernelStackTraceOf(static_cast<const Thread*>(this));
-		while(calls->addr != 0) {
-			os.writef("%p -> %p (%s)\n",(calls + 1)->addr,calls->funcAddr,calls->funcName);
+		uintptr_t *calls = Util::getKernelStackTraceOf(static_cast<const Thread*>(this));
+		while(*calls != 0) {
+			KSymbols::Symbol *sym = KSymbols::getSymbolAt(*calls);
+			os.writef("%p (%s)\n",*calls,sym ? sym->funcName : "Unknown");
 			calls++;
 		}
 	}
 	os.popIndent();
 	{
-		Util::FuncCall *calls = Util::getUserStackTraceOf(
+		uintptr_t *calls = Util::getUserStackTraceOf(
 				const_cast<Thread*>(static_cast<const Thread*>(this)));
 		if(calls) {
 			os.writef("User-trace:\n");
 			os.pushIndent();
-			while(calls->addr != 0) {
-				os.writef("%p -> %p (%s)\n",
-						(calls + 1)->addr,calls->funcAddr,calls->funcName);
+			while(*calls != 0) {
+				os.writef("%p\n",*calls);
 				calls++;
 			}
 			os.popIndent();

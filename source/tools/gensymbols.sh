@@ -12,7 +12,16 @@ if [ "$1" != "-" ]; then
 		name = gensub(/^[a-f0-9]+.+?\.text[ \t]+[a-f0-9]+[ \t]+(.+)$/, "\\1", 1)
 		print address "\t" name
 	}
-	' | sort | gawk '{ print "\t{0x" $1 ", \"" $2 "\"}," }'
+	' | sort | gawk '
+	function ltrim(s) {
+		sub(/^[ \t\r\n]+/, "", s);
+		return s
+	}
+	{
+		printf("\t{0x%s, ", $1)
+		$1 = ""
+		print "\"" ltrim($0) "\"},"
+	}'
 fi
 
 echo "};"

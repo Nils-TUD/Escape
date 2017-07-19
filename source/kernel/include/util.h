@@ -28,15 +28,6 @@ class Util {
 	Util() = delete;
 
 public:
-	/**
-	 * Represents one function-call
-	 */
-	struct FuncCall {
-		uintptr_t addr;
-		uintptr_t funcAddr;
-		const char *funcName;
-	};
-
 	/* The max. stack-depth getStackTrace() supports */
 	static const size_t MAX_STACK_DEPTH		= 100;
 
@@ -121,7 +112,7 @@ public:
 	 *
 	 * @return the first function-call (for printStackTrace())
 	 */
-	static FuncCall *getUserStackTrace();
+	static uintptr_t *getUserStackTrace();
 
 	/**
 	 * Builds the user-stack-trace for the given thread
@@ -129,7 +120,7 @@ public:
 	 * @param t the thread
 	 * @return the first function-call (for printStackTrace()) or NULL if failed
 	 */
-	static FuncCall *getUserStackTraceOf(Thread *t);
+	static uintptr_t *getUserStackTraceOf(Thread *t);
 
 	/**
 	 * Builds the kernel-stack-trace of the given thread
@@ -137,14 +128,14 @@ public:
 	 * @param t the thread
 	 * @return the first function-call (for printStackTrace())
 	 */
-	static FuncCall *getKernelStackTraceOf(const Thread *t);
+	static uintptr_t *getKernelStackTraceOf(const Thread *t);
 
 	/**
 	 * Builds the stack-trace for the kernel
 	 *
 	 * @return the first function-call (for printStackTrace())
 	 */
-	static FuncCall *getKernelStackTrace();
+	static uintptr_t *getKernelStackTrace();
 
 	/**
 	 * Prints <msg>, followed by a short version of the given stack-trace and a newline.
@@ -153,7 +144,7 @@ public:
 	 * @param trace the first function-call (NULL-terminated)
 	 * @param msg the message to print before the trace
 	 */
-	static void printEventTrace(OStream &os,const FuncCall *trace,const char *msg,...);
+	static void printEventTrace(OStream &os,const uintptr_t *trace,const char *msg,...);
 
 	/**
 	 * Prints the given stack-trace
@@ -161,7 +152,7 @@ public:
 	 * @param os the output-stream
 	 * @param trace the first function-call (NULL-terminated)
 	 */
-	static void printStackTrace(OStream &os,const FuncCall *trace);
+	static void printStackTrace(OStream &os,const uintptr_t *trace);
 
 	/**
 	 * Prints the memory from <addr> to <addr> + <dwordCount>

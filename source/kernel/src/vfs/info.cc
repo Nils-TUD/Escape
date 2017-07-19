@@ -53,7 +53,6 @@ void VFSInfo::init(VFSNode *sysNode) {
 }
 
 void VFSInfo::traceReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
-	Util::FuncCall *call;
 	Thread *t = getThread(node,dataSize,buffer);
 	if(!t)
 		return;
@@ -64,15 +63,16 @@ void VFSInfo::traceReadCallback(VFSNode *node,size_t *dataSize,void **buffer) {
 	Proc *p = Proc::getByPid(t->getProc()->getPid());
 	if(p) {
 		os.writef("Kernel:\n");
-		call = Util::getKernelStackTraceOf(t);
-		while(call && call->addr != 0) {
-			os.writef("\t%p -> %p (%s)\n",(call + 1)->addr,call->funcAddr,call->funcName);
+		uintptr_t *call = Util::getKernelStackTraceOf(t);
+		while(call && *call != 0) {
+			KSymbols::Symbol *sym = KSymbols::getSymbolAt(*call);
+			os.writef("\t%p (%s)\n",*call,sym ? sym->funcName : "Unknown");
 			call++;
 		}
 		os.writef("User:\n");
 		call = Util::getUserStackTraceOf(t);
-		while(call && call->addr != 0) {
-			os.writef("\t%p -> %p\n",(call + 1)->addr,call->funcAddr);
+		while(call && *call != 0) {
+			os.writef("\t%p\n",*call);
 			call++;
 		}
 	}

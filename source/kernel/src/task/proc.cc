@@ -747,6 +747,7 @@ int ProcBase::waitChild(ExitState *state,pid_t pid,int options) {
 
 	/* if there is a matching child, but no zombie yet, return immediately on WNOHANG */
 	if(res == 0 && (options & WNOHANG)) {
+		state->pid = 0;
 		childLock.up();
 		return 0;
 	}

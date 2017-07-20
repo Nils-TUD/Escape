@@ -20,11 +20,21 @@
 #include <stddef.h>
 #include <string.h>
 
+#if defined(KASAN)
+void __asan_loadN_noabort(const void *addr,size_t size);
+void __asan_storeN_noabort(const void *addr,size_t size);
+#endif
+
 /* this is necessary to prevent that gcc transforms a loop into library-calls
  * (which might lead to recursion here) */
 #pragma GCC optimize ("no-tree-loop-distribute-patterns")
 
-void *memcpy(void *dest,const void *src,size_t len) {
+A_NOASAN void *memcpy(void *dest,const void *src,size_t len) {
+#if defined(KASAN)
+	__asan_loadN_noabort(dest,len);
+	__asan_storeN_noabort(src,len);
+#endif
+
 	uchar *bdest = (uchar*)dest;
 	uchar *bsrc = (uchar*)src;
 	/* copy bytes for alignment */

@@ -20,11 +20,19 @@
 #include <stddef.h>
 #include <string.h>
 
+#if defined(KASAN)
+void __asan_storeN_noabort(const void *addr,size_t size);
+#endif
+
 /* this is necessary to prevent that gcc transforms a loop into library-calls
  * (which might lead to recursion here) */
 #pragma GCC optimize ("no-tree-loop-distribute-patterns")
 
-void *memset(void *addr,int value,size_t count) {
+A_NOASAN void *memset(void *addr,int value,size_t count) {
+#if defined(KASAN)
+	__asan_storeN_noabort(addr,count);
+#endif
+
 	uchar *baddr = (uchar*)addr;
 	/* align it */
 	while(count > 0 && (uintptr_t)baddr % sizeof(ulong)) {

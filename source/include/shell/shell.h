@@ -25,7 +25,7 @@
 #define MAX_ARG_COUNT		10
 
 #define MAX_CMDNAME_LEN		30
-#define MAX_CMD_LEN			256
+#define MAX_CMD_LEN			(MAX_PATH_LEN + MAX_CMDNAME_LEN + 1)
 
 #if defined(__cplusplus)
 extern "C" {

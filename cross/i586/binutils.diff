@@ -1,61 +1,24 @@
 diff -rcN src/binutils-org/bfd/config.bfd src/binutils/bfd/config.bfd
-*** src/binutils-org/bfd/config.bfd	2012-09-04 16:14:59.000000000 +0200
---- src/binutils/bfd/config.bfd	2013-12-01 18:33:52.746392191 +0100
+*** src/binutils-org/bfd/config.bfd	2017-07-19 16:25:10.895137875 +0200
+--- src/binutils/bfd/config.bfd	2017-07-19 16:32:42.842349588 +0200
 ***************
-*** 522,527 ****
---- 522,531 ----
-    i[3-7]86-*-chorus*)
-      targ_defvec=bfd_elf32_i386_vec
+*** 668,673 ****
+--- 668,677 ----
+      targ_defvec=i386_elf32_vec
+      targ_selvecs=iamcu_elf32_vec
       ;;
 +   i[3-7]86-*-escape*)
-+     targ_defvec=bfd_elf32_i386_vec
-+     targ_selvecs=bfd_elf32_i386_vec
++     targ_defvec=i386_elf32_vec
++     targ_selvecs=i386_elf32_vec
 +     ;;
     i[3-7]86-*-dicos*)
-      targ_defvec=bfd_elf32_i386_vec
-      targ64_selvecs="bfd_elf64_x86_64_vec bfd_elf64_l1om_vec bfd_elf64_k1om_vec"
-diff -rcN src/binutils-org/bfd/doc/bfd.texinfo src/binutils/bfd/doc/bfd.texinfo
-*** src/binutils-org/bfd/doc/bfd.texinfo	2010-10-28 13:40:25.000000000 +0200
---- src/binutils/bfd/doc/bfd.texinfo	2013-12-01 18:37:09.918390620 +0100
-***************
-*** 322,328 ****
-  @printindex cp
-  
-  @tex
-! % I think something like @colophon should be in texinfo.  In the
-  % meantime:
-  \long\def\colophon{\hbox to0pt{}\vfill
-  \centerline{The body of this manual is set in}
---- 322,328 ----
-  @printindex cp
-  
-  @tex
-! % I think something like @@colophon should be in texinfo.  In the
-  % meantime:
-  \long\def\colophon{\hbox to0pt{}\vfill
-  \centerline{The body of this manual is set in}
-***************
-*** 333,339 ****
-  \centerline{{\sl\fontname\tensl\/}}
-  \centerline{are used for emphasis.}\vfill}
-  \page\colophon
-! % Blame: doc@cygnus.com, 28mar91.
-  @end tex
-  
-  @bye
---- 333,339 ----
-  \centerline{{\sl\fontname\tensl\/}}
-  \centerline{are used for emphasis.}\vfill}
-  \page\colophon
-! % Blame: doc@@cygnus.com, 28mar91.
-  @end tex
-  
-  @bye
+      targ_defvec=i386_elf32_vec
+      targ_selvecs=iamcu_elf32_vec
 diff -rcN src/binutils-org/bfd/elf32-i386.c src/binutils/bfd/elf32-i386.c
-*** src/binutils-org/bfd/elf32-i386.c	2013-03-25 09:06:19.000000000 +0100
---- src/binutils/bfd/elf32-i386.c	2013-12-01 18:34:15.530392009 +0100
+*** src/binutils-org/bfd/elf32-i386.c	2017-07-19 16:25:10.898471188 +0200
+--- src/binutils/bfd/elf32-i386.c	2017-07-19 16:32:42.869016094 +0200
 ***************
-*** 518,524 ****
+*** 533,539 ****
   /* The name of the dynamic interpreter.  This is put in the .interp
      section.  */
   
@@ -63,7 +26,7 @@ diff -rcN src/binutils-org/bfd/elf32-i386.c src/binutils/bfd/elf32-i386.c
   
   /* If ELIMINATE_COPY_RELOCS is non-zero, the linker will try to avoid
      copying dynamic variables from a shared lib into an app's dynbss
---- 518,524 ----
+--- 533,539 ----
   /* The name of the dynamic interpreter.  This is put in the .interp
      section.  */
   
@@ -72,54 +35,54 @@ diff -rcN src/binutils-org/bfd/elf32-i386.c src/binutils/bfd/elf32-i386.c
   /* If ELIMINATE_COPY_RELOCS is non-zero, the linker will try to avoid
      copying dynamic variables from a shared lib into an app's dynbss
 diff -rcN src/binutils-org/config.sub src/binutils/config.sub
-*** src/binutils-org/config.sub	2012-04-25 17:53:25.000000000 +0200
---- src/binutils/config.sub	2013-12-01 18:34:37.014391838 +0100
+*** src/binutils-org/config.sub	2017-07-19 16:25:10.885137938 +0200
+--- src/binutils/config.sub	2017-07-19 16:32:42.882349346 +0200
 ***************
-*** 1348,1354 ****
+*** 1386,1392 ****
   	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
-  	      | -sym* | -kopensolaris* \
+  	      | -sym* | -kopensolaris* | -plan9* \
   	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
-! 	      | -aos* | -aros* \
+! 	      | -aos* | -aros* | -cloudabi* | -sortix* \
   	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
   	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
   	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
---- 1348,1354 ----
+--- 1386,1392 ----
   	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
-  	      | -sym* | -kopensolaris* \
+  	      | -sym* | -kopensolaris* | -plan9* \
   	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
-! 	      | -aos* | -aros* | -escape* \
+! 	      | -aos* | -aros* | -cloudabi* | -sortix* | -escape* \
   	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
   	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
   	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
 diff -rcN src/binutils-org/gas/configure.tgt src/binutils/gas/configure.tgt
-*** src/binutils-org/gas/configure.tgt	2012-09-04 14:53:45.000000000 +0200
---- src/binutils/gas/configure.tgt	2013-12-01 18:35:00.698391650 +0100
+*** src/binutils-org/gas/configure.tgt	2017-07-19 16:25:10.935137624 +0200
+--- src/binutils/gas/configure.tgt	2017-07-19 16:32:42.892349286 +0200
 ***************
-*** 98,103 ****
---- 98,104 ----
+*** 122,127 ****
+--- 122,128 ----
   generic_target=${cpu_type}-$vendor-$os
   # Note: This table is alpha-sorted, please try to keep it that way.
   case ${generic_target} in
-+   i386-*-escape*)           fmt=elf ;;
-    aarch64*-*-elf)			fmt=elf;;
++   i386-*-escape*)			fmt=elf;;
+    aarch64*-*-elf | aarch64*-*-rtems*)	fmt=elf;;
+    aarch64*-*-fuchsia*)			fmt=elf;;
     aarch64*-*-linux*)			fmt=elf em=linux ;;
-  
 diff -rcN src/binutils-org/ld/configure.tgt src/binutils/ld/configure.tgt
-*** src/binutils-org/ld/configure.tgt	2012-09-04 14:53:47.000000000 +0200
---- src/binutils/ld/configure.tgt	2013-12-01 18:35:22.414391477 +0100
+*** src/binutils-org/ld/configure.tgt	2017-07-19 16:25:11.131803057 +0200
+--- src/binutils/ld/configure.tgt	2017-07-19 16:32:42.892349286 +0200
 ***************
-*** 27,32 ****
---- 27,33 ----
+*** 45,50 ****
+--- 45,51 ----
   # architecture variants should be kept together even if their names
   # break the alpha sorting.
   case "${targ}" in
-+ i[3-7]86-*-escape*)    targ_emul=escape_i386 ;;
++ i[3-7]86-*-escape*)	targ_emul=escape_i386 ;;
   aarch64_be-*-elf)	targ_emul=aarch64elfb
-  			targ_extra_emuls="aarch64elf armelfb armelf" ;;
-  aarch64-*-elf)		targ_emul=aarch64elf
+  			targ_extra_emuls="aarch64elf aarch64elf32 aarch64elf32b armelfb armelf" ;;
+  aarch64-*-elf | aarch64-*-rtems*)
 diff -rcN src/binutils-org/ld/emulparams/escape_i386.sh src/binutils/ld/emulparams/escape_i386.sh
 *** src/binutils-org/ld/emulparams/escape_i386.sh	1970-01-01 01:00:00.000000000 +0100
---- src/binutils/ld/emulparams/escape_i386.sh	2013-12-01 18:35:44.294391302 +0100
+--- src/binutils/ld/emulparams/escape_i386.sh	2017-07-19 16:32:42.912349165 +0200
 ***************
 *** 0 ****
 --- 1,15 ----
@@ -139,16 +102,27 @@ diff -rcN src/binutils-org/ld/emulparams/escape_i386.sh src/binutils/ld/emulpara
 + DATA_ADDR="ALIGN(${MAXPAGESIZE})"
 + SHLIB_DATA_ADDR="ALIGN(${MAXPAGESIZE})"
 diff -rcN src/binutils-org/ld/Makefile.in src/binutils/ld/Makefile.in
-*** src/binutils-org/ld/Makefile.in	2013-03-25 09:06:23.000000000 +0100
---- src/binutils/ld/Makefile.in	2013-12-01 18:36:07.114391121 +0100
+*** src/binutils-org/ld/Makefile.in	2017-07-19 16:25:11.138469682 +0200
+--- src/binutils/ld/Makefile.in	2017-07-19 16:34:55.081552640 +0200
 ***************
-*** 2134,2139 ****
---- 2134,2141 ----
+*** 535,540 ****
+--- 535,541 ----
+  	eaixrs6.c \
+  	ealpha.c \
+  	ealphavms.c \
++ 	eescape_i386.c \
+  	earcv2elf.c \
+  	earcv2elfx.c \
+  	earcelf.c \
+***************
+*** 2313,2318 ****
+--- 2314,2322 ----
+    $(srcdir)/emultempl/needrelax.em \
+    $(srcdir)/scripttempl/alphavms.sc ${GEN_DEPENDS}
   
-  @TDIRS@
++ eescape_i386.c: $(srcdir)/emulparams/escape_i386.sh \
++   $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
++ 
+  earcv2elf.c: $(srcdir)/emulparams/arcv2elf.sh \
+    $(ELF_DEPS) $(srcdir)/scripttempl/elfarcv2.sc ${GEN_DEPENDS}
   
-+ eescape_i386.c: $(srcdir)/emulparams/escape_i386.sh $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
-+ 	${GENSCRIPTS} escape_i386 "$(tdir_escape_i386)"
-  eaix5ppc.c: $(srcdir)/emulparams/aix5ppc.sh \
-    $(srcdir)/emultempl/aix.em $(srcdir)/scripttempl/aix.sc ${GEN_DEPENDS}
-  	${GENSCRIPTS} aix5ppc "$(tdir_aixppc)"

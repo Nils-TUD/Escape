@@ -50,7 +50,7 @@ struct ISODirEntry {
 	 * the file ID number in ASCII coded decimal ('1'). */
 	uint8_t nameLen;
 	/* is padded with a byte so that a directory entry will always start on an even byte number. */
-	char name[];
+	char name[0];
 } A_PACKED;
 
 /* entries in the directory-entry-cache */

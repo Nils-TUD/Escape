@@ -186,7 +186,7 @@ uint16_t VBE::x86emuExec(uint16_t eax,uint16_t ebx,uint16_t ecx,uint16_t edi,uin
 	return M.x86.R_AX;
 }
 
-EXTERN_C void sprintf(char *str,const char *fmt,...) {
+EXTERN_C void vid_sprintf(char *str,const char *fmt,...) {
 	va_list ap;
 	va_start(ap,fmt);
 	vsnprintf(str,std::numeric_limits<size_t>::max(),fmt,ap);

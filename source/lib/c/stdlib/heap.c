@@ -381,6 +381,11 @@ void *realloc(void *addr,size_t size) {
 	return a;
 }
 
+void *memalign(A_UNUSED size_t align,A_UNUSED size_t size) {
+	// TODO unsupported
+	return NULL;
+}
+
 static bool loadNewSpace(size_t size) {
 	size_t orgsize = size;
 	size = MAX(nextSize,size);

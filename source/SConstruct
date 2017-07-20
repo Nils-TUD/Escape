@@ -3,11 +3,11 @@ sys.path.insert(0, 'tools')
 import install
 
 target = os.environ.get('ESC_TARGET')
-crossver = '4.8.2'
 if target != 'eco32' and target != 'mmix' and target != 'x86_64':
 	target = 'i586'
 cross = target + '-elf-escape'
 crossdir = '/opt/escape-cross-' + target
+crossver = '7.1.0' if target == 'i586' or target == 'x86_64' else '4.8.2'
 
 # set tgttype
 if target == 'i586' or target == 'x86_64':
@@ -42,6 +42,10 @@ env = Environment(
 
 linktype = 'static'
 if tgttype == 'x86':
+	env.Append(
+		CFLAGS = ' -fdiagnostics-color=always',
+		CXXFLAGS = ' -fdiagnostics-color=always',
+	)
 	linktype = os.environ.get('ESC_LINKTYPE')
 	if linktype != 'static':
 		linktype = 'dynamic'

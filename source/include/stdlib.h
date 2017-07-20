@@ -222,6 +222,15 @@ void *malloc(size_t size);
 void *realloc(void *addr,size_t size);
 
 /**
+ * Allocates memory of <size> bytes with alignment <align>.
+ *
+ * @param align the alignment
+ * @param size the number of bytes
+ * @return the address of the memory or NULL
+ */
+void *memalign(size_t align,size_t size);
+
+/**
  * Note that the heap does increase the data-pages of the process as soon as it's required and
  * does not decrease them. So the free-space may increase during runtime!
  *

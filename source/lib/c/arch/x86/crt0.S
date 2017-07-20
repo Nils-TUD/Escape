@@ -26,8 +26,13 @@
 .extern main
 .extern exit
 .extern __libc_preinit
-.extern initenv
 .extern _init
+.extern initenv
+
+.extern __preinit_array_start
+.extern __preinit_array_end
+.extern __init_array_start
+.extern __init_array_end
 
 //  Initial stack:
 //  +------------------+  <- top
@@ -80,8 +85,8 @@ BEGIN_FUNC(_start)
 	mov		WORDSIZE * 3(%REG(sp)),%ARG_2
 	call	initenv
 
-	// call function in .init-section
-	call	_init
+	// call init functions
+	call	call_init_array
 
 	// get argc and argv
 	pop		%ARG_1
@@ -95,6 +100,37 @@ BEGIN_FUNC(_start)
 	// just to be sure
 	1: jmp	1b
 END_FUNC(_start)
+
+.macro acall array
+	mov		$\array\()_start,%REG(ax)
+	// are we at the end of the array?
+1:	mov		$\array\()_end,%REG(cx)
+	cmp		%REG(ax),%REG(cx)
+	je		2f
+	// load function
+	mov		(%REG(ax)),%REG(dx)
+	// save *ax and call function
+	push	%REG(ax)
+	call	*%REG(dx)
+	pop		%REG(ax)
+	// to next function
+	add		$WORDSIZE,%REG(ax)
+	jmp		1b
+2:
+.endm
+
+// calls the constructors in .init_array and .ctors sections
+BEGIN_FUNC(call_init_array)
+	push	%REG(bp)
+	mov		%REG(sp),%REG(bp)
+
+	acall	__preinit_array
+	call	_init
+	acall	__init_array
+
+	leave
+	ret
+END_FUNC(call_init_array)
 
 // all signal-handler return to this "function"
 BEGIN_FUNC(sigRetFunc)

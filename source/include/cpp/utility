@@ -26,19 +26,6 @@
 #include <impl/helper.h>
 
 namespace std {
-	template<typename T>
-	inline typename remove_reference<T>::type && move(T &&t) noexcept {
-		return static_cast<typename remove_reference<T>::type&&>(t);
-	}
-	template<typename T>
-	inline constexpr T&& forward(typename remove_reference<T>::type& a) noexcept {
-		return static_cast<T&&>(a);
-	}
-	template<typename T>
-	inline constexpr T&& forward(typename remove_reference<T>::type&& a) noexcept {
-		return static_cast<T&&>(a);
-	}
-
 	template<class T1,class T2>
 	struct pair {
 		typedef T1 first_type;

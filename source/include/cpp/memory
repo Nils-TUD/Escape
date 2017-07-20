@@ -165,7 +165,7 @@ namespace std {
 		}
 		template<class Y>
 		shared_ptr(const shared_ptr<Y>& r) noexcept : _obj((detail::refobject<T>*)r._obj) {
-			function_requires<is_convertible<Y*,T*>>();
+			function_requires<convertible<Y*,T*>>();
 			attach();
 		}
 		shared_ptr(shared_ptr&& r) noexcept : _obj(r._obj) {
@@ -173,14 +173,14 @@ namespace std {
 		}
 		template<class Y>
 		shared_ptr(shared_ptr<Y>&& r) noexcept : _obj((detail::refobject<T>*)r._obj) {
-			function_requires<is_convertible<Y*,T*>>();
+			function_requires<convertible<Y*,T*>>();
 			r._obj = nullptr;
 		}
 		template<class Y>
 		explicit shared_ptr(const weak_ptr<Y>& r) : _obj((detail::refobject<T>*)r._obj) {
 			if(r.expired())
 				throw bad_weak_ptr();
-			function_requires<is_convertible<Y*,T*>>();
+			function_requires<convertible<Y*,T*>>();
 			attach();
 		}
 		template<class Y>
@@ -203,7 +203,7 @@ namespace std {
 		}
 		template<class Y>
 		shared_ptr& operator=(const shared_ptr<Y>& r) noexcept {
-			function_requires<is_convertible<Y*,T*>>();
+			function_requires<convertible<Y*,T*>>();
 			if(_obj != (detail::refobject<T>*)r._obj) {
 				detach();
 				attachTo((detail::refobject<T>*)r._obj);
@@ -220,7 +220,7 @@ namespace std {
 		}
 		template<class Y>
 		shared_ptr& operator=(shared_ptr<Y>&& r) noexcept {
-			function_requires<is_convertible<Y*,T*>>();
+			function_requires<convertible<Y*,T*>>();
 			if(_obj != (detail::refobject<T>*)r._obj) {
 				detach();
 				_obj = (detail::refobject<T>*)r._obj;
@@ -369,7 +369,7 @@ namespace std {
 	// 20.7.2.2.9, shared_ptr casts:
 	template<class T,class U>
 	inline shared_ptr<T> static_pointer_cast(const shared_ptr<U>& r) noexcept {
-		function_requires<is_static_convertible<U*,T*>>();
+		function_requires<static_convertible<U*,T*>>();
 		shared_ptr<T> res;
 		res.attachTo((detail::refobject<T>*)r._obj);
 		return res;
@@ -384,7 +384,7 @@ namespace std {
 	}
 	template<class T,class U>
 	inline shared_ptr<T> const_pointer_cast(const shared_ptr<U>& r) noexcept {
-		function_requires<is_const_convertible<U*,T*>>();
+		function_requires<const_convertible<U*,T*>>();
 		shared_ptr<T> res;
 		res.attachTo((detail::refobject<T>*)r._obj);
 		return res;
@@ -425,7 +425,7 @@ namespace std {
 		 */
 		template<class Y>
 		weak_ptr(shared_ptr<Y> const& r) noexcept : _obj((detail::refobject<T>*)r._obj) {
-			function_requires<is_convertible<Y*,T*>>();
+			function_requires<convertible<Y*,T*>>();
 			attach();
 		}
 		weak_ptr(weak_ptr const& r) noexcept : _obj(r._obj) {
@@ -433,7 +433,7 @@ namespace std {
 		}
 		template<class Y>
 		weak_ptr(weak_ptr<Y> const& r) noexcept : _obj((detail::refobject<T>*)r._obj) {
-			function_requires<is_convertible<Y*,T*>>();
+			function_requires<convertible<Y*,T*>>();
 			attach();
 		}
 
@@ -451,7 +451,7 @@ namespace std {
 		}
 		template<class Y>
 		weak_ptr& operator=(weak_ptr<Y> const& r) noexcept {
-			function_requires<is_convertible<Y*,T*>>();
+			function_requires<convertible<Y*,T*>>();
 			detach();
 			_obj = (detail::refobject<T>*)r._obj;
 			attach();
@@ -459,7 +459,7 @@ namespace std {
 		}
 		template<class Y>
 		weak_ptr& operator=(shared_ptr<Y> const& r) noexcept {
-			function_requires<is_convertible<Y*,T*>>();
+			function_requires<convertible<Y*,T*>>();
 			detach();
 			_obj = (detail::refobject<T>*)r._obj;
 			attach();

@@ -1,26 +1,26 @@
-diff -rcN src/gcc-4.8.2/config.sub src/gcc/config.sub
-*** src/gcc-4.8.2/config.sub	2013-01-11 14:02:58.000000000 +0100
---- src/gcc/config.sub	2014-05-12 18:45:09.127393768 +0200
+diff -rcN src/gcc-org/config.sub src/gcc/config.sub
+*** src/gcc-org/config.sub	2017-07-20 16:19:40.923251029 +0200
+--- src/gcc/config.sub	2017-07-20 16:20:53.579523458 +0200
 ***************
-*** 1358,1364 ****
+*** 1388,1394 ****
   	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
   	      | -sym* | -kopensolaris* | -plan9* \
   	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
-! 	      | -aos* | -aros* \
+! 	      | -aos* | -aros* | -cloudabi* | -sortix* \
   	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
   	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
   	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
---- 1358,1364 ----
+--- 1388,1394 ----
   	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
   	      | -sym* | -kopensolaris* | -plan9* \
   	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
-! 	      | -aos* | -aros* | -escape* \
+! 	      | -aos* | -aros* | -cloudabi* | -sortix* | -escape* \
   	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
   	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
   	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
-diff -rcN src/gcc-4.8.2/gcc/config/escape.h src/gcc/gcc/config/escape.h
-*** src/gcc-4.8.2/gcc/config/escape.h	1970-01-01 01:00:00.000000000 +0100
---- src/gcc/gcc/config/escape.h	2014-05-12 18:46:20.291395389 +0200
+diff -rcN src/gcc-org/gcc/config/escape.h src/gcc/gcc/config/escape.h
+*** src/gcc-org/gcc/config/escape.h	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/gcc/config/escape.h	2017-07-20 16:21:17.092729277 +0200
 ***************
 *** 0 ****
 --- 1,31 ----
@@ -55,17 +55,16 @@ diff -rcN src/gcc-4.8.2/gcc/config/escape.h src/gcc/gcc/config/escape.h
 + 
 + #define USE_TM_CLONE_REGISTRY 0
 + 
-diff -rcN src/gcc-4.8.2/gcc/config.gcc src/gcc/gcc/config.gcc
-*** src/gcc-4.8.2/gcc/config.gcc	2013-10-03 02:47:24.000000000 +0200
---- src/gcc/gcc/config.gcc	2014-05-12 22:00:04.555660169 +0200
+diff -rcN src/gcc-org/gcc/config.gcc src/gcc/gcc/config.gcc
+*** src/gcc-org/gcc/config.gcc	2017-07-20 16:19:42.399909680 +0200
+--- src/gcc/gcc/config.gcc	2017-07-20 16:22:30.335665623 +0200
 ***************
-*** 554,559 ****
---- 554,565 ----
+*** 615,620 ****
+--- 615,625 ----
   
   # Common parts for widely ported systems.
   case ${target} in
 + *-*-escape*)
-+   extra_parts="crtbegin.o crtbeginS.o crtend.o crtendS.o"
 +   gas=yes
 +   gnu_ld=yes
 +   default_use_cxa_atexit=yes
@@ -74,22 +73,22 @@ diff -rcN src/gcc-4.8.2/gcc/config.gcc src/gcc/gcc/config.gcc
     tmake_file="t-darwin ${cpu_type}/t-darwin"
     tm_file="${tm_file} darwin.h"
 ***************
-*** 815,820 ****
---- 821,831 ----
+*** 918,923 ****
+--- 923,933 ----
   esac
   
   case ${target} in
 + x86_64-*-escape*)
-+   tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h i386/i386elf.h i386/x86-64.h escape.h"
-+   tmake_file="${tmake_file} t-svr4"
-+   use_fixproto=yes
-+   ;;
-  aarch64*-*-elf)
++ 	tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h i386/i386elf.h i386/x86-64.h escape.h"
++ 	tmake_file="${tmake_file} t-svr4"
++ 	use_fixproto=yes
++ 	;;
+  aarch64*-*-elf | aarch64*-*-fuchsia* | aarch64*-*-rtems*)
   	tm_file="${tm_file} dbxelf.h elfos.h newlib-stdint.h"
   	tm_file="${tm_file} aarch64/aarch64-elf.h aarch64/aarch64-elf-raw.h"
-diff -rcN src/gcc-4.8.2/libgcc/config/t-escape src/gcc/libgcc/config/t-escape
-*** src/gcc-4.8.2/libgcc/config/t-escape	1970-01-01 01:00:00.000000000 +0100
---- src/gcc/libgcc/config/t-escape	2014-05-12 18:50:40.239401310 +0200
+diff -rcN src/gcc-org/libgcc/config/t-escape src/gcc/libgcc/config/t-escape
+*** src/gcc-org/libgcc/config/t-escape	1970-01-01 01:00:00.000000000 +0100
+--- src/gcc/libgcc/config/t-escape	2017-07-20 16:23:43.521924579 +0200
 ***************
 *** 0 ****
 --- 1,5 ----
@@ -98,12 +97,12 @@ diff -rcN src/gcc-4.8.2/libgcc/config/t-escape src/gcc/libgcc/config/t-escape
 + # for some reason we need -Wl,-shared as well, i.e. -shared is not enough
 + SHLIB_LDFLAGS = -Wl,-shared -Wl,-soname,$(SHLIB_SONAME)
 + 
-diff -rcN src/gcc-4.8.2/libgcc/config.host src/gcc/libgcc/config.host
-*** src/gcc-4.8.2/libgcc/config.host	2013-07-09 23:35:57.000000000 +0200
---- src/gcc/libgcc/config.host	2014-05-12 18:51:43.455402750 +0200
+diff -rcN src/gcc-org/libgcc/config.host src/gcc/libgcc/config.host
+*** src/gcc-org/libgcc/config.host	2017-07-20 16:19:41.283249076 +0200
+--- src/gcc/libgcc/config.host	2017-07-20 16:24:06.011797730 +0200
 ***************
-*** 280,285 ****
---- 280,289 ----
+*** 329,334 ****
+--- 329,338 ----
   esac
   
   case ${host} in
@@ -111,12 +110,12 @@ diff -rcN src/gcc-4.8.2/libgcc/config.host src/gcc/libgcc/config.host
 + 	extra_parts="crtbegin.o crtbeginS.o crtend.o crtendS.o"
 + 	tmake_file="${tmake_file} t-escape i386/t-crtstuff t-slibgcc t-libgcc-pic t-crtstuff-pic"
 + 	;;
-  aarch64*-*-elf)
+  aarch64*-*-elf | aarch64*-*-rtems*)
   	extra_parts="$extra_parts crtbegin.o crtend.o crti.o crtn.o"
-  	tmake_file="${tmake_file} ${cpu_type}/t-aarch64"
-diff -rcN src/gcc-4.8.2/libgcc/gthr-posix.h src/gcc/libgcc/gthr-posix.h
-*** src/gcc-4.8.2/libgcc/gthr-posix.h	2013-02-04 20:06:20.000000000 +0100
---- src/gcc/libgcc/gthr-posix.h	2014-05-12 18:52:05.591403254 +0200
+  	extra_parts="$extra_parts crtfastmath.o"
+diff -rcN src/gcc-org/libgcc/gthr-posix.h src/gcc/libgcc/gthr-posix.h
+*** src/gcc-org/libgcc/gthr-posix.h	2017-07-20 16:19:41.286582390 +0200
+--- src/gcc/libgcc/gthr-posix.h	2017-07-20 16:24:31.654986475 +0200
 ***************
 *** 33,38 ****
 --- 33,39 ----
@@ -127,12 +126,12 @@ diff -rcN src/gcc-4.8.2/libgcc/gthr-posix.h src/gcc/libgcc/gthr-posix.h
   
   #if ((defined(_LIBOBJC) || defined(_LIBOBJC_WEAK)) \
        || !defined(_GTHREAD_USE_MUTEX_TIMEDLOCK))
-diff -rcN src/gcc-4.8.2/libstdc++-v3/configure src/gcc/libstdc++-v3/configure
-*** src/gcc-4.8.2/libstdc++-v3/configure	2013-05-24 20:10:37.000000000 +0200
---- src/gcc/libstdc++-v3/configure	2014-05-12 18:54:51.351407030 +0200
+diff -rcN src/gcc-org/libstdc++-v3/configure src/gcc/libstdc++-v3/configure
+*** src/gcc-org/libstdc++-v3/configure	2017-07-20 16:19:41.726580002 +0200
+--- src/gcc/libstdc++-v3/configure	2017-07-20 16:26:42.007585569 +0200
 ***************
-*** 11057,11062 ****
---- 11057,11070 ----
+*** 11145,11150 ****
+--- 11145,11158 ----
     shlibpath_var=LD_LIBRARY_PATH
     ;;
   
@@ -148,8 +147,8 @@ diff -rcN src/gcc-4.8.2/libstdc++-v3/configure src/gcc/libstdc++-v3/configure
     dynamic_linker=no
     ;;
 ***************
-*** 13169,13174 ****
---- 13177,13186 ----
+*** 13257,13262 ****
+--- 13265,13274 ----
   	esac
         ;;
   
@@ -161,8 +160,8 @@ diff -rcN src/gcc-4.8.2/libstdc++-v3/configure src/gcc/libstdc++-v3/configure
           case $cc_basename in
             NCC*)
 ***************
-*** 14557,14562 ****
---- 14569,14582 ----
+*** 14645,14650 ****
+--- 14657,14670 ----
     dynamic_linker='GNU/Linux ld.so'
     ;;
   
@@ -177,15 +176,15 @@ diff -rcN src/gcc-4.8.2/libstdc++-v3/configure src/gcc/libstdc++-v3/configure
   netbsd*)
     version_type=sunos
     need_lib_prefix=no
-diff -rcN src/gcc-4.8.2/libstdc++-v3/libsupc++/eh_term_handler.cc src/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc
-*** src/gcc-4.8.2/libstdc++-v3/libsupc++/eh_term_handler.cc	2013-02-03 18:54:05.000000000 +0100
---- src/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc	2014-05-12 18:52:52.315404319 +0200
+diff -rcN src/gcc-org/libstdc++-v3/libsupc++/eh_term_handler.cc src/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc
+*** src/gcc-org/libstdc++-v3/libsupc++/eh_term_handler.cc	2017-07-20 16:19:41.489914620 +0200
+--- src/gcc/libstdc++-v3/libsupc++/eh_term_handler.cc	2017-07-20 16:26:58.937490297 +0200
 ***************
 *** 32,38 ****
      --disable-libstdcxx-verbose and rebuilding the library.
      In a freestanding environment, we default to this latter approach.  */
   
-! #if _GLIBCXX_HOSTED && _GLIBCXX_VERBOSE
+! #if _GLIBCXX_HOSTED && _GLIBCXX_VERBOSE && __cpp_exceptions
   /* The current installed user handler.  */
   std::terminate_handler __cxxabiv1::__terminate_handler =
   	__gnu_cxx::__verbose_terminate_handler;
@@ -193,13 +192,13 @@ diff -rcN src/gcc-4.8.2/libstdc++-v3/libsupc++/eh_term_handler.cc src/gcc/libstd
      --disable-libstdcxx-verbose and rebuilding the library.
      In a freestanding environment, we default to this latter approach.  */
   
-! #if 1 // _GLIBCXX_HOSTED && _GLIBCXX_VERBOSE
+! #if 1 // _GLIBCXX_HOSTED && _GLIBCXX_VERBOSE && __cpp_exceptions
   /* The current installed user handler.  */
   std::terminate_handler __cxxabiv1::__terminate_handler =
   	__gnu_cxx::__verbose_terminate_handler;
-diff -rcN src/gcc-4.8.2/libstdc++-v3/libsupc++/vterminate.cc src/gcc/libstdc++-v3/libsupc++/vterminate.cc
-*** src/gcc-4.8.2/libstdc++-v3/libsupc++/vterminate.cc	2013-02-03 18:54:05.000000000 +0100
---- src/gcc/libstdc++-v3/libsupc++/vterminate.cc	2014-05-12 18:53:12.867404787 +0200
+diff -rcN src/gcc-org/libstdc++-v3/libsupc++/vterminate.cc src/gcc/libstdc++-v3/libsupc++/vterminate.cc
+*** src/gcc-org/libstdc++-v3/libsupc++/vterminate.cc	2017-07-20 16:19:41.489914620 +0200
+--- src/gcc/libstdc++-v3/libsupc++/vterminate.cc	2017-07-20 16:27:32.307302572 +0200
 ***************
 *** 24,35 ****
   
@@ -245,50 +244,7 @@ diff -rcN src/gcc-4.8.2/libstdc++-v3/libsupc++/vterminate.cc src/gcc/libstdc++-v
   	  int status = -1;
   	  char *dem = 0;
   	  
-! 	  //dem = __cxa_demangle(name, 0, 0, &status);
+! 	  // dem = __cxa_demangle(name, 0, 0, &status);
   
   	  fputs("terminate called after throwing an instance of '", stderr);
   	  if (status == 0)
-diff -rcN src/gcc/gcc-org/doc/gcc.texi src/gcc/gcc/doc/gcc.texi
-*** src/gcc/gcc-org/doc/gcc.texi	2017-01-16 14:27:27.795405663 +0100
---- src/gcc/gcc/doc/gcc.texi	2017-01-16 14:28:41.271638428 +0100
-***************
-*** 83,93 ****
-  Published by:
-  @multitable @columnfractions 0.5 0.5
-  @item GNU Press
-! @tab Website: www.gnupress.org
-  @item a division of the
-! @tab General: @tex press@@gnu.org @end tex
-  @item Free Software Foundation
-! @tab Orders:  @tex sales@@gnu.org @end tex
-  @item 51 Franklin Street, Fifth Floor
-  @tab Tel 617-542-5942
-  @item Boston, MA 02110-1301 USA
---- 83,93 ----
-  Published by:
-  @multitable @columnfractions 0.5 0.5
-  @item GNU Press
-! @tab Website: @uref{http://www.gnupress.org}
-  @item a division of the
-! @tab General: @email{press@@gnu.org}
-  @item Free Software Foundation
-! @tab Orders:  @email{sales@@gnu.org}
-  @item 51 Franklin Street, Fifth Floor
-  @tab Tel 617-542-5942
-  @item Boston, MA 02110-1301 USA
-diff -rcN src/gcc-org/gcc/cp/cfns.h src/gcc/gcc/cp/cfns.h
-*** src/gcc-org/gcc/cp/cfns.h	2017-01-16 14:41:17.453844930 +0100
---- src/gcc/gcc/cp/cfns.h	2017-01-16 14:46:55.271854999 +0100
-***************
-*** 124,132 ****
-  
-  #ifdef __GNUC__
-  __inline
-- #ifdef __GNUC_STDC_INLINE__
-- __attribute__ ((__gnu_inline__))
-- #endif
-  #endif
-  const char *
-  libc_name_p (register const char *str, register unsigned int len)
---- 124,129 ----

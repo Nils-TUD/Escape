@@ -41,12 +41,18 @@ else
 fi
 
 echo "Downloading binutils, gcc and newlib..."
-wget -c http://ftp.gnu.org/gnu/binutils/binutils-2.23.2.tar.bz2
-wget -c http://ftp.gnu.org/gnu/gcc/gcc-4.8.2/gcc-4.8.2.tar.bz2
-wget -c ftp://sources.redhat.com/pub/newlib/newlib-1.20.0.tar.gz
-BINVER=2.23.2
-GCCVER=4.8.2
+if [ $ARCH = "i586" ] || [ $ARCH = "x86_64" ]; then
+	BINVER=2.28
+	GCCVER=7.1.0
+else
+	BINVER=2.23.2
+	GCCVER=4.8.2
+fi
 NEWLVER=1.20.0
+
+wget -c http://ftp.gnu.org/gnu/binutils/binutils-$BINVER.tar.bz2
+wget -c http://ftp.gnu.org/gnu/gcc/gcc-$GCCVER/gcc-$GCCVER.tar.bz2
+wget -c ftp://sources.redhat.com/pub/newlib/newlib-$NEWLVER.tar.gz
 REGPARMS=""
 if [ "$ARCH" = "eco32" ] || [ "$ARCH" = "mmix" ]; then
 	CUSTOM_FLAGS="-g -O2"
@@ -142,7 +148,7 @@ if $BUILD_GCC; then
 	fi
 	cd $BUILD/gcc
 	if [ $REBUILD -eq 1 ] || [ ! -f $BUILD/gcc/Makefile ]; then
-		CC=$BUILD_CC CFLAGS="$CUSTOM_FLAGS" CXXFLAGS="$CUSTOM_FLAGS" \
+		CC=$BUILD_CC CFLAGS="$CUSTOM_FLAGS" CXXFLAGS="$CUSTOM_FLAGS" CFLAGS_FOR_TARGET="$CUSTOM_FLAGS" \
 			$SRC/gcc/configure --target=$TARGET --prefix=$PREFIX --disable-nls \
 			  --enable-languages=c,c++ --with-headers=$HEADER \
 			  --disable-linker-build-id --with-gxx-include-dir=$HEADER/cpp $ENABLE_THREADS

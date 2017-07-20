@@ -26,6 +26,7 @@
 #include "setup.h"
 
 typedef uintptr_t (*fPreinit)(uintptr_t,int,char *[]);
+typedef void (*init_func)(void);
 
 static void load_initLib(sSharedLib *l);
 
@@ -56,6 +57,16 @@ static void load_initLib(sSharedLib *l) {
 			DBGDL("Calling _init of %s...\n",l->name);
 			void (*initFunc)(void) = (void (*)(void))(initAddr + l->loadAddr);
 			initFunc();
+		}
+
+		uintptr_t initArrayAddr = (uintptr_t)load_getDyn(l->dyn,DT_INIT_ARRAY);
+		if(initArrayAddr) {
+			size_t initArraySize = (size_t)load_getDyn(l->dyn,DT_INIT_ARRAYSZ) / sizeof(init_func);
+			init_func *funcs = (init_func*)(initArrayAddr + l->loadAddr);
+			for(; initArraySize-- > 0; ++funcs) {
+				DBGDL("Calling init_array function %p of %s...\n",*funcs,l->name);
+				(*funcs)();
+			}
 		}
 	}
 

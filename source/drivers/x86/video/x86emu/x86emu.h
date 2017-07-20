@@ -146,7 +146,7 @@ extern X86EMU_intrFuncs _X86EMU_intrTab[256];
 extern "C" {            			/* Use "C" linkage when in C++ mode */
 #endif
 
-void sprintf(char *str,const char *fmt,...);
+void vid_sprintf(char *str,const char *fmt,...);
 
 void 	X86EMU_setupMemFuncs(X86EMU_memFuncs *funcs);
 void 	X86EMU_setupPioFuncs(X86EMU_pioFuncs *funcs);

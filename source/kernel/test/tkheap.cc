@@ -17,10 +17,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <mem/kasan.h>
 #include <mem/kheap.h>
 #include <mem/pagedir.h>
 #include <mem/physmem.h>
 #include <sys/test.h>
+#include <task/thread.h>
 #include <common.h>
 #include <stdarg.h>
 #include <video.h>
@@ -91,8 +93,12 @@ static void test_kheap() {
 		&test_kheap_realloc
 	};
 
+	KASan::disable(Thread::getRunning()->getCPU());
+
 	for(size_t i = 0; i < ARRAY_SIZE(tests); i++)
 		tests[i]();
+
+	KASan::enable(Thread::getRunning()->getCPU());
 }
 
 /* test functions */

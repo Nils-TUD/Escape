@@ -241,7 +241,7 @@ private:
 	}
 
 	void writeRL(char c,uchar keycode,uchar modifier) {
-		char escape[SSTRLEN("\033[kc;123;123;15]") + 1];
+		char escape[SSTRLEN("\033[kc;123;123;123]") + 1];
 		/* we want to treat the character as unsigned here and extend it to 32bit */
 		uint code = *(uchar*)&c;
 		snprintf(escape,sizeof(escape),"\033[kc;%u;%u;%u]",code,keycode,modifier);

@@ -2424,7 +2424,7 @@ void div_long(u32 s)
 		div <<= 1;
 		carry = (l_dvd >= l_s) ? 0 : 1;
 		
-		if (h_dvd < (h_s + carry)) {
+		if (h_dvd < (s32)(h_s + carry)) {
 			h_s >>= 1;
 			l_s = s << (--counter);
 			continue;

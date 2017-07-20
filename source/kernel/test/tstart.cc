@@ -62,8 +62,7 @@ void unittest_start() {
 
 void unittest_run() {
 	/* first unmap all userspace stuff */
-	Proc *p = Proc::getByPid(Proc::getRunning());
-	p->getVM()->unmapAll(true);
+	Proc::removeRegions(Proc::getRunning(),true);
 
 #if defined(__mmix__)
 	test_register(&tModAddrSpace);

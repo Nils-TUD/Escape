@@ -101,8 +101,8 @@ static void test_vmreg_addAndRem(uintptr_t *addrs,const char *msg) {
 	/* remove */
 	for(size_t i = 0; i < TEST_REG_COUNT; i++) {
 		Region *r = regs[i]->reg;
-		delete regs[i]->reg;
 		tree.remove(regs[i]);
+		delete r;
 		reg = tree.getByAddr(addrs[i]);
 		test_assertPtr(reg,NULL);
 		reg = tree.getByReg(r);

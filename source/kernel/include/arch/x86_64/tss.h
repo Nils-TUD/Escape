@@ -24,7 +24,7 @@
 /* the Task State Segment */
 struct TSS {
 	/* the size of the io-map (in bits) */
-	static const size_t IO_MAP_SIZE					= 0xFFFF;
+	static const size_t IO_MAP_SIZE					= 0x10000;
 
 	static const uint16_t IO_MAP_OFFSET				= 104;
 	/* an invalid offset for the io-bitmap => not loaded yet */

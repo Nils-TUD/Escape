@@ -194,9 +194,11 @@ X86CPUInfo::Info X86CPUInfo::getInfo() const {
 			case 0x4 ... 0x9:
 				cpuid(CPUID_INTELBRANDSTRINGEND,
 					&info.name[8],&info.name[9],&info.name[10],&info.name[11]);
+				// fall through
 			case 0x3:
 				cpuid(CPUID_INTELBRANDSTRINGMORE,
 					&info.name[4],&info.name[5],&info.name[6],&info.name[7]);
+				// fall through
 			case 0x2:
 				cpuid(CPUID_INTELBRANDSTRING,
 					&info.name[0],&info.name[1],&info.name[2],&info.name[3]);

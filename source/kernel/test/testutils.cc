@@ -19,6 +19,7 @@
 
 #include <mem/cache.h>
 #include <mem/dynarray.h>
+#include <mem/kasan.h>
 #include <mem/kheap.h>
 #include <mem/physmem.h>
 #include <sys/test.h>
@@ -34,6 +35,9 @@ static size_t daPages;
 static size_t freeFrames;
 
 void checkMemoryBefore(bool checkMappedPages) {
+	// flush the free queue first
+	KASan::kheap_flush();
+
 	if(checkMappedPages)
 		mappedPages = Proc::getCurPageDir()->getPageCount();
 	heapPages = KHeap::getPageCount();
@@ -48,6 +52,8 @@ void checkMemoryAfter(bool checkMappedPages) {
 	size_t newCacheUsed;
 	size_t newFreeFrames;
 	size_t newDaPages;
+	KASan::kheap_flush();
+
 	newHeapPages = KHeap::getPageCount();
 	newHeapUsed = KHeap::getUsedMem();
 	newCacheUsed = Cache::getUsedMem();

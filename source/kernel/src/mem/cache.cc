@@ -93,7 +93,7 @@ void *Cache::calloc(size_t num,size_t size) {
 	return p;
 }
 
-void *Cache::realloc(void *p,size_t size) {
+A_NOASAN void *Cache::realloc(void *p,size_t size) {
 	if(p == NULL)
 		return alloc(size);
 
@@ -114,7 +114,7 @@ void *Cache::realloc(void *p,size_t size) {
 	return res;
 }
 
-void Cache::free(void *p) {
+A_NOASAN void Cache::free(void *p) {
 	ulong *area = (ulong*)((uintptr_t)p - 16);
 	if(p == NULL)
 		return;
@@ -191,7 +191,7 @@ void Cache::printBar(OStream &os,size_t mem,size_t maxMem,size_t total,size_t fr
 	os.writef("\n");
 }
 
-void *Cache::get(Entry *c,size_t i) {
+A_NOASAN void *Cache::get(Entry *c,size_t i) {
 	LockGuard<SpinLock> g(&lock);
 	if(!c->freeList) {
 		size_t pageCount = BYTES_2_PAGES(MIN_OBJ_COUNT * c->objSize);

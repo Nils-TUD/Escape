@@ -76,7 +76,7 @@ void ThreadBase::freeArch(Thread *t) {
 	FPU::freeState(t);
 }
 
-int ThreadBase::finishClone(Thread *t,Thread *nt) {
+A_NOASAN int ThreadBase::finishClone(Thread *t,Thread *nt) {
 	/* we clone just the current thread. all other threads are ignored */
 	/* map stack temporary (copy later) */
 	frameno_t frame = nt->getProc()->getPageDir()->getFrameNo(nt->kernelStack);
@@ -89,7 +89,11 @@ int ThreadBase::finishClone(Thread *t,Thread *nt) {
 
 	/* we don't need to copy the whole page. but take into account that we call Thread::save, which
 	 * internally does a push, so start 8 bytes earlier */
-	ulong sp = CPU::getSP() - 8;
+	/* use GET_REG to prevent a function call */
+	ulong sp;
+	GET_REG(sp,sp);
+	sp -= 8;
+
 	ulong *src = (ulong*)t->kernelStack;
 	size_t off = (sp & (PAGE_SIZE - 1)) / sizeof(ulong);
 	ulong *dstend = dst + (PAGE_SIZE / sizeof(ulong)) - 1;

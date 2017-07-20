@@ -29,6 +29,7 @@
 #include <mem/cache.h>
 #include <mem/copyonwrite.h>
 #include <mem/dynarray.h>
+#include <mem/kasan.h>
 #include <mem/pagedir.h>
 #include <mem/physmemareas.h>
 #include <mem/virtmem.h>
@@ -65,6 +66,7 @@ static const BootTask tasks[] = {
 	{"Parsing cmdline...",Boot::parseCmdline},
 	{"Pre-initializing processes...",Proc::preinit},
 	{"Initializing physical memory management...",PhysMem::init},
+	{"Initializing kernel address sanitizer...",KASan::init},
 	{"Map modules...",mapModules},
 	{"Initializing dynarray...",DynArray::init},
 	{"Initializing LAPIC...",LAPIC::init},

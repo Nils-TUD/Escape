@@ -104,16 +104,21 @@
 #define SLLNODE_AREA			(VFSNODE_AREA + VFSNODE_AREA_SIZE)
 #define SLLNODE_AREA_SIZE		(PT_SIZE * 8)
 
+/* shadow area for kernel address sanitizer */
+#define SHADOW_AREA				(SLLNODE_AREA + SLLNODE_AREA_SIZE)
+#define SHADOW_AREA_SIZE		(KHEAP_SIZE / 8)
+
 /* this area is not managed, but we map all stuff one after another and never unmap it */
 /* this is used for multiboot-modules, pmem, ACPI, ... */
-#define KFREE_AREA				(SLLNODE_AREA + SLLNODE_AREA_SIZE)
+#define KFREE_AREA				(SHADOW_AREA + SHADOW_AREA_SIZE)
 /* use up all space till kernel-stacks and temp area */
 #define KFREE_AREA_SIZE			(PT_SIZE * 64 - (			\
  									KERNEL_SIZE +			\
  									KHEAP_SIZE +			\
  									GFT_AREA_SIZE +			\
  									VFSNODE_AREA_SIZE +		\
- 									SLLNODE_AREA_SIZE))
+ 									SLLNODE_AREA_SIZE +		\
+ 									SHADOW_AREA_SIZE))
 
 /* the area where we map the first part of the physical memory contiguously */
 #define DIR_MAP_AREA			(KFREE_AREA + KFREE_AREA_SIZE)

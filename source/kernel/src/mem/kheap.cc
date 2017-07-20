@@ -40,7 +40,7 @@ struct MetaData {
 	uint64_t magic;
 } A_PACKED;
 
-void *KHeap::alloc(size_t size) {
+A_NOASAN void *KHeap::alloc(size_t size) {
 	if(size == 0)
 		return NULL;
 
@@ -310,7 +310,7 @@ A_NOASAN void *KHeap::realloc(void *addr,size_t size) {
 	return a;
 }
 
-size_t KHeap::getUsedMem() {
+A_NOASAN size_t KHeap::getUsedMem() {
 	size_t c = 0;
 	for(size_t i = 0; i < OCC_MAP_SIZE; i++) {
 		MemArea *a = occupiedMap[i];
@@ -322,7 +322,7 @@ size_t KHeap::getUsedMem() {
 	return c;
 }
 
-size_t KHeap::getFreeMem() {
+A_NOASAN size_t KHeap::getFreeMem() {
 	size_t c = 0;
 	MemArea *a = usableList;
 	while(a != NULL) {
@@ -332,7 +332,7 @@ size_t KHeap::getFreeMem() {
 	return c;
 }
 
-void KHeap::print(OStream &os) {
+A_NOASAN void KHeap::print(OStream &os) {
 	os.writef("Used=%zu, free=%zu, pages=%zu\n",getUsedMem(),getFreeMem(),
 			memUsage / PAGE_SIZE);
 	os.writef("UsableList:\n");
@@ -355,7 +355,7 @@ void KHeap::print(OStream &os) {
 	}
 }
 
-bool KHeap::doAddMemory(uintptr_t addr,size_t size) {
+A_NOASAN bool KHeap::doAddMemory(uintptr_t addr,size_t size) {
 	if(freeList == NULL) {
 		if(!loadNewAreas())
 			return false;
@@ -373,7 +373,7 @@ bool KHeap::doAddMemory(uintptr_t addr,size_t size) {
 	return true;
 }
 
-bool KHeap::loadNewSpace(size_t size) {
+A_NOASAN bool KHeap::loadNewSpace(size_t size) {
 	/* check for overflow */
 	if(size + PAGE_SIZE < PAGE_SIZE)
 		return false;
@@ -389,7 +389,7 @@ bool KHeap::loadNewSpace(size_t size) {
 	return doAddMemory(addr,count * PAGE_SIZE);
 }
 
-bool KHeap::loadNewAreas() {
+A_NOASAN bool KHeap::loadNewAreas() {
 	uintptr_t addr = allocAreas();
 	if(addr == 0)
 		return false;

@@ -8,6 +8,16 @@ ldenv.Append(CPPFLAGS = ' -P -Ikernel/include')
 ldconfs = Flatten([ldenv.Glob('src/arch/$TGTTYPE/ld.conf'), ldenv.Glob('src/arch/$TGT/ld.conf')])
 ldconf = ldenv.EscapeCPP('ld.conf', ldconfs[0])
 
+kasan=False
+
+if kasan and kenv['TGTTYPE'] == 'x86':
+	kenv.Append(
+		CPPFLAGS = ' -DKASAN=1',
+		CFLAGS = ' -fsanitize=kernel-address',
+		CXXFLAGS = ' -fsanitize=kernel-address',
+		LINKFLAGS = ' -Wl,--wrap=cache_alloc -Wl,--wrap=cache_calloc -Wl,--wrap=cache_realloc -Wl,--wrap=cache_free',
+	)
+
 kenv.Append(
 	CFLAGS = ' -ffreestanding',
 	CXXFLAGS = ' -std=c++0x -fno-exceptions -fno-rtti -ffreestanding',

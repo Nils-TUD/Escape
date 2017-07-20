@@ -41,10 +41,12 @@
 #define A_INIT					__attribute__((section(".ctors")))
 #define A_UNUSED				__attribute__((unused))
 #define A_INLINE				__attribute__((inline))
+#define A_NOINLINE				__attribute__((noinline))
 #define A_ALWAYS_INLINE			__attribute__((always_inline))
 #define A_UNREACHED				__builtin_unreachable()
 #define A_REGPARM(x)			__attribute__((regparm(x)))
 #define A_WEAK					__attribute__((weak))
+#define A_NOASAN				__attribute__((no_sanitize_address))
 
 #if defined(__cplusplus)
 #	define EXTERN_C				extern "C"

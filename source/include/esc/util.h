@@ -54,6 +54,11 @@ public:
     }
 
     template<typename T>
+    static constexpr bool is_aligned(T value, size_t align) {
+        return (value & (align - 1)) == 0;
+    }
+
+    template<typename T>
     static constexpr T round_up(T value, size_t align) {
         return (value + align - 1) & ~static_cast<T>(align - 1);
     }

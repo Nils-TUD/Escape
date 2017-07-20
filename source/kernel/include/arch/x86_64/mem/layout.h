@@ -105,9 +105,13 @@
 #define SLLNODE_AREA			(VFSNODE_AREA + VFSNODE_AREA_SIZE)
 #define SLLNODE_AREA_SIZE		(PT_SIZE * 16)
 
+/* shadow area for kernel address sanitizer */
+#define SHADOW_AREA				(SLLNODE_AREA + SLLNODE_AREA_SIZE)
+#define SHADOW_AREA_SIZE		(KHEAP_SIZE / 8)
+
 /* this area is not managed, but we map all stuff one after another and never unmap it */
 /* this is used for multiboot-modules, pmem, ACPI, ... */
-#define KFREE_AREA				(SLLNODE_AREA + SLLNODE_AREA_SIZE)
+#define KFREE_AREA				(SHADOW_AREA + SHADOW_AREA_SIZE)
 #define KFREE_AREA_SIZE			(PT_SIZE * 128)
 
 /* for temporary mappings */

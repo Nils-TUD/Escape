@@ -279,7 +279,7 @@ public:
 	/**
 	 * @return the current or last cpu that executed this thread
 	 */
-	cpuid_t getCPU() const {
+	A_NOASAN cpuid_t getCPU() const {
 		return cpu;
 	}
 	void setCPU(cpuid_t cpu) {

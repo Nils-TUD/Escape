@@ -92,7 +92,7 @@ void vtin_handleKey(sVTerm *vt,uchar keycode,uchar modifier,char c) {
 
 	/* send escape-code when we're not in readline-mode */
 	if(!vt->readLine) {
-		char escape[SSTRLEN("\033[kc;123;123;15]") + 1];
+		char escape[SSTRLEN("\033[kc;123;123;123]") + 1];
 		/* we want to treat the character as unsigned here and extend it to 32bit */
 		uint code = *(uchar*)&c;
 		snprintf(escape,sizeof(escape),"\033[kc;%u;%u;%u]",code,keycode,modifier);

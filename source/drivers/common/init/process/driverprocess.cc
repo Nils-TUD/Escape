@@ -92,7 +92,7 @@ void DriverProcess::load() {
 				// check whether the child already died
 				int state;
 				if(waitpid(_pid,&state,WNOHANG) == _pid) {
-					VTHROW("Child '" << it->name() << "' died with exitcode "
+					VTHROW("Child " << _pid << ":" << name() << " died with exitcode "
 						<< WEXITSTATUS(state) << " (signal " << WTERMSIG(state) << ")");
 				}
 

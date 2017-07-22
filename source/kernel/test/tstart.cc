@@ -17,6 +17,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <dbg/console.h>
+#include <dbg/kb.h>
 #include <mem/pagedir.h>
 #include <mem/swapmap.h>
 #include <sys/test.h>
@@ -83,6 +85,9 @@ void unittest_run() {
 	test_start();
 
 	/* stay here */
-	while(1)
-		CPU::halt();
+	tprintf("\nPress any key to continue...\n");
+	while(1) {
+		Keyboard::get(NULL,Keyboard::EVENT_PRESS,true);
+		Console::start("");
+	}
 }

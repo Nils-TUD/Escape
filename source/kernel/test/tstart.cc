@@ -47,6 +47,7 @@ extern sTestModule tModVFSn;
 extern sTestModule tModSwapMap;
 extern sTestModule tModVmm;
 extern sTestModule tModPmemAreas;
+extern sTestModule tModCache;
 
 EXTERN_C void unittest_run();
 EXTERN_C void unittest_start();
@@ -82,6 +83,7 @@ void unittest_run() {
 	test_register(&tModSwapMap);
 	test_register(&tModVmm);
 	test_register(&tModPmemAreas);
+	test_register(&tModCache);
 	test_start();
 
 	/* stay here */

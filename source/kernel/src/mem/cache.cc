@@ -62,7 +62,7 @@ size_t Cache::totalObjSize(size_t sz) {
 
 void *Cache::alloc(size_t size) {
 	void *res;
-	if(size == 0)
+	if(EXPECT_FALSE(size == 0))
 		return NULL;
 
 	for(size_t i = 0; i < ARRAY_SIZE(caches); i++) {
@@ -88,13 +88,13 @@ done:
 
 void *Cache::calloc(size_t num,size_t size) {
 	void *p = alloc(num * size);
-	if(p)
+	if(EXPECT_TRUE(p))
 		memclear(p,num * size);
 	return p;
 }
 
 A_NOASAN void *Cache::realloc(void *p,size_t size) {
-	if(p == NULL)
+	if(EXPECT_FALSE(p == NULL))
 		return alloc(size);
 
 	ulong *area = (ulong*)((uintptr_t)p - 16);
@@ -107,7 +107,7 @@ A_NOASAN void *Cache::realloc(void *p,size_t size) {
 	if(objSize >= size)
 		return p;
 	void *res = alloc(size);
-	if(res) {
+	if(EXPECT_TRUE(res)) {
 		memcpy(res,p,objSize);
 		free(p);
 	}
@@ -116,7 +116,7 @@ A_NOASAN void *Cache::realloc(void *p,size_t size) {
 
 A_NOASAN void Cache::free(void *p) {
 	ulong *area = (ulong*)((uintptr_t)p - 16);
-	if(p == NULL)
+	if(EXPECT_FALSE(p == NULL))
 		return;
 
 #if DEBUG_ALLOC_N_FREE
@@ -193,7 +193,7 @@ void Cache::printBar(OStream &os,size_t mem,size_t maxMem,size_t total,size_t fr
 
 A_NOASAN void *Cache::get(Entry *c,size_t i) {
 	LockGuard<SpinLock> g(&lock);
-	if(!c->freeList) {
+	if(EXPECT_FALSE(!c->freeList)) {
 		size_t pageCount = BYTES_2_PAGES(MIN_OBJ_COUNT * c->objSize);
 		size_t bytes = pageCount * PAGE_SIZE;
 		size_t total = totalObjSize(c->objSize);

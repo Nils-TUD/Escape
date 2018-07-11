@@ -6,11 +6,6 @@ suffix=""
 if [ "$ESC_TARGET" = "x86_64" ]; then
 	suffix=".elf32"
 fi
-case "$ESC_SIM_FLAGS" in
-	*-enable-kvm*)
-		args=" forcepit"
-		;;
-esac
 
 $ESC_QEMU -m 512 -net nic,model=ne2k_pci -net nic -net user -serial stdio \
 	-kernel $1/dist/boot/escape$suffix -append "root=/dev/ext2-ramdisk-fs.img $args" \

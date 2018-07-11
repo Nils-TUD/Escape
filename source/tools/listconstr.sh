@@ -14,28 +14,31 @@ if [ "`$crossdir/bin/$cross-readelf -h \"$file\" | grep ELF32`" != "" ]; then
 	x86_64=false
 fi
 
-name="\.ctors"
-if [ "`$crossdir/bin/$cross-readelf -S "$file" | grep $name`" = "" ]; then
-	name="\.init_array"
-fi
-if [ "`$crossdir/bin/$cross-readelf -S "$file" | grep $name`" = "" ]; then
-	echo "Unable to find section init_array/ctors" >&2
-	exit 1
-fi
+show_symbols() {
+	name=$1
+	namepat="\\$name"
 
-if $x86_64; then
-	off=0x`$crossdir/bin/$cross-readelf -S "$file" | grep $name | xargs | cut -d ' ' -f 6`
-	len=0x`$crossdir/bin/$cross-readelf -S "$file" | grep $name -A1 | grep '^       ' | \
-		xargs | cut -d ' ' -f 1`
-	bytes=8
-else
-	section=`$crossdir/bin/$cross-readelf -S "$file" | grep $name | xargs`
-	off=0x`echo "$section" | cut -d ' ' -f 6`
-	len=0x`echo "$section" | cut -d ' ' -f 7`
-	bytes=4
-fi
+	rdelf=$crossdir/bin/$cross-readelf
+	if [ "`$rdelf -S "$file" | grep $namepat`" != "" ]; then
+		if $x86_64; then
+			off=0x`$rdelf -S "$file" | grep $namepat | sed -e 's/\[.*\]//g' | xargs | cut -d ' ' -f 4`
+			len=0x`$rdelf -S "$file" | grep $namepat -A1 | grep '^       ' | xargs | cut -d ' ' -f 1`
+			bytes=8
+		else
+			section=`$rdelf -S "$file" | grep $namepat | sed -e 's/\[.*\]//g' | xargs`
+			off=0x`echo "$section" | cut -d ' ' -f 4`
+			len=0x`echo "$section" | cut -d ' ' -f 5`
+			bytes=4
+		fi
 
-od -t x$bytes "$file" -j $off -N $len -v -w$bytes | grep ' ' | while read line; do
-	addr=${line#* }
-	$crossdir/bin/$cross-nm -C -l "$file" | grep -m 1 $addr
+		echo "Constructors in $name ($off : $len):"
+		od -t x$bytes "$file" -j $off -N $len -v -w$bytes | grep ' ' | while read line; do
+			addr=${line#* }
+			$crossdir/bin/$cross-nm -C -l "$file" | grep -m 1 $addr
+		done
+	fi
+}
+
+for name in ".init_array" ".ctors"; do
+	show_symbols $name
 done

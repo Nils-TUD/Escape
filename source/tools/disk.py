@@ -75,12 +75,21 @@ def create_disk(image, parts, offset, flat, nogrub):
 		i += 1
 
 	if not nogrub:
-		# add grub
-		with open(tmpfile, "w") as f:
-			f.write("device (hd0) " + str(image) + "\nroot (hd0,0)\nsetup (hd0)\nquit\n")
-		with open(tmpfile, "r") as fin:
-			p = subprocess.Popen(["grub", "--no-floppy", "--batch"], stdin=fin)
-			p.wait()
+		# mount root fs
+		tmpdir = subprocess.check_output(["mktemp", "-d"]).rstrip()
+		mount_disk(image, block_offset(parts, offset, 0), tmpdir)
+		# create loop device for MBR
+		lodev = create_loop(image)
+		# install grub
+		subprocess.call([
+			"sudo", "grub-install", "--target=i386-pc", "--root-directory=" + tmpdir,
+			"--no-floppy", "--modules=normal part_msdos ext2 multiboot",
+			lodev
+		])
+		# free loop and unmount
+		free_loop(lodev)
+		umount_disk(tmpdir)
+		subprocess.call(["rm", "-Rf", tmpdir])
 
 	# remove temp file
 	subprocess.call(["rm", "-Rf", tmpfile])

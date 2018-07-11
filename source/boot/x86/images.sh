@@ -11,24 +11,31 @@ create_cd() {
 	dst="$2"
 	suffix=`get_suffix`
 
-	cat > $src/boot/grub/menu.lst <<EOF
-default 0
-timeout 3
+	cat > $src/boot/grub/grub.cfg <<EOF
+set timeout=3
+set default=0
 
-title Escape
-kernel /boot/escape$suffix root=/dev/iso9660-cdrom
-module /sbin/initloader
-module /sbin/pci /dev/pci
-module /sbin/ata /sys/dev/ata nodma
-module /sbin/iso9660 /dev/iso9660-cdrom cdrom
+menuentry "Escape" {
+	multiboot /boot/escape$suffix escape root=/dev/iso9660-cdrom
+	module /sbin/initloader initloader
+	module /sbin/pci pci /dev/pci
+	module /sbin/ata ata /sys/dev/ata nodma
+	module /sbin/iso9660 iso9660 /dev/iso9660-cdrom cdrom
+	boot
+}
 
-title Escape - Test
-kernel /boot/escape_test$suffix
-module /sbin/initloader
+menuentry "Escape - Test" {
+	multiboot /boot/escape_test$suffix
+	module /sbin/initloader initloader
+	boot
+}
 EOF
 
-	genisoimage -U -iso-level 3 -input-charset ascii -R -b boot/grub/stage2_eltorito -no-emul-boot \
-		-boot-load-size 4 -boot-info-table -o "$dst" "$src" 1>&2
+	grub-mkrescue -d "/usr/lib/grub/i386-pc" \
+		--locales="" --fonts="" --themes="" \
+		--install-modules="normal part_msdos iso9660 multiboot" \
+		-o "$dst" "$src" \
+		-- -as mkisofs -U # options for xorriso
 }
 
 create_mini_cd() {
@@ -57,20 +64,24 @@ create_disk() {
 
 	dir=`mktemp -d`
 	cp -R $src/* $dir
-	cat > $dir/boot/grub/menu.lst <<EOF
-default 0
-timeout 3
+	cat > $dir/boot/grub/grub.cfg <<EOF
+set timeout=3
+set default=0
 
-title Escape
-kernel /boot/escape$suffix root=/dev/ext2-hda1 swapdev=/dev/hda3
-module /sbin/initloader
-module /sbin/pci /dev/pci
-module /sbin/ata /sys/dev/ata
-module /sbin/ext2 /dev/ext2-hda1 /dev/hda1
+menuentry "Escape" {
+	multiboot /boot/escape$suffix escape root=/dev/ext2-hda1 swapdev=/dev/hda3
+	module /sbin/initloader initloader
+	module /sbin/pci pci /dev/pci
+	module /sbin/ata ata /sys/dev/ata
+	module /sbin/ext2 ext2 /dev/ext2-hda1 /dev/hda1
+	boot
+}
 
-title Escape - Test
-kernel /boot/escape_test$suffix
-module /sbin/initloader
+menuentry "Escape - Test" {
+	multiboot /boot/escape_test$suffix
+	module /sbin/initloader initloader
+	boot
+}
 EOF
 
 	sudo ./boot/perms.sh $dir
@@ -114,22 +125,26 @@ create_usbimg() {
 	done
 	cp $1/fs.img.gz $tmp/boot
 
-	# create menu.lst
-	cat > $tmp/boot/grub/menu.lst <<EOF
-default 0
-timeout 3
+	# create grub.cfg
+	cat > $dir/boot/grub/grub.cfg <<EOF
+set timeout=3
+set default=0
 
-title Escape
-kernel /boot/escape$suffix root=/dev/ext2-ramdisk-fs nolog
-module /sbin/initloader
-module /sbin/ramdisk /dev/ramdisk-fs -f /sys/boot/fs.img.gz
-module /sbin/pci /dev/pci
-module /sbin/ext2 /dev/ext2-ramdisk-fs /dev/ramdisk-fs
-module /boot/fs.img.gz
+menuentry "Escape" {
+	multiboot /boot/escape$suffix escape root=/dev/ext2-ramdisk-fs nolog
+	module /sbin/initloader initloader
+	module /sbin/ramdisk ramdisk /dev/ramdisk-fs -f /sys/boot/fs.img.gz
+	module /sbin/pci pci /dev/pci
+	module /sbin/ext2 ext2 /dev/ext2-ramdisk-fs /dev/ramdisk-fs
+	module /boot/fs.img.gz fs.img.gz
+	boot
+}
 
-title Escape - Test
-kernel /boot/escape_test$suffix
-module /sbin/initloader
+menuentry "Escape - Test" {
+	multiboot /boot/escape_test$suffix
+	module /sbin/initloader initloader
+	boot
+}
 EOF
 
 	# determine size and add a bit of space

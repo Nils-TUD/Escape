@@ -65,7 +65,7 @@ int main(int argc,char **argv) {
 	int opt;
 	while((opt = getopt(argc,argv,"lvs:")) != -1) {
 		switch(opt) {
-			case 'L': list = true; break;
+			case 'l': list = true; break;
 			case 'v': verbose = true; break;
 			case 's': ssig = optarg; break;
 			default:

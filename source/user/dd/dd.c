@@ -69,7 +69,7 @@ int main(int argc,char *argv[]) {
 			error("Unable to open '%s'",inFile);
 	}
 	if(outFile) {
-		outfd = open(outFile,O_WRONLY);
+		outfd = creat(outFile,0644);
 		if(outfd < 0)
 			error("Unable to open '%s'",outFile);
 	}

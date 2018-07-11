@@ -69,7 +69,7 @@ static void test_rev_order() {
 }
 
 static void test_rand_order() {
-    test_caseStart("Add and remove regions with addresses in rand order");
+    test_caseStart("Add and remove nodes with addresses in rand order");
 
     static int vals[TEST_NODE_COUNT];
     for(size_t i = 0; i < TEST_NODE_COUNT; i++)

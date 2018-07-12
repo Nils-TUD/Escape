@@ -25,7 +25,7 @@ menuentry "Escape" {
 }
 
 menuentry "Escape - Test" {
-	multiboot /boot/escape_test$suffix
+	multiboot /boot/escape_test$suffix escape_test
 	module /sbin/initloader initloader
 	boot
 }
@@ -78,7 +78,7 @@ menuentry "Escape" {
 }
 
 menuentry "Escape - Test" {
-	multiboot /boot/escape_test$suffix
+	multiboot /boot/escape_test$suffix escape_test
 	module /sbin/initloader initloader
 	boot
 }
@@ -141,7 +141,7 @@ menuentry "Escape" {
 }
 
 menuentry "Escape - Test" {
-	multiboot /boot/escape_test$suffix
+	multiboot /boot/escape_test$suffix escape_test
 	module /sbin/initloader initloader
 	boot
 }

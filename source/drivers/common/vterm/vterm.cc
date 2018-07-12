@@ -256,7 +256,7 @@ static int vtInit(int id,const char *name,uint cols,uint rows) {
 		}
 		catch(const std::exception &e) {
 			/* ignore errors here. in this case we simply don't use it */
-			printe("%s",e.what());
+			fprintf(stderr,"%s\n",e.what());
 		}
 	}
 

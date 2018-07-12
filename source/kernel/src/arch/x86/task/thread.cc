@@ -88,11 +88,11 @@ A_NOASAN int ThreadBase::finishClone(Thread *t,Thread *nt) {
 	}
 
 	/* we don't need to copy the whole page. but take into account that we call Thread::save, which
-	 * internally does a push, so start 8 bytes earlier */
+	 * internally does a push, so start 2 words earlier */
 	/* use GET_REG to prevent a function call */
 	ulong sp;
 	GET_REG(sp,sp);
-	sp -= 8;
+	sp -= sizeof(ulong) * 2;
 
 	ulong *src = (ulong*)t->kernelStack;
 	size_t off = (sp & (PAGE_SIZE - 1)) / sizeof(ulong);

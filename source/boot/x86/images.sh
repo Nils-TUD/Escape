@@ -11,6 +11,7 @@ create_cd() {
 	dst="$2"
 	suffix=`get_suffix`
 
+	mkdir -p $src/boot/grub
 	cat > $src/boot/grub/grub.cfg <<EOF
 set timeout=3
 set default=0
@@ -64,6 +65,8 @@ create_disk() {
 
 	dir=`mktemp -d`
 	cp -R $src/* $dir
+
+	mkdir -p $dir/boot/grub
 	cat > $dir/boot/grub/grub.cfg <<EOF
 set timeout=3
 set default=0
@@ -126,7 +129,8 @@ create_usbimg() {
 	cp $1/fs.img.gz $tmp/boot
 
 	# create grub.cfg
-	cat > $dir/boot/grub/grub.cfg <<EOF
+	mkdir -p $tmp/boot/grub
+	cat > $tmp/boot/grub/grub.cfg <<EOF
 set timeout=3
 set default=0
 

@@ -152,6 +152,7 @@ static const NICDesc nics[] = {
 	{0x8086,	0x153b,	"/sbin/e1000",	"i217",			"I217"},
 	{0x8086,	0x155a,	"/sbin/e1000",	"i218",			"I218"},			/* tested and works */
 	{0x8086,	0x15a2,	"/sbin/e1000",	"i218-lm",		"I218-LM"},			/* tested and works */
+	{0x8086, 	0x15bc, "/sbin/e1000",  "i219-v",		"I219-V"},			/* tested and works */
 	{0x8086,	0x294c,	"/sbin/e1000",	"82566dc-2",	"82566DC-2"},
 	{0x8086,	0x2e6e,	"/sbin/e1000",	"cemedia",		"CE Media Processor"},
 

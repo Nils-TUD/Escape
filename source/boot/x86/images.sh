@@ -135,6 +135,7 @@ set timeout=3
 set default=0
 
 menuentry "Escape" {
+	insmod gzio
 	multiboot /boot/escape$suffix escape root=/dev/ext2-ramdisk-fs nolog
 	module /sbin/initloader initloader
 	module /sbin/ramdisk ramdisk /dev/ramdisk-fs -f /sys/boot/fs.img.gz

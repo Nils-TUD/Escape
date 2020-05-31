@@ -92,7 +92,7 @@ static uintptr_t load(const void *elf) {
 
 	// check magic
 	if(memcmp(header->e_ident,ELFMAG,4) != 0) {
-		debugf("Invalida ELF magic\n");
+		debugf("Invalid ELF magic!\n");
 		return 0;
 	}
 

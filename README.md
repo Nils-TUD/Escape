@@ -2,7 +2,7 @@ Escape
 ======
 
 Escape is a UNIX-like microkernel operating system on which I'm working since
-october 2008. It's implemented in C, C++ and a bit assembler. I'm trying to
+October 2008. It's implemented in C, C++ and a bit Assembler. I'm trying to
 write all code myself to maximize the learning effect and the fun, but
 there are some cases where it just gets too time consuming to do that. Thus,
 I'm using the bootloader GRUB, libgcc, libsupc++ and x86emu.

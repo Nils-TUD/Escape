@@ -111,7 +111,10 @@ END_FUNC(_start)
 	mov		(%REG(ax)),%REG(dx)
 	// save *ax and call function
 	push	%REG(ax)
+	// align it properly (SSE)
+	sub		$8,%REG(sp)
 	call	*%REG(dx)
+	add     $8,%REG(sp)
 	pop		%REG(ax)
 	// to next function
 	add		$WORDSIZE,%REG(ax)

@@ -52,7 +52,7 @@ NEWLVER=1.20.0
 
 wget -c http://ftp.gnu.org/gnu/binutils/binutils-$BINVER.tar.bz2
 wget -c http://ftp.gnu.org/gnu/gcc/gcc-$GCCVER/gcc-$GCCVER.tar.bz2
-wget -c ftp://sources.redhat.com/pub/newlib/newlib-$NEWLVER.tar.gz
+wget -c ftp://sourceware.org/pub/newlib/newlib-$NEWLVER.tar.gz
 REGPARMS=""
 if [ "$ARCH" = "eco32" ] || [ "$ARCH" = "mmix" ]; then
 	CUSTOM_FLAGS="-g -O2"

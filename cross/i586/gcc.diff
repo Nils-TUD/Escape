@@ -1,3 +1,15 @@
+diff -rcN src/gcc-org/gcc/graphite.h src/gcc/gcc/graphite.h
+--- src/gcc-org/gcc/graphite.h 2018-01-03 11:03:58.000000000 +0000
++++ src/gcc/gcc/graphite.h 2018-07-29 17:42:55.836121000 +0000
+@@ -37,6 +37,8 @@
+ #include <isl/schedule.h>
+ #include <isl/ast_build.h>
+ #include <isl/schedule_node.h>
++#include <isl/id.h>
++#include <isl/space.h>
+
+ typedef struct poly_dr *poly_dr_p;
+
 diff -rcN src/gcc-org/config.sub src/gcc/config.sub
 *** src/gcc-org/config.sub	2017-07-19 16:38:06.043744966 +0200
 --- src/gcc/config.sub	2017-07-19 18:23:12.340133908 +0200

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 import os
 import argparse
@@ -63,7 +63,7 @@ def create_disk(image, parts, offset, flat, nogrub):
 	for p in parts:
 		off = block_offset(parts, offset, i)
 		blocks = mb_to_blocks(int(p[1]))
-		print "Creating ", p[0], " filesystem in partition ", i, " (@ ", off, ",", blocks, " blocks)"
+		print("Creating ", p[0], " filesystem in partition ", i, " (@ ", off, ",", blocks, " blocks)")
 		create_fs(image, off, p[0], blocks)
 		i += 1
 
@@ -76,7 +76,7 @@ def create_disk(image, parts, offset, flat, nogrub):
 
 	if not nogrub:
 		# mount root fs
-		tmpdir = subprocess.check_output(["mktemp", "-d"]).rstrip()
+		tmpdir = subprocess.check_output(["mktemp", "-d"]).rstrip().decode()
 		mount_disk(image, block_offset(parts, offset, 0), tmpdir)
 		# create loop device for MBR
 		lodev = create_loop(image)
@@ -96,7 +96,7 @@ def create_disk(image, parts, offset, flat, nogrub):
 
 # mounts the partition in <image> @ <offset> to <dest>
 def mount_disk(image, offset, dest):
-	lodev = subprocess.check_output(["sudo", "losetup" , "-f"]).rstrip()
+	lodev = subprocess.check_output(["sudo", "losetup" , "-f"]).rstrip().decode()
 	return subprocess.call([
 		"sudo", "mount", "-oloop=" + lodev + ",offset=" + str(offset * 1024), image, dest
 	])
@@ -109,7 +109,7 @@ def umount_disk(dest):
 
 # determines the number of blocks for <mb> MB
 def mb_to_blocks(mb):
-	return (mb * hdheads * hdtracksecs) / 2
+	return int((mb * hdheads * hdtracksecs) / 2)
 
 # determines the block offset for partition <no> in <parts>
 def block_offset(parts, secoffset, no):
@@ -117,13 +117,13 @@ def block_offset(parts, secoffset, no):
 	off = secoffset / 2
 	for p in parts:
 		if i == no:
-			return off
+			return int(off)
 		off += mb_to_blocks(int(p[1]))
 		i += 1
 
 # creates a free loop device for <image>, starting at <offset>
 def create_loop(image, offset = 0):
-	lodev = subprocess.check_output(["sudo", "losetup" , "-f"]).rstrip()
+	lodev = subprocess.check_output(["sudo", "losetup" , "-f"]).rstrip().decode()
 	subprocess.call(["sudo", "losetup", "-o", str(offset), lodev, image])
 	return lodev
 
@@ -146,12 +146,12 @@ def create_fs(image, offset, fs, blocks):
 	elif fs == 'ntfs':
 		subprocess.call(["sudo", "mkfs.ntfs", "-s", "1024", lodev, str(blocks)])
 	elif fs != 'nofs':
-		print "Unsupported filesystem"
+		print("Unsupported filesystem")
 	free_loop(lodev)
 
 # copies the directory <directory> into the filesystem of partition @ <offset> in <image>,
 def copy_files(image, offset, directory):
-	tmpdir = subprocess.check_output(["mktemp", "-d"]).rstrip()
+	tmpdir = subprocess.check_output(["mktemp", "-d"]).rstrip().decode()
 	mount_disk(image, offset, tmpdir)
 	for node in os.listdir(directory):
 		subprocess.call(["sudo", "cp", "--preserve=all", "-R", directory + '/' + node, tmpdir])
@@ -204,15 +204,15 @@ def parted(args):
 	run_parted(args.disk)
 def fsck(args):
 	offset = get_part_offset(args.disk, args.part)
-	print "Running fsck for partition ", args.part, " (@", offset, ") of ", args.disk, " with fs ", args.fs
+	print("Running fsck for partition ", args.part, " (@", offset, ") of ", args.disk, " with fs ", args.fs)
 	run_fsck(args.disk, args.fs, offset)
 def dump(args):
 	offset = get_part_offset(args.disk, args.part)
-	print "Running dumpe2fs for partition ", args.part, " (@", offset, ") of ", args.disk
+	print("Running dumpe2fs for partition ", args.part, " (@", offset, ") of ", args.disk)
 	run_dump(args.disk, offset)
 def mount(args):
 	offset = get_part_offset(args.disk, args.part)
-	print "Mounting partition ", args.part, " (@", offset, ") of ", args.disk, " at ", args.dest
+	print("Mounting partition ", args.part, " (@", offset, ") of ", args.disk, " at ", args.dest)
 	mount_disk(args.disk, offset, args.dest)
 def umount(args):
 	umount_disk(args.dir)

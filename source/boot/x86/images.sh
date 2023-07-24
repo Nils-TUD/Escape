@@ -154,7 +154,7 @@ EOF
 
 	# determine size and add a bit of space
 	size=`du -sm $tmp | cut -f 1`
-	size=$((size + $size))
+	size=$((size + size + size))
 
 	# create disk
 	./tools/disk.py create --offset 2048 --part ext3 $size $tmp $1/usb.img

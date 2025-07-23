@@ -138,7 +138,7 @@ def free_loop(lodev):
 def create_fs(image, offset, fs, blocks):
 	lodev = create_loop(image, offset * 1024)
 	if fs == 'ext2r0':
-		subprocess.call(["sudo", "mke2fs", "-r0", "-Onone", "-b1024", lodev, str(blocks)])
+		subprocess.call(["sudo", "mke2fs", "-E", "revision=0", "-b1024", lodev, str(blocks)])
 	elif fs == 'ext2' or fs == 'ext3' or fs == 'ext4':
 		subprocess.call(["sudo", "mkfs." + fs, "-b", "1024", lodev, str(blocks)])
 	elif fs == 'fat32':
